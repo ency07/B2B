@@ -1,0 +1,18 @@
+CRITERIOS DE ACEPTACIÓN
+
+Define cuándo algo se considera terminado.
+
+Formato:
+
+Módulo:
+Clientes
+
+Aceptado si:
+
+✓ Pantalla terminada
+✓ API terminada
+✓ Tabla creada
+✓ Auditoría activa
+✓ Permisos activos
+✓ Pruebas aprobadas
+✓ Documentación actualizada

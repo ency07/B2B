@@ -1,0 +1,1 @@
+Antes de diseñar cualquier pantalla, compara tu propuesta con estas referencias. Si el resultado no transmite el mismo nivel de calidad visual, no escribas código y explica qué falta.

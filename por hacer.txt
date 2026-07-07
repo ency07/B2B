@@ -1,0 +1,165 @@
+esta es la estructura de mi proyecto y quiero que me ayude con estos los principales faltantes técnicos para que el ERP y el portal sean 100% de producción son:
+Formularios CRUD en el ERP: Módulos como Inventario, Compras y Facturas muestran tablas muy bonitas pero carecen de formularios completamente funcionales de creación y edición conectados al backend.
+Descargas de Archivos Reales: Los botones de exportación a CSV/Excel y descarga de archivos CAD o reportes PDF en el Portal del Cliente son simulaciones; no devuelven un archivo real dinámico del servidor.
+Pasarela de Pagos: La pasarela Wompi en el portal de clientes simula la confirmación y saldo a $0 localmente, pero falta conectarla a Webhooks reales o simular la persistencia de transacciones reales en la base de datos.
+Buscador Global de Catálogo: La web comercial tiene pestañas de categorías, pero no tiene una barra de búsqueda de productos con autocompletado en tiempo real.
+
+Chatbot interactivo de soporte sin IA. Actualmente hay un chat interactivo de servicio técnico simulado en el Portal del Cliente, pero propone implementar un chatbot más global.
+Solución Propuesta:
+En la Landing Comercial / Cotizador
+ya todo esto esta constituido en la arquitectura del proyecto
+
+estructura completa del Proyecto
+
+├── .agents/                          # Agentes de IA/automatización
+├── .gitignore                        # Configuración de git
+│
+├── 📄 CONFIGURACIÓN & SETUP
+├── package.json                      # Dependencias (Next.js, Supabase, Framer Motion, jsPDF, Tailwind, etc.)
+├── tsconfig.json                     # Configuración TypeScript
+├── next.config.ts                    # Configuración Next.js
+├── eslint.config.mjs                 # ESLint
+├── postcss.config.mjs                # PostCSS (Tailwind)
+│
+├── 📄 DOCUMENTACIÓN
+├── CURRENT_PROJECT_STATE.md          # Auditoría y estado actual (Fases 11-12 en progreso)
+├── task.md                           # Lista de tareas del sprint
+├── check-catalog.ts                  # Script de validación de catálogo
+├── supabase_combined_migrations.sql  # Migraciones BD consolidadas (~450KB)
+├── video_hero.mp4                    # Video de héroe del landing
+│
+├── 16_visual_reference/              # Referencias visuales del proyecto
+├── RULES/                            # Reglas y políticas del proyecto
+│
+├── 📁 docs/                          # 📚 GOBERNANZA & ESPECIFICACIONES COMPLETAS
+│   ├── MASTER_INDEX.md               # Índice maestro
+│   ├── DOCUMENT_TRACEABILITY.md      # Trazabilidad de documentos
+│   ├── 00_GOVERNANCE/                # Gobernanza
+│   │   └── PROJECT_MEMORY.md         # Memoria histórica del proyecto
+│   ├── 01_vision/                    # Visión estratégica
+│   ├── 02_fuente_verdad/             # Fuente de verdad (reqs, specs)
+│   ├── 03_protocolo/                 # Protocolos técnicos obligatorios
+│   │   ├── 00_CONSTITUCION_TECNICA.md  # Constitución técnica v2.0
+│   │   ├── 0.2_DECISIONES_GLOBALES_CONGELADAS.md
+│   │   ├── 0.3_MODO_AUDITOR.md
+│   │   ├── 00.1_OBLIGATORIO_LEER_PRIMERO.md
+│   │   ├── 21_IMPLEMENTATION_ORDER.txt
+│   │   └── 5_ROADMAP_MAESTRO_CONSTRUCCION.md
+│   ├── 04_arquitectura/              # Arquitectura técnica
+│   ├── 05_modelo_funcional/          # Modelo funcional
+│   ├── 07_estados/                   # Máquinas de estado
+│   ├── 08_datos/                     # Especificaciones de datos
+│   ├── 09_apis/                      # Especificaciones de APIs
+│   ├── 10_pruebas/                   # Plan de testing
+│   ├── 11_marketing/                 # Marketing & Website
+│   │   ├── Módulo Website.txt
+│   │   └── doc_web_wizard.md
+│   ├── 12_portal_cliente/            # Portal del cliente
+│   ├── 13_finanzas/                  # Módulo financiero
+│   ├── 14_reutilizacion/             # Política de reutilización de activos
+│   ├── 15_frontend/                  # Políticas frontend
+│   │   ├── 00_FRONTEND_POLICY.md
+│   │   ├── 01_DESIGN_SYSTEM.md
+│   │   └── 08_WHITE_LABEL_GUIDE.md
+│   ├── 15_trazabilidad/              # Trazabilidad
+│   ├── 16_engineering_assistant/     # Asistente de ingeniería
+│   ├── 30_configuracion_global/      # Configuración global
+│   └── FASE X.0 — DESCUBRIMIENTO_VACIOS.md
+│
+├── 📁 src/                           # 💻 CÓDIGO FUENTE
+│   ├── 📁 app/                       # Next.js App Router
+│   │   ├── (auth)/                   # Rutas de autenticación
+│   │   ├── (dashboard)/              # Layout del dashboard (RLS multi-tenant)
+│   │   ├── actions/                  # Server Actions organizadas
+│   │   ├── portal/                   # Portal de cliente (requerimientos, cotizaciones, etc.)
+│   │   ├── wizard/                   # Wizard de solicitud de presupuesto
+│   │   ├── actions.ts                # Server Actions principales
+│   │   ├── page.tsx                  # Landing pública
+│   │   ├── layout.tsx                # Layout raíz
+│   │   ├── loading.tsx               # Skeleton de carga
+│   │   ├── error.tsx                 # Error boundary
+│   │   ├── globals.css               # Estilos globales
+│   │   └── favicon.ico
+│   │
+│   ├── 📁 components/                # 🎨 COMPONENTES REUTILIZABLES
+│   │   ├── CatalogView.tsx           # Vista de catálogo técnico (60/40 layout con sheet)
+│   │   ├── WizardStepper.tsx         # Wizard principal (62KB - 60/40 layout con HUD ingeniería)
+│   │   ├── LandingCfmCalculator.tsx  # Calculadora de CFM en landing
+│   │   ├── ProcessesMapSVG.tsx       # Mapa de procesos SVG interactivo
+│   │   ├── dashboard-sidebar.tsx     # Sidebar traslúcida con menú
+│   │   ├── dashboard-header.tsx      # Header con breadcrumbs y DB_CONNECTED
+│   │   ├── layout-context.tsx        # Context para manejo de layout
+│   │   ├── theme-provider.tsx        # Proveedor de tema
+│   │   ├── theme-toggle.tsx          # Toggle light/dark
+│   │   ├── ui/                       # Componentes base (shadcn/Radix)
+│   │   │   └── [botones, inputs, dialogs, etc.]
+│   │   └── marketing/                # Componentes de marketing
+│   │
+│   ├── 📁 utils/                     # 🔧 UTILIDADES & LÓGICA
+│   │   ├── engineering.ts            # Motor de ingeniería (cálculos técnicos)
+│   │   ├── pricing.ts                # Motor de precios y cotización
+│   │   ├── supabase.ts               # Cliente Supabase
+│   │   ├── tenant.ts                 # Resolución multi-tenant
+│   │   ├── branding-defaults.ts      # Valores por defecto de marca (White Label)
+│   │   └── cn.ts                     # Utilidad de merge de clases CSS
+│   │
+│   ├── 📁 types/                     # 📝 TIPOS TypeScript
+│   │   └── react-headroom.d.ts       # Type defs para react-headroom
+│
+├── 📁 supabase/                      # 🗄️ CONFIGURACIÓN SUPABASE
+│   └── migrations/                   # Migraciones de base de datos
+│
+├── 📁 scripts/                       # 🚀 SCRIPTS UTILITARIOS (40+ archivos)
+│   ├── combine-migrations.ts         # Combina migraciones
+│   ├── deploy-migrations.ts          # Despliega migraciones
+│   ├── apply-patch.ts                # Aplica patches
+│   ├── restore-grants.ts             # Restaura permisos RLS
+│   ├── find-region.ts                # Encuentra región
+│   ├── check-index-collisions.ts     # Verifica colisiones de índices
+│   │
+│   └── test-*.ts (40 tests de módulos):
+│       ├── test-multitenant.ts       # Multi-tenancy y RLS
+│       ├── test-clients.ts           # Módulo de clientes
+│       ├── test-requirements.ts      # Requerimientos
+│       ├── test-quotes.ts            # Cotizaciones (24KB)
+│       ├── test-aprobaciones.ts      # Aprobaciones
+│       ├── test-trabajos.ts          # Trabajos/Jobs
+│       ├── test-inventario.ts        # Inventario
+│       ├── test-facturas.ts          # Facturación
+│       ├── test-garantias.ts         # Garantías
+│       ├── test-website.ts           # Website pública
+│       ├── test-wizard.ts            # Wizard
+│       ├── test-crm.ts               # CRM
+│       ├── test-dashboards.ts        # Dashboards
+│       ├── test-marketing.ts         # Marketing
+│       ├── test-costos.ts            # Análisis de costos
+│       ├── test-rentabilidad.ts      # Rentabilidad
+│       ├── test-documentos.ts        # Gestión de documentos
+│       ├── test-notificaciones.ts    # Sistema de notificaciones
+│       ├── test-seguridad-auditoria.ts   # Seguridad y auditoría
+│       ├── test-settings.ts          # Configuraciones
+│       ├── test-white-label.ts       # White Label
+│       ├── test-integrations.ts      # Integraciones
+│       ├── test-advanced-admin.ts    # Admin avanzado
+│       ├── test-performance-hardening.ts # Hardening de performance
+│       ├── test-uat.ts               # UAT
+│       ├── test-go-live.ts           # Go-live
+│       └── test-conn.ts              # Prueba conexión
+│
+├── public/                           # 📦 Archivos estáticos
+└── .github/workflows/                # 🔄 CI/CD (si existe)
+```
+
+## 📊 **Resumen Estructura**
+
+| Área | Contenido | Propósito |
+|------|----------|----------|
+| **Documentación** | 20+ carpetas en `docs/` | Gobernanza, arquitectura, especificaciones, políticas |
+| **Código Frontend** | Next.js + React 19 en `src/` | Landing, Wizard, Catálogo, Dashboard multi-tenant |
+| **Lógica de Negocio** | Engineering, Pricing engines | Cálculos técnicos y cotizaciones |
+| **Migraciones BD** | SQL combinado en raíz | Esquema completo (36+ fases) |
+| **Testing** | 40+ scripts en `scripts/` | Validación de cada módulo del ERP |
+| **Gestión de Datos** | Supabase + RLS | Multi-tenant con aislamiento por cliente |
+
+**Stack**: Next.js 16 + TypeScript + Tailwind v4 + Framer Motion + jsPDF + Supabase + PostgreSQL (PLpgSQL)
+

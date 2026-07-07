@@ -1,0 +1,48 @@
+PLAN DE PRUEBAS
+
+Objetivo:
+
+Validar cada módulo antes de avanzar.
+
+Estructura:
+
+Pruebas Unitarias
+
+Pruebas Integración
+
+Pruebas Dominio
+
+Pruebas API
+
+Pruebas UI
+
+Pruebas Seguridad
+
+Pruebas Auditoría
+
+Pruebas Permisos
+
+Ejemplo:
+
+CLIENT-001
+
+Crear cliente válido
+
+Resultado esperado:
+Cliente creado
+
+Auditoría creada
+
+Evento generado
+CLIENT-002
+
+Intentar crear NIT duplicado
+
+Resultado esperado:
+Error validación
+
+Regla:
+
+No avanzar a siguiente módulo
+hasta aprobar 100% pruebas
+del módulo actual.

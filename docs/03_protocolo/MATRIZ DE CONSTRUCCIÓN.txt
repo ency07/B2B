@@ -1,0 +1,44 @@
+MATRIZ DE CONSTRUCCIÓN
+
+Ejemplo:
+
+FASE 01
+Core
+
+Users
+Roles
+Permissions
+
+Pruebas
+
+Aprobación
+FASE 02
+Clientes
+
+Clients
+Contacts
+
+Pruebas
+
+Aprobación
+FASE 03
+Requerimientos
+
+Requirements
+
+Pruebas
+
+Aprobación
+
+Y así sucesivamente hasta:
+
+FASE 24
+
+Canal Digital
+
+Website
+Wizard
+SEO
+Tracking
+Lead Scoring
+Marketing Dashboard

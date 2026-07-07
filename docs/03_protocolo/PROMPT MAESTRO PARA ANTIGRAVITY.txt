@@ -1,0 +1,331 @@
+ACTUALIZACIÓN DE DIRECTIVA MAESTRA
+
+ANTES DE ESCRIBIR UNA SOLA LÍNEA DE CÓDIGO DEBES EJECUTAR LAS SIGUIENTES TAREAS.
+
+---
+
+1. LECTURA DOCUMENTAL OBLIGATORIA
+
+Leer TODOS los documentos existentes en la carpeta raíz del proyecto.
+
+No asumir que los documentos están organizados.
+
+No ignorar ningún archivo.
+
+No crear nuevas versiones duplicadas.
+
+---
+
+2. ORGANIZACIÓN DOCUMENTAL
+
+Una vez leídos los documentos:
+
+Crear estructura documental estándar.
+
+docs/
+
+01_vision/
+02_fuente_verdad/
+03_protocolo/
+04_arquitectura/
+05_modelo_funcional/
+06_reglas_negocio/
+07_estados/
+08_datos/
+09_apis/
+10_pruebas/
+11_marketing/
+12_portal_cliente/
+13_finanzas/
+14_reutilizacion/
+15_trazabilidad/
+
+Mover cada documento a su carpeta correspondiente.
+
+Actualizar referencias cruzadas.
+
+Generar MASTER_INDEX.md.
+
+Generar DOCUMENT_TRACEABILITY.md.
+
+No eliminar información.
+
+No modificar contenido funcional aprobado.
+
+---
+
+3. REUSE ANALYSIS OBLIGATORIO
+
+Antes de programar:
+
+Generar:
+
+REUSE_ANALYSIS_GLOBAL.md
+
+Analizar:
+
+Frontend
+
+ERP
+
+CRM
+
+Portal Cliente
+
+Dashboard
+
+Wizard
+
+RBAC
+
+Inventario
+
+Workflow
+
+Reporting
+
+Document Management
+
+File Storage
+
+Payment Gateway
+
+No construir desde cero si existe una solución madura reutilizable.
+
+---
+
+4. SEPARACIÓN OBLIGATORIA DE EXPERIENCIAS
+
+Website Pública
+
+Portal Cliente
+
+ERP Interno
+
+son productos visualmente independientes.
+
+PROHIBIDO compartir layouts.
+
+PROHIBIDO compartir navegación.
+
+PROHIBIDO compartir sidebars.
+
+PROHIBIDO compartir headers.
+
+PROHIBIDO compartir footers.
+
+PROHIBIDO mezclar branding operativo con branding comercial.
+
+---
+
+5. WEBSITE PÚBLICA
+
+Objetivo:
+
+Captación.
+
+Marketing.
+
+SEO.
+
+Conversión.
+
+Generación de Leads.
+
+Generación de Diagnósticos.
+
+Generación de PDF.
+
+Puede tener:
+
+Modo Claro.
+
+Modo Oscuro.
+
+Landing pages.
+
+Blog técnico.
+
+Catálogo técnico.
+
+Proyectos.
+
+Servicios.
+
+Wizard.
+
+Formulario de contacto.
+
+NO puede mostrar:
+
+ERP.
+
+Portal Cliente.
+
+Módulos internos.
+
+Información financiera.
+
+Datos operativos.
+
+---
+
+6. PORTAL CLIENTE
+
+Objetivo:
+
+Autoservicio.
+
+Consulta.
+
+Pagos.
+
+Garantías.
+
+Documentos.
+
+Cotizaciones.
+
+Facturas.
+
+Trabajos.
+
+Puede tener tema independiente.
+
+Puede tener modo claro u oscuro propio.
+
+Debe mantener identidad corporativa.
+
+NO debe reutilizar la UI de la Website.
+
+---
+
+7. ERP INTERNO
+
+Objetivo:
+
+Operación.
+
+Administración.
+
+Finanzas.
+
+Inventario.
+
+CRM.
+
+Proyectos.
+
+Compras.
+
+Pagos.
+
+Garantías.
+
+Tema independiente.
+
+Layout independiente.
+
+Componentes independientes.
+
+NO reutilizar experiencia visual de Website.
+
+NO reutilizar experiencia visual de Portal Cliente.
+
+---
+
+8. TRAZABILIDAD TOTAL
+
+Todo lead debe registrar:
+
+Origen.
+
+Campaña.
+
+UTM.
+
+Página.
+
+Usuario.
+
+Fecha.
+
+Empresa.
+
+Estado.
+
+Responsable.
+
+Toda conversión debe poder rastrearse:
+
+Visitante
+→ Lead
+→ Oportunidad
+→ Cotización
+→ Cliente
+→ Trabajo
+→ Factura
+→ Pago
+→ Garantía
+
+---
+
+9. PRUEBAS
+
+Generar:
+
+25 empresas demo.
+
+106 usuarios demo.
+
+Todos los roles.
+
+Todos los permisos.
+
+Portal Cliente.
+
+Website.
+
+ERP.
+
+Pasarela de Pago Sandbox.
+
+Generar:
+
+MANUAL_TEST_SCRIPT.md
+
+Validar:
+
+Todos los botones.
+
+Todos los iconos.
+
+Todos los filtros.
+
+Todos los formularios.
+
+Todos los estados.
+
+Todos los permisos.
+
+Todas las aprobaciones.
+
+Todas las integraciones.
+
+---
+
+10. REGLA SUPREMA
+
+Si existe duda:
+
+DETENER.
+
+Generar preguntas.
+
+Esperar respuesta.
+
+PROHIBIDO asumir.
+
+PROHIBIDO inventar.
+
+PROHIBIDO continuar con información incompleta.

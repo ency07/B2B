@@ -29,6 +29,7 @@ const contactFormSchema = z.object({
   companyName: z.string().min(2, "La empresa debe tener al menos 2 caracteres"),
   phone: z.string().min(7, "El teléfono debe tener al menos 7 caracteres"),
   email: z.string().email("Email inválido"),
+  role: z.string().optional().default("Otro"),
   urgency: z.string().min(2, "La urgencia es requerida"),
   description: z.string().min(10, "La descripción debe tener al menos 10 caracteres")
 });
@@ -179,6 +180,7 @@ export async function submitContactForm(
     companyName: string;
     phone: string;
     email: string;
+    role?: string;
     urgency: string;
     description: string;
   }
@@ -212,7 +214,7 @@ export async function submitContactForm(
     throw new Error("El servicio no está disponible para este tenant.");
   }
 
-  const { score, riskLevel } = await calculateLeadScore(leadData.email, "Otro", leadData.urgency);
+  const { score, riskLevel } = await calculateLeadScore(leadData.email, leadData.role, leadData.urgency);
   const userId = await resolveTenantOwnerUserIdAsync(tenantId);
 
   const { data, error } = await db

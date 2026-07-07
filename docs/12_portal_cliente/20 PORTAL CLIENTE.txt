@@ -1,0 +1,121 @@
+# CAPÍTULO 20
+
+# PORTAL CLIENTE
+
+## OBJETIVO
+
+Permitir autoservicio completo del cliente.
+
+---
+
+# DASHBOARD
+
+Cotizaciones
+
+Facturas
+
+Pagos
+
+Trabajos
+
+Garantías
+
+Documentos
+
+Indicadores
+
+---
+
+# COTIZACIONES
+
+Ver
+
+Descargar
+
+Aceptar
+
+Rechazar
+
+Solicitar cambios
+
+---
+
+# FACTURAS
+
+Ver
+
+Descargar PDF
+
+Ver saldo
+
+Ver vencimiento
+
+Pagar
+
+---
+
+# PAGOS
+
+Registrar pago
+
+Ver pagos
+
+Ver anticipos
+
+Ver saldo disponible
+
+Aplicar anticipos
+
+---
+
+# TRABAJOS
+
+Ver estado
+
+Ver avance
+
+Ver evidencias
+
+Ver cronograma
+
+---
+
+# GARANTÍAS
+
+Ver garantía
+
+Abrir caso
+
+Adjuntar evidencia
+
+Consultar historial
+
+---
+
+# DOCUMENTOS
+
+Fichas técnicas
+
+Contratos
+
+Certificados
+
+Informes
+
+PDFs
+
+---
+
+# NOTIFICACIONES
+
+Email
+
+WhatsApp
+
+Portal
+
+---
+
+# AUDITORÍA
+
+Toda acción del cliente debe registrarse.

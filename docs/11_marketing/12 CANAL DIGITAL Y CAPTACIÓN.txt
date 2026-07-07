@@ -1,0 +1,237 @@
+# CAPÍTULO 15
+
+# CANAL DIGITAL Y CAPTACIÓN
+
+## OBJETIVO
+
+Todo lead debe ser rastreable desde su origen hasta la venta final.
+
+No se permiten leads huérfanos.
+
+No se permiten formularios sin responsable.
+
+No se permiten solicitudes sin seguimiento.
+
+---
+
+# EMBUDO OFICIAL
+
+Visitante
+↓
+Lead
+↓
+MQL
+↓
+SQL
+↓
+Oportunidad
+↓
+Cotización
+↓
+Negociación
+↓
+Venta
+↓
+Ejecución
+↓
+Postventa
+
+---
+
+# FUENTES DE CAPTACIÓN
+
+Google Ads
+
+SEO
+
+LinkedIn
+
+WhatsApp
+
+Facebook
+
+Instagram
+
+Email Marketing
+
+Directo
+
+Referido
+
+Distribuidor
+
+Otro
+
+---
+
+# TRAZABILIDAD OBLIGATORIA
+
+Todo lead debe almacenar:
+
+lead_source
+
+utm_source
+
+utm_medium
+
+utm_campaign
+
+utm_content
+
+utm_term
+
+landing_page
+
+referrer_url
+
+ip_address
+
+user_agent
+
+created_at
+
+session_id
+
+visitor_id
+
+---
+
+# FORMULARIO CONTACTO
+
+Genera:
+
+Lead
+
+Actividad CRM
+
+Notificación
+
+Asignación automática
+
+Auditoría
+
+---
+
+# WIZARD
+
+Genera:
+
+Lead
+
+Diagnóstico
+
+Oportunidad
+
+Propuesta Borrador
+
+Pipeline
+
+Actividad CRM
+
+PDF Técnico
+
+Auditoría
+
+---
+
+# RESPONSABLES
+
+Todo lead debe tener:
+
+owner_user_id
+
+owner_role_id
+
+assigned_at
+
+first_contact_at
+
+last_contact_at
+
+next_follow_up_at
+
+---
+
+# SLA
+
+Lead HOT
+
+15 minutos
+
+Lead WARM
+
+4 horas
+
+Lead LOW
+
+24 horas
+
+---
+
+# ALERTAS
+
+Si SLA vencido:
+
+Notificar Ejecutivo
+
+Notificar Supervisor
+
+Registrar Incumplimiento
+
+---
+
+# KPI MARKETING
+
+Visitas
+
+Leads
+
+Conversiones
+
+MQL
+
+SQL
+
+Oportunidades
+
+Ventas
+
+ROI
+
+Costo Lead
+
+Costo Oportunidad
+
+Costo Venta
+
+---
+
+# KPI COMERCIAL
+
+Tiempo Primera Respuesta
+
+Tiempo Cotización
+
+Tiempo Cierre
+
+Tasa Conversión
+
+Tasa Abandono
+
+Tasa Seguimiento
+
+---
+
+# REGLA SUPREMA
+
+Todo lead debe responder:
+
+Quién lo generó.
+
+Desde dónde llegó.
+
+Quién lo atiende.
+
+Qué ocurrió.
+
+En qué estado está.

@@ -1,0 +1,101 @@
+# MEMORIA MAESTRA DEL PROYECTO
+
+Nombre:
+
+ME PREGUNTARAS YA QU ES MULTIEMPRESAS T LA IDEA ES CAMBIAR CONSTANTEMENTE DE NOMBRE
+
+Tipo:
+
+ERP + CRM + Operaciones + Inventario + Finanzas + Postventa + Canal Digital B2B
+
+Modelo:
+
+Multiempresa
+
+Multisede
+
+Multiusuario
+
+RBAC
+
+Objetivo:
+
+Administrar el ciclo completo:
+
+Visitante
+→ Lead
+→ Oportunidad
+→ Cotización
+→ Trabajo
+→ Facturación
+→ Pago
+→ Garantía
+
+Fuente de verdad:
+
+Documento Maestro de Descubrimiento
+
+Regla Suprema:
+
+No inventar funcionalidades.
+
+No asumir reglas.
+
+No crear campos no definidos.
+
+No modificar estados definidos.
+
+No crear relaciones no documentadas.
+
+Arquitectura:
+
+Frontend
+API
+Dominio
+Persistencia
+
+Toda lógica en dominio.
+
+Todo registro con tenant_id.
+
+Todo evento auditado.
+
+Todo módulo trazable.
+
+Todo módulo debe tener:
+
+Pantalla
+
+API
+
+Tabla
+
+Regla
+
+Prueba
+
+Auditoría
+
+Permiso
+
+La construcción se realiza:
+
+Fase por fase.
+
+Módulo por módulo.
+
+Prueba por prueba.
+
+No construir funcionalidades futuras.
+
+No adelantar fases.
+
+No refactorizar módulos aprobados sin autorización.
+
+Si existe duda:
+
+Detener ejecución.
+
+Generar pregunta.
+
+Esperar respuesta.

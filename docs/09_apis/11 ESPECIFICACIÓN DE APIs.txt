@@ -1,0 +1,295 @@
+ESPECIFICACIÓN DE APIs
+
+Debe definir para cada endpoint:
+
+Endpoint
+
+Método
+
+Autenticación
+
+Roles permitidos
+
+Request
+
+Response
+
+Errores
+
+Reglas de negocio
+
+Auditoría
+
+Pruebas asociadas
+
+Ejemplo:
+
+POST /api/clients
+
+Request:
+{
+  company_name,
+  tax_id,
+  city,
+  email
+}
+
+Validaciones:
+- company_name obligatorio
+- tax_id único
+
+Auditoría:
+CLIENT_CREATED
+
+Permisos:
+CLIENT_CREATE
+
+Pruebas:
+CLIENT-001
+CLIENT-002
+
+Debe existir para:
+
+Auth
+Users
+Roles
+Clients
+Contacts
+Requirements
+Quotes
+Approvals
+Jobs
+Activities
+Documents
+Invoices
+Payments
+Costs
+Inventory
+Warranties
+KPIs
+Dashboards
+Website Leads
+Wizard
+Marketing
+
+# CAPÍTULO 11
+
+# ESPECIFICACIÓN DE APIs
+
+## ESTÁNDAR
+
+Prefijo:
+
+/api/v1
+
+Formato:
+
+JSON
+
+Autenticación:
+
+JWT
+
+Autorización:
+
+RBAC
+
+Auditoría:
+
+Obligatoria
+
+---
+
+# CLIENTES
+
+GET /api/v1/clients
+
+POST /api/v1/clients
+
+GET /api/v1/clients/{id}
+
+PUT /api/v1/clients/{id}
+
+DELETE /api/v1/clients/{id}
+
+---
+
+# CONTACTOS
+
+GET /api/v1/contacts
+
+POST /api/v1/contacts
+
+PUT /api/v1/contacts/{id}
+
+GET /api/v1/contacts/{id}
+
+---
+
+# REQUERIMIENTOS
+
+GET /api/v1/requirements
+
+POST /api/v1/requirements
+
+PUT /api/v1/requirements/{id}
+
+GET /api/v1/requirements/{id}
+
+SUBMIT /api/v1/requirements/{id}/submit
+
+---
+
+# COTIZACIONES
+
+GET /api/v1/quotes
+
+POST /api/v1/quotes
+
+PUT /api/v1/quotes/{id}
+
+GET /api/v1/quotes/{id}
+
+POST /api/v1/quotes/{id}/approve
+
+POST /api/v1/quotes/{id}/reject
+
+POST /api/v1/quotes/{id}/send
+
+---
+
+# TRABAJOS
+
+GET /api/v1/jobs
+
+POST /api/v1/jobs
+
+PUT /api/v1/jobs/{id}
+
+POST /api/v1/jobs/{id}/start
+
+POST /api/v1/jobs/{id}/pause
+
+POST /api/v1/jobs/{id}/close
+
+---
+
+# INVENTARIO
+
+GET /api/v1/items
+
+POST /api/v1/items
+
+PUT /api/v1/items/{id}
+
+GET /api/v1/stock
+
+POST /api/v1/movements
+
+---
+
+# FACTURACIÓN
+
+GET /api/v1/invoices
+
+POST /api/v1/invoices
+
+PUT /api/v1/invoices/{id}
+
+POST /api/v1/invoices/{id}/cancel
+
+---
+
+# PAGOS
+
+GET /api/v1/payments
+
+POST /api/v1/payments
+
+POST /api/v1/payments/{id}/confirm
+
+---
+
+# GARANTÍAS
+
+GET /api/v1/warranties
+
+POST /api/v1/warranties
+
+POST /api/v1/interventions
+
+---
+
+# WEBSITE
+
+GET /api/v1/website/pages
+
+GET /api/v1/products
+
+GET /api/v1/projects
+
+POST /api/v1/contact
+
+POST /api/v1/wizard
+
+POST /api/v1/download-pdf
+
+---
+
+# CRM
+
+GET /api/v1/leads
+
+POST /api/v1/leads
+
+PUT /api/v1/leads/{id}
+
+POST /api/v1/leads/{id}/assign
+
+POST /api/v1/leads/{id}/qualify
+
+POST /api/v1/leads/{id}/convert
+
+---
+
+# MARKETING
+
+GET /api/v1/marketing/kpis
+
+GET /api/v1/marketing/sources
+
+GET /api/v1/marketing/campaigns
+
+GET /api/v1/marketing/funnel
+
+---
+
+# DASHBOARD
+
+GET /api/v1/dashboard
+
+GET /api/v1/widgets
+
+POST /api/v1/widgets
+
+---
+
+# AUDITORÍA
+
+GET /api/v1/audit
+
+GET /api/v1/audit/{entity}
+
+---
+
+# REGLA
+
+Toda API debe tener:
+
+Permiso
+
+Auditoría
+
+Prueba
+
+Trazabilidad

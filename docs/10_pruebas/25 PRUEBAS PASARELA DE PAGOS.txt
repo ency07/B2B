@@ -1,0 +1,127 @@
+# CAPÍTULO 25
+
+# PRUEBAS PASARELA DE PAGOS
+
+## PAGO TOTAL
+
+Cliente
+
+↓
+
+Factura
+
+↓
+
+Portal Cliente
+
+↓
+
+Pago aprobado
+
+↓
+
+Factura pagada
+
+↓
+
+Auditoría
+
+---
+
+## PAGO PARCIAL
+
+Factura 10.000.000
+
+Pago 5.000.000
+
+Saldo 5.000.000
+
+---
+
+## ANTICIPO
+
+Cliente
+
+↓
+
+Anticipo 3.000.000
+
+↓
+
+Saldo Favor
+
+↓
+
+Aplicar posteriormente
+
+---
+
+## RECHAZO
+
+Pago rechazado
+
+↓
+
+No registrar recaudo
+
+↓
+
+Generar evento
+
+---
+
+## WEBHOOK
+
+Recepción correcta
+
+Actualización correcta
+
+Auditoría correcta
+
+---
+
+## CONCILIACIÓN
+
+Pago registrado
+
+↓
+
+Factura actualizada
+
+↓
+
+Saldo actualizado
+
+---
+
+## REVERSIÓN
+
+Pago revertido
+
+↓
+
+Factura pendiente
+
+↓
+
+Auditoría generada
+
+---
+
+## MULTIPLES PAGOS
+
+3 pagos
+
+1 factura
+
+Saldo correcto
+
+---
+
+## KPI
+
+Recaudo actualizado
+
+Cartera actualizada
+
+Dashboard actualizado

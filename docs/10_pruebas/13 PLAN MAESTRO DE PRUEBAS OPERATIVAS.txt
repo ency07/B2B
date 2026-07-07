@@ -1,0 +1,319 @@
+# CAPÍTULO 13
+
+# PLAN MAESTRO DE PRUEBAS OPERATIVAS
+
+## OBJETIVO
+
+Validar el sistema completo desde la perspectiva de usuario final.
+
+No se considera aprobado un módulo hasta ser probado manualmente.
+
+---
+
+# DATOS DE PRUEBA
+
+Generar:
+
+25 Empresas
+
+250 Contactos
+
+500 Leads
+
+300 Oportunidades
+
+300 Cotizaciones
+
+200 Trabajos
+
+200 Facturas
+
+300 Pagos
+
+300 Movimientos Inventario
+
+100 Garantías
+
+---
+
+# EMPRESAS
+
+5 Manufactura
+
+5 Minería
+
+5 HVAC
+
+5 Data Center
+
+5 Logística
+
+---
+
+# SCRIPT
+
+Archivo:
+
+MANUAL_TEST_SCRIPT.md
+
+---
+
+# CLIENTES
+
+Crear
+
+Editar
+
+Eliminar
+
+Buscar
+
+Filtrar
+
+Exportar
+
+Importar
+
+Ver detalle
+
+Ver auditoría
+
+Ver historial
+
+---
+
+# CONTACTOS
+
+Crear
+
+Editar
+
+Eliminar
+
+Asociar cliente
+
+Cambiar estado
+
+Buscar
+
+---
+
+# LEADS
+
+Crear
+
+Asignar
+
+Convertir
+
+Cerrar
+
+Reabrir
+
+Cambiar estado
+
+---
+
+# OPORTUNIDADES
+
+Crear
+
+Editar
+
+Cerrar ganada
+
+Cerrar perdida
+
+Ver pipeline
+
+---
+
+# COTIZACIONES
+
+Crear
+
+Editar
+
+Duplicar
+
+Enviar
+
+Aprobar
+
+Rechazar
+
+Descargar PDF
+
+Adjuntar archivos
+
+Calcular impuestos
+
+Calcular descuentos
+
+---
+
+# APROBACIONES
+
+Solicitar
+
+Aprobar
+
+Rechazar
+
+Escalar
+
+Ver historial
+
+---
+
+# TRABAJOS
+
+Crear
+
+Programar
+
+Iniciar
+
+Pausar
+
+Finalizar
+
+Cerrar
+
+Adjuntar evidencias
+
+---
+
+# INVENTARIO
+
+Entrada
+
+Salida
+
+Transferencia
+
+Ajuste
+
+Conteo
+
+Consulta stock
+
+Historial
+
+---
+
+# FACTURAS
+
+Crear
+
+Anular
+
+Ver PDF
+
+Enviar
+
+Aplicar impuestos
+
+---
+
+# PAGOS
+
+Registrar
+
+Confirmar
+
+Conciliar
+
+Reversar
+
+---
+
+# GARANTÍAS
+
+Crear
+
+Aprobar
+
+Cerrar
+
+Crear intervención
+
+---
+
+# WEBSITE
+
+Formulario Contacto
+
+Wizard
+
+PDF
+
+Tracking UTM
+
+Lead generado
+
+CRM generado
+
+---
+
+# PORTAL CLIENTE
+
+Login
+
+Ver cotizaciones
+
+Aceptar cotización
+
+Rechazar cotización
+
+Ver facturas
+
+Pagar
+
+Descargar PDF
+
+Ver garantías
+
+Ver trabajos
+
+---
+
+# VALIDACIÓN OBLIGATORIA
+
+Todos los:
+
+Botones
+
+Iconos
+
+Links
+
+Filtros
+
+Modales
+
+Exportaciones
+
+Importaciones
+
+Widgets
+
+Reportes
+
+Deben probarse manualmente.
+
+---
+
+# EVIDENCIA
+
+Captura
+
+Resultado
+
+Usuario
+
+Fecha
+
+Estado
+
+Observaciones

@@ -1,0 +1,18 @@
+
+
+FASE 0  -> Reuse Analysis Global
+FASE 1  -> Core (Auth, Users, Roles)
+FASE 2  -> Clientes
+FASE 3  -> Requerimientos
+FASE 4  -> Cotizaciones
+FASE 5  -> Aprobaciones
+FASE 6  -> Trabajos
+FASE 7  -> Inventario
+FASE 8  -> Facturación
+FASE 9  -> Pagos
+FASE 10 -> Garantías
+FASE 11 -> Website
+FASE 12 -> Wizard
+FASE 13 -> CRM
+FASE 14 -> Marketing
+FASE 15 -> Dashboards

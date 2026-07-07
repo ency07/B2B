@@ -1,0 +1,99 @@
+# CAPÍTULO 24
+
+# PRUEBAS DE ROLES Y PERMISOS
+
+## SUPER ADMIN
+
+Crear empresas
+
+Crear usuarios
+
+Asignar permisos
+
+Ver auditoría global
+
+---
+
+## GERENTE
+
+Ver indicadores
+
+Aprobar cotizaciones
+
+Aprobar presupuestos
+
+Aprobar trabajos
+
+---
+
+## COMERCIAL
+
+Crear lead
+
+Crear oportunidad
+
+Crear cotización
+
+Seguimiento
+
+---
+
+## INGENIERO
+
+Crear requerimiento
+
+Actualizar proyecto
+
+Adjuntar evidencias
+
+---
+
+## INVENTARIO
+
+Entradas
+
+Salidas
+
+Transferencias
+
+Ajustes
+
+---
+
+## CARTERA
+
+Facturas
+
+Pagos
+
+Conciliación
+
+Cobranza
+
+---
+
+## CLIENTE
+
+Ver cotizaciones
+
+Aceptar cotización
+
+Ver facturas
+
+Pagar
+
+Descargar documentos
+
+Abrir garantía
+
+---
+
+## AUDITOR
+
+Ver auditoría
+
+Exportar auditoría
+
+Consultar historial
+
+Sin modificar datos

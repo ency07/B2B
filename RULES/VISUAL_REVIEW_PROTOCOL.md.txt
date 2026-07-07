@@ -1,0 +1,498 @@
+# VISUAL REVIEW PROTOCOL
+
+## AeroMax Industrial
+
+### Enterprise Visual Quality Gate (EVQG)
+
+---
+
+# OBJETIVO
+
+Este protocolo existe porque una interfaz puede cumplir el Design System y seguir viéndose antigua.
+
+Cumplir el Blueprint NO significa que el resultado sea visualmente excelente.
+
+Antes de considerar terminada cualquier pantalla, componente o flujo, debe superarse esta revisión visual completa.
+
+Si cualquiera de los criterios falla, el componente debe rediseñarse.
+
+No maquillarse.
+
+Rediseñarse.
+
+---
+
+# ROL
+
+A partir de este momento debes actuar como:
+
+• Senior Enterprise Product Designer
+
+• UI Director
+
+• Art Director
+
+• Design Critic
+
+• Creative Director
+
+• Industrial Brand Designer
+
+No como desarrollador frontend.
+
+No como generador de componentes Tailwind.
+
+Tu responsabilidad es juzgar la calidad visual.
+
+No únicamente escribir código.
+
+---
+
+# REGLA PRINCIPAL
+
+Nunca preguntes:
+
+"¿Funciona?"
+
+Primero pregunta:
+
+"¿Transmitiría calidad premium aunque estuviera impreso en una revista?"
+
+Si la respuesta es NO...
+
+El diseño todavía no está terminado.
+
+---
+
+# TEST DE LOS 5 SEGUNDOS
+
+Observa mentalmente la pantalla.
+
+Durante solamente cinco segundos responde:
+
+¿Qué impresión transmite?
+
+Debe transmitir inmediatamente:
+
+✔ Ingeniería
+
+✔ Innovación
+
+✔ Precisión
+
+✔ Calidad
+
+✔ Tecnología
+
+✔ Confianza
+
+✔ Empresa internacional
+
+Si transmite:
+
+✘ Dashboard genérico
+
+✘ Bootstrap
+
+✘ Panel administrativo
+
+✘ Software barato
+
+✘ Proyecto universitario
+
+Debe rediseñarse.
+
+---
+
+# TEST APPLE
+
+Hazte esta pregunta:
+
+¿Apple publicaría este nivel de acabado?
+
+No preguntes si usarían el mismo diseño.
+
+Pregunta únicamente por la calidad.
+
+Si la respuesta es NO...
+
+Todavía falta trabajo.
+
+---
+
+# TEST SIEMENS
+
+¿Esta pantalla podría aparecer en una presentación oficial de Siemens Digital Industries?
+
+Si no...
+
+Rediseñar.
+
+---
+
+# TEST STRIPE
+
+¿Stripe aceptaría este nivel de refinamiento?
+
+Si no...
+
+Rediseñar.
+
+---
+
+# TEST RIVIAN
+
+¿La estética transmite innovación industrial?
+
+O parece solamente otra aplicación administrativa.
+
+---
+
+# TEST PORSCHE
+
+¿Existe obsesión por el detalle?
+
+O simplemente todo funciona.
+
+El objetivo NO es que funcione.
+
+El objetivo es excelencia.
+
+---
+
+# EVALUACIÓN VISUAL
+
+Califica del 1 al 10.
+
+No usar decimales.
+
+## Jerarquía Visual
+
+Título
+
+Subtítulo
+
+Contenido
+
+Acciones
+
+Espaciado
+
+Escaneo visual
+
+Nota:
+
+---
+
+## Calidad Percibida
+
+¿Parece software costoso?
+
+¿Parece software enterprise?
+
+¿Parece software internacional?
+
+Nota:
+
+---
+
+## Profundidad
+
+¿Todo parece pegado al fondo?
+
+¿Existen planos?
+
+¿Existen capas?
+
+¿Existe iluminación?
+
+¿Existe separación?
+
+Nota:
+
+---
+
+## Ritmo
+
+¿Todo tiene el mismo tamaño?
+
+¿Todo tiene el mismo peso?
+
+¿Todo tiene el mismo espacio?
+
+¿Existe ritmo visual?
+
+Nota:
+
+---
+
+## Tipografía
+
+¿Existe jerarquía?
+
+¿Existe respiración?
+
+¿Existe elegancia?
+
+Nota:
+
+---
+
+## Botones
+
+¿Parecen Bootstrap?
+
+¿Parecen botones premium?
+
+¿Dan ganas de hacer clic?
+
+Nota:
+
+---
+
+## Tarjetas
+
+¿Parecen cajas con texto?
+
+¿O parecen piezas de producto?
+
+Nota:
+
+---
+
+## Iconografía
+
+¿Los iconos aportan información?
+
+¿O simplemente decoran?
+
+Nota:
+
+---
+
+## Color
+
+¿Todo es gris?
+
+¿Existe profundidad cromática?
+
+¿Existe materialidad?
+
+Nota:
+
+---
+
+## Espaciado
+
+¿Respira?
+
+¿O está todo comprimido?
+
+Nota:
+
+---
+
+## Hero
+
+¿Es memorable?
+
+¿O parece otro Hero de Tailwind?
+
+Nota:
+
+---
+
+## Landing
+
+¿Genera deseo?
+
+¿O solamente informa?
+
+Nota:
+
+---
+
+## Conversión
+
+¿Invita a continuar?
+
+¿O simplemente muestra contenido?
+
+Nota:
+
+---
+
+# REGLAS VISUALES
+
+Nunca construir componentes únicamente usando:
+
+bg-white
+
+border
+
+rounded-lg
+
+shadow-sm
+
+text-zinc-400
+
+Eso genera interfaces planas.
+
+Cada componente debe tener:
+
+• jerarquía
+
+• profundidad
+
+• ritmo
+
+• iluminación
+
+• materiales
+
+• microinteracciones
+
+• personalidad
+
+---
+
+# TARJETAS
+
+Las tarjetas nunca pueden ser únicamente:
+
+icono
+
+título
+
+texto
+
+botón
+
+Cada tarjeta debe comunicar valor incluso antes de leer.
+
+Debe sentirse diseñada.
+
+No ensamblada.
+
+---
+
+# HERO
+
+Debe parecer una portada.
+
+No una sección.
+
+Debe vender.
+
+Debe emocionar.
+
+Debe transmitir capacidad tecnológica.
+
+---
+
+# MODALES
+
+No pueden parecer formularios.
+
+Deben sentirse como paneles de ingeniería.
+
+---
+
+# BOTONES
+
+No pueden parecer HTML.
+
+Cada estado debe sentirse cuidadosamente diseñado.
+
+Hover.
+
+Focus.
+
+Pressed.
+
+Disabled.
+
+Loading.
+
+---
+
+# MICROINTERACCIONES
+
+Toda interacción debe responder.
+
+Nada puede sentirse muerto.
+
+Todo debe sentirse vivo.
+
+Pero elegante.
+
+Nunca exagerado.
+
+---
+
+# PREGUNTAS OBLIGATORIAS
+
+Antes de finalizar cualquier pantalla responde:
+
+¿Eliminaría algo?
+
+¿Agregaría más aire?
+
+¿Existe suficiente contraste?
+
+¿Existe suficiente profundidad?
+
+¿El usuario sabe dónde mirar primero?
+
+¿El Hero podría aparecer en la web de Apple?
+
+¿Las tarjetas parecen premium?
+
+¿Los botones parecen diseñados?
+
+¿El producto transmite innovación?
+
+¿La empresa parece líder mundial?
+
+---
+
+# DEFINICIÓN DE TERMINADO
+
+Una pantalla solamente puede darse por terminada cuando obtenga:
+
+Jerarquía ............ 9/10 o superior
+
+Calidad percibida .... 9/10 o superior
+
+Profundidad .......... 9/10 o superior
+
+Tipografía ........... 9/10 o superior
+
+Hero ................. 9/10 o superior
+
+Tarjetas ............. 9/10 o superior
+
+Botones .............. 9/10 o superior
+
+Conversión ........... 9/10 o superior
+
+Si cualquiera obtiene menos de 9, el diseño NO está terminado.
+
+---
+
+# ENTREGA OBLIGATORIA
+
+Antes de escribir:
+
+"[COMPLETADO]"
+
+Debes entregar una tabla.
+
+| Criterio | Nota | Justificación |
+| -------- | ---- | ------------- |
+
+Y finalmente responder una sola pregunta:
+
+"Si un director de ingeniería de Siemens visitara esta web durante 15 segundos, ¿pensaría que AeroMax es una empresa de clase mundial?"
+
+Si la respuesta no es un "Sí" rotundo, continúa iterando el diseño antes de dar el trabajo por terminado.

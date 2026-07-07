@@ -1,0 +1,209 @@
+Módulo Website
+
+No existe actualmente.
+
+Debe existir.
+
+Module:
+Website
+Entidades
+website_pages
+
+website_forms
+
+website_leads
+
+website_events
+
+website_downloads
+
+website_sessions
+2. Tracking Comercial
+
+No basta con capturar lead.
+
+Debe saberse:
+
+De dónde vino
+
+Qué página visitó
+
+Qué campaña
+
+Qué anuncio
+
+Qué keyword
+
+Qué PDF descargó
+Tabla
+lead_sources
+
+Campos:
+
+utm_source
+
+utm_medium
+
+utm_campaign
+
+utm_content
+
+utm_term
+
+Ejemplo:
+
+Google Ads
+
+LinkedIn
+
+WhatsApp
+
+Facebook
+
+Directo
+3. Embudo Comercial
+
+Debe existir.
+
+Visitante
+
+Lead
+
+MQL
+
+SQL
+
+Oportunidad
+
+Cotización
+
+Negociación
+
+Venta
+
+Actualmente no está modelado.
+
+4. Lead Scoring Dinámico
+
+Yo no lo dejaría fijo.
+
+Tu versión:
+
++30
++20
++15
+
+es buena para MVP.
+
+Pero después debería configurarse desde administración.
+
+5. Marketing Dashboard
+
+No aparece en el ERP.
+
+Debe existir.
+
+KPIs:
+
+Visitas
+
+Leads
+
+Conversión
+
+Costo por lead
+
+Costo por oportunidad
+
+ROI campañas
+
+Origen leads
+6. Remarketing
+
+Fundamental.
+
+Cuando alguien hace:
+
+Wizard
+
+pero no envía
+
+Debe guardarse.
+
+Tabla:
+
+wizard_sessions
+
+Campos:
+
+session_id
+
+step
+
+completion_percent
+
+last_activity
+
+Esto permite:
+
+Email recuperación
+
+WhatsApp recuperación
+
+Campañas remarketing
+7. Catálogo Técnico
+
+No lo veo.
+
+Y para la empresa es importante.
+
+Entidad:
+
+products
+families
+
+categories
+
+technical_datasheets
+
+specifications
+
+downloads
+
+Porque muchos clientes:
+
+no quieren cotizar
+
+quieren investigar
+
+antes.
+
+8. Portal Técnico
+
+Muy valioso.
+
+Después del PDF.
+
+El lead recibe:
+
+Usuario
+
+Contraseña
+
+y entra a:
+
+Portal Técnico
+
+Puede ver:
+
+PDF
+
+Cotizaciones
+
+Proyectos
+
+Documentos
+
+Garantías
+
+Eso aumenta muchísimo la percepción B2B Premium.

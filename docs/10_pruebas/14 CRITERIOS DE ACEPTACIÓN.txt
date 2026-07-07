@@ -1,0 +1,79 @@
+# CAPÍTULO 14
+
+# CRITERIOS DE ACEPTACIÓN
+
+## UN MÓDULO SE CONSIDERA TERMINADO SOLO SI:
+
+✓ Pantallas completas
+
+✓ APIs completas
+
+✓ Base de datos completa
+
+✓ Permisos completos
+
+✓ Auditoría completa
+
+✓ Estados implementados
+
+✓ Reglas implementadas
+
+✓ Pruebas aprobadas
+
+✓ Documentación actualizada
+
+✓ Trazabilidad validada
+
+---
+
+# NO ACEPTADO SI
+
+Falta una pantalla
+
+Falta una API
+
+Falta una tabla
+
+Falta una regla
+
+Falta una prueba
+
+Falta auditoría
+
+Falta permiso
+
+---
+
+# ENTREGA DE MÓDULO
+
+Antigravity debe entregar:
+
+Module Report
+
+Test Report
+
+Audit Report
+
+Traceability Report
+
+Approval Report
+
+---
+
+# DEFINICIÓN DE DONE
+
+DONE =
+
+Código
+
+Pruebas
+
+Auditoría
+
+Permisos
+
+Documentación
+
+Trazabilidad
+
+Aprobados

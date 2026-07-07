@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Galería de Proyectos — Análisis Visual</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=DM+Serif+Display&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f7f5f0;
+      --card: #ffffff;
+      --text: #14171e;
+      --muted: #7c7a72;
+      --primary: #2f6f5e;
+      --accent: #c97b3f;
+      --danger: #b06367;
+      --line: #e9e3d6;
+      --track: #e9e3d6;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      font-size: 15px;
+    }
+
+    /* ── Header ── */
+    header {
+      padding: 64px 24px 48px;
+      text-align: center;
+      position: relative;
+    }
+    header::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(ellipse at 20% 20%, rgba(47,111,94,0.06) 0%, transparent 60%),
+                  radial-gradient(ellipse at 80% 80%, rgba(201,123,63,0.05) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    header h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 42px;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+    }
+    header p {
+      color: var(--muted);
+      font-size: 17px;
+      max-width: 540px;
+      margin: 0 auto;
+    }
+
+    /* ── Layout ── */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px 80px;
+    }
+
+    /* ── Problem Section ── */
+    .section-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--danger);
+      margin-bottom: 16px;
+    }
+    .section-label svg { width: 14px; height: 14px; }
+
+    .bad-gallery {
+      background: var(--card);
+      border-radius: 20px;
+      padding: 32px;
+      border: 1px solid var(--line);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+      margin-bottom: 64px;
+    }
+    .bad-gallery h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 28px;
+      font-weight: 400;
+      margin-bottom: 8px;
+    }
+    .bad-gallery .desc {
+      color: var(--muted);
+      margin-bottom: 24px;
+      font-size: 14px;
+    }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+    .gallery-grid img {
+      width: 100%;
+      aspect-ratio: 4/3;
+      object-fit: cover;
+      border-radius: 12px;
+      filter: grayscale(30%);
+    }
+    .no-context-overlay {
+      background: linear-gradient(135deg, #e5e5e5 0%, #d0d0d0 100%);
+      width: 100%;
+      aspect-ratio: 4/3;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .no-context-overlay svg {
+      width: 48px;
+      height: 48px;
+      color: #aaa;
+    }
+    .no-context-label {
+      font-size: 11px;
+      color: #999;
+      text-align: center;
+      margin-top: 6px;
+    }
+
+    .verdict {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(176,99,103,0.08);
+      border: 1px solid rgba(176,99,103,0.2);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-top: 24px;
+    }
+    .verdict svg { width: 20px; height: 20px; color: var(--danger); flex-shrink: 0; }
+    .verdict p { font-size: 14px; color: var(--danger); font-weight: 500; }
+
+    /* ── Solution Section ── */
+    .section-label.good { color: var(--primary); }
+
+    .good-gallery {
+      background: var(--card);
+      border-radius: 20px;
+      padding: 32px;
+      border: 1px solid var(--line);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+      margin-bottom: 64px;
+    }
+    .good-gallery h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 28px;
+      font-weight: 400;
+      margin-bottom: 8px;
+    }
+    .good-gallery .desc {
+      color: var(--muted);
+      margin-bottom: 24px;
+      font-size: 14px;
+    }
+
+    .project-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+    .project-card {
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .project-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+    }
+    .project-img {
+      width: 100%;
+      aspect-ratio: 16/9;
+      object-fit: cover;
+      display: block;
+    }
+    .project-body {
+      padding: 20px;
+      background: var(--card);
+    }
+    .project-tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--primary);
+      background: rgba(47,111,94,0.1);
+      padding: 4px 10px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+    .project-title {
+      font-size: 17px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      line-height: 1.3;
+    }
+    .project-client {
+      font-size: 13px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 10px;
+    }
+    .project-client svg { width: 13px; height: 13px; }
+    .project-specs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .spec-chip {
+      font-size: 12px;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 4px 10px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ── Checklist ── */
+    .checklist-section { margin-top: 16px; }
+    .checklist-section h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 28px;
+      font-weight: 400;
+      margin-bottom: 24px;
+    }
+    .checklist-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .check-item {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 20px;
+      border: 1px solid var(--line);
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+    }
+    .check-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: rgba(47,111,94,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .check-icon svg { width: 18px; height: 18px; color: var(--primary); }
+    .check-item h3 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+    .check-item p { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+    /* ── Comparison Stats ── */
+    .comparison {
+      margin-top: 64px;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 0;
+      align-items: stretch;
+      background: var(--card);
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+    }
+    .vs-col {
+      padding: 40px;
+    }
+    .vs-col.bad { background: rgba(176,99,103,0.04); }
+    .vs-col.good { background: rgba(47,111,94,0.04); }
+    .vs-col h3 {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 24px;
+    }
+    .vs-col.bad h3 { color: var(--danger); }
+    .vs-col.good h3 { color: var(--primary); }
+    .vs-divider {
+      width: 1px;
+      background: var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .vs-badge {
+      background: var(--text);
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 8px 12px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+    .vs-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+    .vs-item svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 2px; }
+    .vs-col.bad .vs-item svg { color: var(--danger); }
+    .vs-col.good .vs-item svg { color: var(--primary); }
+    .vs-item span { color: var(--muted); }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      header h1 { font-size: 32px; }
+      .gallery-grid { grid-template-columns: repeat(2, 1fr); }
+      .project-grid { grid-template-columns: 1fr; }
+      .checklist-grid { grid-template-columns: 1fr; }
+      .comparison { grid-template-columns: 1fr; }
+      .vs-divider { width: auto; height: 1px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Galería de Fotos de Maquinaria</h1>
+  <p>8 fotos idénticas sin contexto. ¿Proyecto? ¿Cliente? ¿Qué máquina? Cero información. Así no.</p>
+</header>
+
+<div class="container">
+
+  <!-- ── PROBLEMA ── -->
+  <div class="section-label">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+    Galería actual — Sin contexto
+  </div>
+  <div class="bad-gallery">
+    <h2>Lo que existe ahora</h2>
+    <p class="desc">8 fotos de maquinaria industrial. Todas iguales. Ninguna con nombre, cliente o especificación.</p>
+
+    <div class="gallery-grid">
+      <div>
+        <div class="no-context-overlay">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </div>
+        <p class="no-context-label">IMG_001.jpg</p>
+      </div>
+      <div>
+        <div class="no-context-overlay">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </div>
+        <p class="no-context-label">IMG_002.jpg</p>
+      </div>
+      <div>
+        <div class="no-context-overlay">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </div>
+        <p class="no-context-label">IMG_003.jpg</p>
+      </div>
+      <div>
+        <div class="no-context-overlay">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </div>
+        <p class="no-context-label">IMG_004.jpg</p>
+      </div>
+      <div>
+        <div class="no-context-overlay">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </div>
+        <p class="no-context-label">IMG_005.jpg</p>
+      </div>
+      <div>
+        <div class="no-context-overlay">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </div>
+        <p class="no-context-label">IMG_006.jpg</p>
+      </div>
+      <div>
+        <div class="no-context-overlay">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </div>
+        <p class="no-context-label">IMG_007.jpg</p>
+      </div>
+      <div>
+        <div class="no-context-overlay">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </div>
+        <p class="no-context-label">IMG_008.jpg</p>
+      </div>
+    </div>
+
+    <div class="verdict">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <p>Cada foto pesa ~2MB. En total: 16MB de píxeles que no dicen absolutamente nada.</p>
+    </div>
+  </div>
+
+  <!-- ── SOLUCIÓN ── -->
+  <div class="section-label good">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    Cómo debería verse
+  </div>
+  <div class="good-gallery">
+    <h2>Galería por proyecto</h2>
+    <p class="desc">Cada proyecto con su nombre, cliente, sector, máquina y ubicación. El lector sabe exactamente qué está viendo.</p>
+
+    <div class="project-grid">
+      <!-- Project 1 -->
+      <div class="project-card">
+        <img class="project-img" src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=600&h=340&fit=crop" alt="Sistema de refrigeración industrial">
+        <div class="project-body">
+          <span class="project-tag">Refrigeración Industrial</span>
+          <h3 class="project-title">Sistema de Refrigeración para Planta de Alimentos</h3>
+          <p class="project-client">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Agroindustrias del Norte S.A.
+          </p>
+          <div class="project-specs">
+            <span class="spec-chip">Chiller 450 TR</span>
+            <span class="spec-chip">Monterrey, NL</span>
+            <span class="spec-chip">2024</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Project 2 -->
+      <div class="project-card">
+        <img class="project-img" src="https://images.unsplash.com/photo-1565793298595-6a879b1d9492?w=600&h=340&fit=crop" alt="Compresor de aire industrial">
+        <div class="project-body">
+          <span class="project-tag">Aire Comprimido</span>
+          <h3 class="project-title">Planta de Compresión para Planta Automotriz</h3>
+          <p class="project-client">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Motores Compuestos de México
+          </p>
+          <div class="project-specs">
+            <span class="spec-chip">Compresor 250 kW</span>
+            <span class="spec-chip">Ramos Arizpe, COAH</span>
+            <span class="spec-chip">2023</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Project 3 -->
+      <div class="project-card">
+        <img class="project-img" src="https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=600&h=340&fit=crop" alt="Sistema de ventilación">
+        <div class="project-body">
+          <span class="project-tag">Ventilación Industrial</span>
+          <h3 class="project-title">Sistema de Extracción para Planta Química</h3>
+          <p class="project-client">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Químicos Industriales Potosí
+          </p>
+          <div class="project-specs">
+            <span class="spec-chip">HVAC 80,000 CFM</span>
+            <span class="spec-chip">San Luis Potosí</span>
+            <span class="spec-chip">2024</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Project 4 -->
+      <div class="project-card">
+        <img class="project-img" src="https://images.unsplash.com/photo-1581092160607-ee22731f9ebe?w=600&h=340&fit=crop" alt="Generador eléctrico">
+        <div class="project-body">
+          <span class="project-tag">Generación Eléctrica</span>
+          <h3 class="project-title">Planta de Emergencia para Hospital</h3>
+          <p class="project-client">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Secretaría de Salud — Jalisco
+          </p>
+          <div class="project-specs">
+            <span class="spec-chip">Generador 1.5 MW</span>
+            <span class="spec-chip">Guadalajara, JAL</span>
+            <span class="spec-chip">2023</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CHECKLIST ── -->
+  <div class="checklist-section">
+    <h2>Lo que cada foto necesita</h2>
+    <div class="checklist-grid">
+      <div class="check-item">
+        <div class="check-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div>
+          <h3>Nombre del cliente</h3>
+          <p>Quién compró o utiliza el equipo. Transmite confianza y referencia comercial.</p>
+        </div>
+      </div>
+      <div class="check-item">
+        <div class="check-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
+        <div>
+          <h3>Nombre del proyecto</h3>
+          <p>El caso específico. "Planta de..." no es suficiente — necesita ser identificable.</p>
+        </div>
+      </div>
+      <div class="check-item">
+        <div class="check-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        </div>
+        <div>
+          <h3>Tipo de máquina</h3>
+          <p>Chiller, compresor, generador, HVAC... El lector técnico necesita saber qué ve.</p>
+        </div>
+      </div>
+      <div class="check-item">
+        <div class="check-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div>
+          <h3>Especificaciones clave</h3>
+          <p>Capacidad, potencia, modelo. Datos que demuestran escala y competencia técnica.</p>
+        </div>
+      </div>
+      <div class="check-item">
+        <div class="check-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        </div>
+        <div>
+          <h3>Ubicación</h3>
+          <p>Ciudad o región. Importante para clientes que buscan proveedores cerca de ellos.</p>
+        </div>
+      </div>
+      <div class="check-item">
+        <div class="check-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <div>
+          <h3>Año del proyecto</h3>
+          <p>Indica experiencia reciente y vigencia. Un proyecto de 2015 no dice lo mismo que uno de 2024.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── COMPARISON ── -->
+  <div class="comparison">
+    <div class="vs-col bad">
+      <h3>Galería sin contexto</h3>
+      <div class="vs-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <span>8 fotos donde solo importa la cantidad</span>
+      </div>
+      <div class="vs-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <span>Nombre del archivo como único identificador</span>
+      </div>
+      <div class="vs-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <span>El lector no puede buscar por sector</span>
+      </div>
+      <div class="vs-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <span>No hay forma de filtrar por tipo de máquina</span>
+      </div>
+      <div class="vs-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <span>16MB de ancho de banda para nada</span>
+      </div>
+    </div>
+
+    <div class="vs-divider">
+      <span class="vs-badge">VS</span>
+    </div>
+
+    <div class="vs-col good">
+      <h3>Galería por proyecto</h3>
+      <div class="vs-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        <span>Cada foto cuenta una historia completa</span>
+      </div>
+      <div class="vs-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        <span>Cliente visible → referencia verificable</span>
+      </div>
+      <div class="vs-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        <span>Filtros por sector, tipo y ubicación</span>
+      </div>
+      <div class="vs-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        <span>Especificaciones técnicas = autoridad</span>
+      </div>
+      <div class="vs-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        <span>4 fotos contextualizadas pesan menos y valen más</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

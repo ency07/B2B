@@ -1,0 +1,161 @@
+# CAPÍTULO 21
+
+# PASARELA DE PAGOS
+
+## OBJETIVO
+
+Permitir pagos parciales, totales y anticipos.
+
+---
+
+# PROVEEDOR INICIAL
+
+Wompi
+
+---
+
+# ENTIDADES
+
+payment_gateways
+
+payment_transactions
+
+customer_advances
+
+payment_reconciliations
+
+---
+
+# CASO 1
+
+Pago Total
+
+Factura
+
+↓
+
+Portal Cliente
+
+↓
+
+Wompi
+
+↓
+
+Confirmación
+
+↓
+
+Factura Pagada
+
+---
+
+# CASO 2
+
+Pago Parcial
+
+Factura
+
+↓
+
+Pago Parcial
+
+↓
+
+Saldo Pendiente
+
+---
+
+# CASO 3
+
+Anticipo
+
+Cliente
+
+↓
+
+Anticipo
+
+↓
+
+Saldo Favor
+
+↓
+
+Aplicación futura
+
+---
+
+# CASO 4
+
+Aplicación Anticipo
+
+Cotización
+
+↓
+
+Factura
+
+↓
+
+Aplicar saldo
+
+↓
+
+Reducir valor
+
+---
+
+# ESTADOS
+
+Pendiente
+
+Procesando
+
+Pagado
+
+Parcial
+
+Fallido
+
+Reversado
+
+---
+
+# WEBHOOKS
+
+Pago Aprobado
+
+Pago Rechazado
+
+Pago Pendiente
+
+Reembolso
+
+---
+
+# AUDITORÍA
+
+Obligatoria
+
+---
+
+# CONCILIACIÓN
+
+Automática
+
+Manual
+
+---
+
+# KPI
+
+Valor Pagado
+
+Valor Pendiente
+
+Anticipos
+
+Recaudo
+
+Mora

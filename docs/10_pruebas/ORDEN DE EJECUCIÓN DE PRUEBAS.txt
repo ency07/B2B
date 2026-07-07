@@ -1,0 +1,49 @@
+1 Usuarios
+
+2 Roles
+
+3 Permisos
+
+4 Empresas
+
+5 Sedes
+
+6 Clientes
+
+7 Contactos
+
+8 Leads
+
+9 Oportunidades
+
+10 Cotizaciones
+
+11 Aprobaciones
+
+12 Portal Cliente
+
+13 Pasarela Pago
+
+14 Trabajos
+
+15 Inventario
+
+16 Compras
+
+17 Facturación
+
+18 Pagos
+
+19 Garantías
+
+20 Dashboard
+
+21 Auditoría
+
+22 KPI
+
+23 Integraciones
+
+24 Seguridad
+
+25 Go Live

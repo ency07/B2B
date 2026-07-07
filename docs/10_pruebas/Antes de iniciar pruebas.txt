@@ -1,0 +1,21 @@
+Antes de iniciar pruebas:
+
+Debe crear automáticamente:
+
+25 empresas demo
+
+106 usuarios demo
+
+Todos los roles
+
+Todas las sedes
+
+Todos los permisos
+
+Todos los datos de prueba
+
+Toda la estructura de aprobaciones
+
+Portal Cliente funcional
+
+Pasarela de Pago Sandbox funcional

@@ -1,0 +1,31 @@
+FASE 0
+
+Generar REUSE_ANALYSIS global.
+
+Analizar:
+
+Frontend
+
+ERP
+
+CRM
+
+RBAC
+
+Wizard
+
+Dashboard
+
+Reporting
+
+File Storage
+
+Workflow Engine
+
+Inventory
+
+Portal Cliente
+
+Marketing
+
+y proponer reutilización antes de construir una sola línea de código.

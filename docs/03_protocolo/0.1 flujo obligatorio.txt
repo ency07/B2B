@@ -1,0 +1,20 @@
+FLUJO OBLIGATORIO DE EJECUCIÓN (CON PROTOCOLO 0.3)
+
+PASO 0: AUDITORÍA DE GOBERNANZA Y DECISIONES CONGELADAS (MODO AUDITOR 0.3)
+[OBLIGATORIO] Antes de iniciar cualquier fase, Discovery, diseño de arquitectura, plan de implementación o codificación del ERP:
+1. Leer y analizar en su totalidad 'docs/03_protocolo/0.2 DECISIONES GLOBALES CONGELADAS.md' (Fuente Suprema de Verdad).
+2. Leer y aplicar en su totalidad 'docs/03_protocolo/0.3 MODO AUDITOR DE DECISIONES CONGELADAS.md'.
+3. Ejecutar la "AUDITORÍA DE REUTILIZACIÓN" (Regla 2: prohibido crear tablas duplicadas si existe una equivalente como clients, client_contacts, etc.).
+4. Ejecutar la "AUDITORÍA DE PREGUNTAS" (Regla 4: prohibido preguntar temas ya respondidos en la documentación).
+5. Aplicar la Regla 5 (Gate de Bloqueo): Si más del 20% de las preguntas propuestas ya tienen respuesta en la documentación, se debe abortar el Discovery inmediatamente (DISCOVERY RECHAZADO).
+6. Cumplir estrictamente con la Regla 7 (Fallo Obligatorio) deteniendo la ejecución con "ERROR DE GOBERNANZA" si se detecta cualquier violación.
+
+Si cualquiera de estos pasos de auditoría previa no se ha ejecutado y documentado en el Plan de Implementación de la fase, la tarea no puede avanzar.
+
+PASO 1: ANÁLISIS DE REUTILIZACIÓN DE CÓDIGO Y MÓDULO
+PASO 2: GENERAR REUSE_ANALYSIS.md (Y ANEXAR AL PLAN DE IMPLEMENTACIÓN)
+PASO 3: MOSTRAR REPOSITORIOS, TEMPLATES Y LIBRERÍAS DISPONIBLES Y COSTE DE ADAPTACIÓN
+PASO 4: ESPERAR APROBACIÓN EXPLÍCITA DEL USUARIO
+PASO 5: CONSTRUIR E IMPLEMENTAR MIGRACIONES, TRIGGERS Y RLS
+PASO 6: EJECUTAR Y VALIDAR PRUEBAS LOCALES (TESTS)
+PASO 7: REGISTRAR REPORTE DE IMPLEMENTACIÓN Y WALKTHROUGH

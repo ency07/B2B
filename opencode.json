@@ -1,0 +1,47 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "ollama": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Ollama",
+      "options": {
+        "baseURL": "http://localhost:11434/v1"
+      },
+      "models": {
+        "qwen2.5-coder:1.5b": {
+          "name": "Qwen 1.5B (Rápido)",
+          "default": true,
+          "config": {
+            "temperature": 0.2,
+            "maxTokens": 512,
+            "system": "INSTRUCCIÓN OBLIGATORIA: SIEMPRE DEBES RESPONDER EN ESPAÑOL.Eres un asistente ágil y directo. Responde de forma concisa (máximo 150 palabras o 4 párrafos). Si no sabes algo, di 'No lo sé'. Siempre responde en español."
+          }
+        },
+        "deepseek-r1:1.5b": {
+          "name": "DeepSeek R1 (Arquitecto)",
+          "config": {
+            "temperature": 0.3,
+            "maxTokens": 768,
+            "system": "INSTRUCCIÓN OBLIGATORIA: SIEMPRE DEBES RESPONDER EN ESPAÑOL.Eres un planificador meticuloso. Desglosa los problemas en pasos lógicos y explica tu razonamiento paso a paso. Para tareas grandes, da un resumen inicial y luego pregunta '¿Por dónde quieres que empiece?' antes de continuar. Máximo 200 palabras por respuesta. Siempre responde en español."
+          }
+        },
+        "qwen2.5-coder:7b": {
+          "name": "Qwen 7B (Código avanzado)",
+          "config": {
+            "temperature": 0.2,
+            "maxTokens": 1024,
+            "system": "INSTRUCCIÓN OBLIGATORIA: SIEMPRE DEBES RESPONDER EN ESPAÑOL.Eres un experto en programación. Genera código limpio, eficiente y bien comentado. Explica tu razonamiento detrás de las soluciones. Para tareas grandes, divide el código en partes y pide confirmación antes de continuar. Siempre responde en español."
+          }
+        },
+        "mistral": {
+          "name": "Mistral (Alternativa)",
+          "config": {
+            "temperature": 0.2,
+            "maxTokens": 1024,
+            "system": "INSTRUCCIÓN OBLIGATORIA: SIEMPRE DEBES RESPONDER EN ESPAÑOL.Eres un asistente versátil y preciso. Da respuestas claras y bien estructuradas. Si no estás seguro, dilo. Para problemas complejos, ofrece soluciones paso a paso. Siempre responde en español."
+          }
+        }
+      }
+    }
+  }
+}
