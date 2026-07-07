@@ -1,0 +1,25 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Mexico_City"
+    # Solo parches de seguridad automáticos; upgrades manuales
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "security"
+    reviewers:
+      - "team-lead"
+    # Ignorar dependencias inestables que requieren revisión manual
+    ignore:
+      - dependency-name: "zod"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "@tailwindcss/postcss"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+    commit-message:
+      prefix: "fix(deps)"
+      prefix-development: "chore(deps)"

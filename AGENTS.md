@@ -115,6 +115,28 @@ Notas:
 - `src/app/portal/`    — Public portal page
 - `src/app/(landing)/`  — Marketing landing routes
 
+## Dependencias
+
+El proyecto usa versiones **exactas** (pinned) para todas las dependencias, sin rangos `^`.
+Consulta `docs/15_frontend/DEPENDENCY_GUIDE.md` para la justificación de cada una.
+
+### Auditoría de seguridad
+
+```bash
+npm run audit:security   # npm audit con nivel high+
+npm run audit:outdated   # Lista paquetes desactualizados
+npm run deps:pin         # Fija versiones según package-lock.json
+```
+
+Dependabot está configurado en `.github/dependabot.yml` para PRs automáticos de seguridad.
+
+### Dependencias inestables
+
+| Paquete | Versión | Riesgo |
+|---------|---------|--------|
+| `zod` | 4.4.3 | v4 no es release estable. Monitorear breaking changes. |
+| `@tailwindcss/postcss` | 4.3.1 | Plugin alpha para Tailwind v4. |
+
 ## Code style
 
 - React 19 + Next.js 16 (App Router)
