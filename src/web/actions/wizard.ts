@@ -1,0 +1,260 @@
+"use server";
+
+import { z } from "zod";
+import { supabaseAdmin } from "@/platform/auth/clients";
+import { getTenantId } from "@/erp/actions/core";;
+import { resolveTenantOwnerUserIdAsync } from "@/platform/tenant/tenant-resolver";
+import { calculateRequiredCfm } from "@/utils/engineering";
+import { estimatePrice } from "@/utils/pricing";
+import { createLeadWithScore } from "./leads";
+
+export interface WizardSubmission {
+  servicio: "fabricacion" | "venta" | "mantenimiento" | "reparacion" | "otro";
+  length: number;
+  width: number;
+  height: number;
+  environment: "heavy_plant" | "data_center" | "mining" | "warehouse" | "default";
+  nombre: string;
+  empresa: string;
+  cargo: string;
+  telefono: string;
+  email: string;
+  ciudad: string;
+  urgencia: "baja" | "media" | "alta";
+  otroDetalle?: string;
+}
+
+const wizardSubmissionSchema = z.object({
+  servicio: z.enum(["fabricacion", "venta", "mantenimiento", "reparacion", "otro"]),
+  length: z.number().positive("El largo debe ser mayor que 0"),
+  width: z.number().positive("El ancho debe ser mayor que 0"),
+  height: z.number().positive("El alto debe ser mayor que 0"),
+  environment: z.enum(["heavy_plant", "data_center", "mining", "warehouse", "default"]),
+  nombre: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
+  empresa: z.string().min(2, "La empresa debe tener al menos 2 caracteres"),
+  cargo: z.string().min(2, "El cargo debe tener al menos 2 caracteres"),
+  telefono: z.string().min(7, "El teléfono debe tener al menos 7 caracteres"),
+  email: z.string().email("El correo electrónico no es válido"),
+  ciudad: z.string().min(2, "La ciudad debe tener al menos 2 caracteres"),
+  urgencia: z.enum(["baja", "media", "alta"]),
+  otroDetalle: z.string().optional(),
+});
+
+export interface WizardResult {
+  diagnosticCode: string;
+  requiredCfm: number;
+  cfmCategory: "CRITICAL" | "HIGH" | "STANDARD" | "COMPACT";
+  calculatedVolumeM3: number;
+  estimatedPriceMinCop: number;
+  estimatedPriceMaxCop: number;
+  estimatedPriceMinUsd: number;
+  estimatedPriceMaxUsd: number;
+  materialsRecommendation: string;
+  leadId: string;
+}
+
+/**
+ * Procesa la sumisión del Wizard Web:
+ * 1. Valida los datos de entrada con Zod y verifica que el tenant esté activo.
+ * 2. Calcula CFM y estimación de precios con los Motores funcionales.
+ * 3. Registra o Reutiliza al Cliente (en clients) y Contacto (en client_contacts).
+ * 4. Crea el Requerimiento (requirements) y el Lead (leads) con score dinámico en español.
+ * 5. Guarda el Reporte de Diagnóstico (diagnostic_reports).
+ */
+export async function submitWizardData(
+  tenantCode: string | null,
+  rawData: WizardSubmission
+): Promise<WizardResult> {
+  // 1. Validar datos de entrada con Zod
+  const parsed = wizardSubmissionSchema.safeParse(rawData);
+  if (!parsed.success) {
+    throw new Error(
+      `Datos de entrada inválidos: ${parsed.error.errors.map((e) => e.message).join(", ")}`
+    );
+  }
+  const data = parsed.data;
+
+  const tenantId = await getTenantId(tenantCode);
+
+  // 2. Verificar activamente que el tenant existe y está Activo antes de usar supabaseAdmin
+  const { data: tenantInfo, error: tenantErr } = await supabaseAdmin
+    .from("tenants")
+    .select("status")
+    .eq("id", tenantId)
+    .maybeSingle();
+
+  if (tenantErr || !tenantInfo || tenantInfo.status !== "Activo") {
+    throw new Error("El tenant especificado no está activo o no existe.");
+  }
+
+  const userId = await resolveTenantOwnerUserIdAsync(tenantId);
+
+
+  // 1. Cálculos de Motores Funcionales
+  const { cfm, cubicMeters } = calculateRequiredCfm(
+    { length: data.length, width: data.width, height: data.height },
+    data.environment
+  );
+
+  const priceEstimation = estimatePrice(data.servicio, data.urgencia, cubicMeters);
+
+  // Clasificación de Caudal
+  let cfmCategory: "CRITICAL" | "HIGH" | "STANDARD" | "COMPACT" = "STANDARD";
+  if (cfm >= 15000) {
+    cfmCategory = "CRITICAL";
+  } else if (cfm >= 8000) {
+    cfmCategory = "HIGH";
+  } else if (cfm < 2000) {
+    cfmCategory = "COMPACT";
+  }
+
+  // Recomendación de materiales dinámica
+  let materialsRecommendation = "Extractor multiusos o axial de alta capacidad con ductería de acero galvanizado calibre 22.";
+  if (data.environment === "heavy_plant" || data.environment === "mining") {
+    materialsRecommendation = "Recomendado extractor industrial Blower o tipo Hongo con recubrimiento epóxico anticorrosivo y álabes de aluminio extruido.";
+  } else if (data.environment === "data_center") {
+    materialsRecommendation = "Recomendado sistema de inyección de aire con filtros de partículas EPA/HEPA y control acústico de baja vibración.";
+  }
+
+  // 2. Reutilización B2B Upsert (Clients)
+  // Buscar si ya existe el cliente por Razón Social (legal_name)
+  let { data: client } = await supabaseAdmin
+    .from("clients")
+    .select("id")
+    .eq("tenant_id", tenantId)
+    .eq("legal_name", data.empresa)
+    .is("deleted_at", null)
+    .limit(1)
+    .maybeSingle();
+
+  if (!client) {
+    // Si no existe, crear nuevo cliente (tax_id es nullable)
+    const { data: newClient, error: clientErr } = await supabaseAdmin
+      .from("clients")
+      .insert({
+        tenant_id: tenantId,
+        legal_name: data.empresa,
+        client_type: "Empresa",
+        country: "Colombia",
+        city: data.ciudad,
+        phone: data.telefono,
+        email: data.email,
+        assigned_user_id: userId,
+        status: "PROSPECTO",
+        created_by: userId
+      })
+      .select()
+      .single();
+
+    if (clientErr) {
+      console.error("Error creating client in wizard:", clientErr);
+      throw new Error(clientErr.message);
+    }
+    client = newClient;
+  }
+
+  if (!client) {
+    throw new Error("No se pudo obtener o crear el cliente.");
+  }
+
+  const clientId = client.id;
+
+  // 3. Reutilización de Contactos (client_contacts)
+  let { data: contact } = await supabaseAdmin
+    .from("client_contacts")
+    .select("id")
+    .eq("tenant_id", tenantId)
+    .eq("client_id", clientId)
+    .eq("email", data.email)
+    .is("deleted_at", null)
+    .limit(1)
+    .maybeSingle();
+
+  if (!contact) {
+    // Crear el contacto
+    const { data: newContact, error: contactErr } = await supabaseAdmin
+      .from("client_contacts")
+      .insert({
+        tenant_id: tenantId,
+        client_id: clientId,
+        first_name: data.nombre,
+        last_name: "",
+        position: data.cargo,
+        email: data.email,
+        phone: data.telefono,
+        created_by: userId
+      })
+      .select()
+      .single();
+
+    if (contactErr) {
+      console.error("Error creating contact in wizard:", contactErr);
+      throw new Error(contactErr.message);
+    }
+    contact = newContact;
+  }
+
+  if (!contact) {
+    throw new Error("No se pudo obtener o crear el contacto.");
+  }
+
+  const contactId = contact.id;
+
+  // 4. Registrar Lead Calificado con Scoring en Español
+  const leadNotes = `Servicio: ${data.servicio}${data.servicio === "otro" && data.otroDetalle ? ` (${data.otroDetalle})` : ""}. Cálculo CFM: ${cfm}. Volumen M3: ${cubicMeters}. Urgencia: ${data.urgencia}. Ciudad: ${data.ciudad}.`;
+  const lead = await createLeadWithScore(tenantCode, {
+    clientId,
+    contactId,
+    notes: leadNotes,
+    role: data.cargo,
+    urgency: data.urgencia,
+    email: data.email
+  });
+
+  // 5. Registrar Reporte de Diagnóstico (diagnostic_reports)
+  const { data: diagReport, error: diagErr } = await supabaseAdmin
+    .from("diagnostic_reports")
+    .insert({
+      tenant_id: tenantId,
+      lead_id: lead.id,
+      service_type: data.servicio,
+      dimensions: {
+        length: data.length,
+        width: data.width,
+        height: data.height
+      },
+      symptoms: {
+        environment: data.environment,
+        city: data.ciudad
+      },
+      calculated_volume: cubicMeters,
+      calculated_cfm: cfm,
+      cfm_category: cfmCategory,
+      materials_recommendation: materialsRecommendation,
+      estimated_price_min_cop: priceEstimation.rangeMinCop,
+      estimated_price_max_cop: priceEstimation.rangeMaxCop,
+      estimated_price_min_usd: priceEstimation.rangeMinUsd,
+      estimated_price_max_usd: priceEstimation.rangeMaxUsd,
+      created_by: userId
+    })
+    .select()
+    .single();
+
+  if (diagErr) {
+    console.error("Error creating diagnostic report:", diagErr);
+    throw new Error(diagErr.message);
+  }
+
+  return {
+    diagnosticCode: diagReport.diagnostic_code,
+    requiredCfm: cfm,
+    cfmCategory,
+    calculatedVolumeM3: cubicMeters,
+    estimatedPriceMinCop: priceEstimation.rangeMinCop,
+    estimatedPriceMaxCop: priceEstimation.rangeMaxCop,
+    estimatedPriceMinUsd: priceEstimation.rangeMinUsd,
+    estimatedPriceMaxUsd: priceEstimation.rangeMaxUsd,
+    materialsRecommendation,
+    leadId: lead.id
+  };
+}
