@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { supabaseAdmin } from "@/platform/auth/clients";
+import { getPublicServerClient } from "@/platform/auth/clients";
 import { getTenantId } from "@/erp/actions/core";
 import { resolveTenantOwnerUserIdAsync } from "@/platform/tenant/tenant-resolver";
 import { sanitizeObject } from "@/lib/utils/sanitize";
@@ -9,6 +9,9 @@ import { checkRateLimit } from "@/lib/utils/rate-limiter";
 import { calculateRequiredCfm } from "@/utils/engineering";
 import { estimatePrice } from "@/utils/pricing";
 import { createLeadWithScore } from "./leads";
+
+// Cliente público (anon key + RLS) para operaciones del wizard
+const db = getPublicServerClient();
 
 export interface WizardSubmission {
   servicio: "fabricacion" | "venta" | "mantenimiento" | "reparacion" | "otro";
@@ -87,8 +90,8 @@ export async function submitWizardData(
 
   const tenantId = await getTenantId(tenantCode);
 
-  // 2. Verificar activamente que el tenant existe y está Activo antes de usar supabaseAdmin
-  const { data: tenantInfo, error: tenantErr } = await supabaseAdmin
+  // Verificar que el tenant existe y está Activo
+  const { data: tenantInfo, error: tenantErr } = await db
     .from("tenants")
     .select("status")
     .eq("id", tenantId)
@@ -130,7 +133,7 @@ export async function submitWizardData(
 
   // 2. Reutilización B2B Upsert (Clients)
   // Buscar si ya existe el cliente por Razón Social (legal_name)
-  let { data: client } = await supabaseAdmin
+  let { data: client } = await db
     .from("clients")
     .select("id")
     .eq("tenant_id", tenantId)
@@ -141,7 +144,7 @@ export async function submitWizardData(
 
   if (!client) {
     // Si no existe, crear nuevo cliente (tax_id es nullable)
-    const { data: newClient, error: clientErr } = await supabaseAdmin
+    const { data: newClient, error: clientErr } = await db
       .from("clients")
       .insert({
         tenant_id: tenantId,
@@ -168,7 +171,7 @@ export async function submitWizardData(
   const clientId = client!.id;
 
   // 3. Reutilización de Contactos (client_contacts)
-  let { data: contact } = await supabaseAdmin
+  let { data: contact } = await db
     .from("client_contacts")
     .select("id")
     .eq("tenant_id", tenantId)
@@ -180,7 +183,7 @@ export async function submitWizardData(
 
   if (!contact) {
     // Crear el contacto
-    const { data: newContact, error: contactErr } = await supabaseAdmin
+    const { data: newContact, error: contactErr } = await db
       .from("client_contacts")
       .insert({
         tenant_id: tenantId,
@@ -220,7 +223,7 @@ export async function submitWizardData(
   });
 
   // 5. Registrar Reporte de Diagnóstico (diagnostic_reports)
-  const { data: diagReport, error: diagErr } = await supabaseAdmin
+  const { data: diagReport, error: diagErr } = await db
     .from("diagnostic_reports")
     .insert({
       tenant_id: tenantId,

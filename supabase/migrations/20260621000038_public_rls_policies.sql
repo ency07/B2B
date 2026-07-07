@@ -128,3 +128,47 @@ DROP POLICY IF EXISTS pages_select_anon ON website_pages;
 CREATE POLICY pages_select_anon ON website_pages
     FOR SELECT TO anon
     USING (status = 'ACTIVA' AND deleted_at IS NULL);
+
+-- ==========================================
+-- 5. Políticas para Clientes y Contactos (Wizard)
+-- ==========================================
+
+-- Clientes: inserción anónima desde el wizard
+DROP POLICY IF EXISTS clients_insert_anon ON clients;
+CREATE POLICY clients_insert_anon ON clients
+    FOR INSERT TO anon
+    WITH CHECK (true);
+
+-- Clientes: lectura anónima limitada (solo wizard upsert)
+DROP POLICY IF EXISTS clients_select_anon ON clients;
+CREATE POLICY clients_select_anon ON clients
+    FOR SELECT TO anon
+    USING (deleted_at IS NULL);
+
+-- Contactos de clientes: inserción anónima desde el wizard
+DROP POLICY IF EXISTS client_contacts_insert_anon ON client_contacts;
+CREATE POLICY client_contacts_insert_anon ON client_contacts
+    FOR INSERT TO anon
+    WITH CHECK (true);
+
+-- Contactos de clientes: lectura anónima limitada
+DROP POLICY IF EXISTS client_contacts_select_anon ON client_contacts;
+CREATE POLICY client_contacts_select_anon ON client_contacts
+    FOR SELECT TO anon
+    USING (deleted_at IS NULL);
+
+-- ==========================================
+-- 6. Políticas para Tenants y Diagnósticos
+-- ==========================================
+
+-- Tenants: lectura anónima limitada (solo status para validación del wizard)
+DROP POLICY IF EXISTS tenants_select_anon ON tenants;
+CREATE POLICY tenants_select_anon ON tenants
+    FOR SELECT TO anon
+    USING (status = 'Activo' AND deleted_at IS NULL);
+
+-- Reportes de diagnóstico: lectura anónima (para leer el insert recién creado)
+DROP POLICY IF EXISTS diagnostic_reports_select_anon ON diagnostic_reports;
+CREATE POLICY diagnostic_reports_select_anon ON diagnostic_reports
+    FOR SELECT TO anon
+    USING (true);

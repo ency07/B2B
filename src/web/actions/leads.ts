@@ -1,12 +1,14 @@
 "use server";
 
 import { z } from "zod";
-import { supabaseAdmin } from "@/platform/auth/clients";
+import { getPublicServerClient } from "@/platform/auth/clients";
 import { getTenantId } from "@/erp/actions/core";
 import { resolveTenantOwnerUserIdAsync } from "@/platform/tenant/tenant-resolver";
 import { sanitizeObject } from "@/lib/utils/sanitize";
 import { checkRateLimit } from "@/lib/utils/rate-limiter";
 import { PUBLIC_EMAIL_DOMAINS, KNOWN_DISPOSABLE_DOMAINS } from "@/lib/constants";
+
+const db = getPublicServerClient();
 
 export interface LeadScoreResult {
   score: number;
@@ -126,15 +128,15 @@ export async function createLeadWithScore(
 
   const tenantId = await getTenantId(tenantCode);
 
-  // 2. Verificar que el tenant está activo antes de proceder con supabaseAdmin
-  const { data: tenantInfo, error: tenantErr } = await supabaseAdmin
+  // 2. Verificar que el tenant está activo
+  const { data: tenantInfo, error: tenantErr } = await db
     .from("tenants")
     .select("status")
     .eq("id", tenantId)
     .maybeSingle();
 
   if (tenantErr || !tenantInfo || tenantInfo.status !== "Activo") {
-    console.error("Tenant validation error in createLeadWithScore:", tenantErr, tenantInfo);
+    console.error("Tenant validation error:", tenantErr, tenantInfo);
     throw new Error("El servicio no está disponible para este tenant.");
   }
 
@@ -142,7 +144,7 @@ export async function createLeadWithScore(
   const userId = await resolveTenantOwnerUserIdAsync(tenantId);
 
   // Insertar lead en la tabla leads
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await db
     .from("leads")
     .insert({
       tenant_id: tenantId,
@@ -198,22 +200,22 @@ export async function submitContactForm(
 
   const tenantId = await getTenantId(tenantCode);
 
-  // 2. Verificar que el tenant está activo antes de proceder con supabaseAdmin
-  const { data: tenantInfo, error: tenantErr } = await supabaseAdmin
+  // 2. Verificar que el tenant está activo
+  const { data: tenantInfo, error: tenantErr } = await db
     .from("tenants")
     .select("status")
     .eq("id", tenantId)
     .maybeSingle();
 
   if (tenantErr || !tenantInfo || tenantInfo.status !== "Activo") {
-    console.error("Tenant validation error in submitContactForm:", tenantErr, tenantInfo);
+    console.error("Tenant validation error:", tenantErr, tenantInfo);
     throw new Error("El servicio no está disponible para este tenant.");
   }
 
   const { score, riskLevel } = await calculateLeadScore(leadData.email, "Otro", leadData.urgency);
   const userId = await resolveTenantOwnerUserIdAsync(tenantId);
 
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await db
     .from("leads")
     .insert({
       tenant_id: tenantId,
