@@ -149,9 +149,88 @@ Dependabot está configurado en `.github/dependabot.yml` para PRs automáticos d
 
 ## Testing instructions
 
-- Unit tests: `npm run test:website` (site-wide tests)
-- Wizard tests: `npm run test:wizard` (multi-step form flow)
+- Unit tests (vitest): `npm run test:unit` or `npx vitest run`
+- Watch mode:   `npx vitest`
+- Coverage:     `npx vitest run --coverage`
+- Legacy SQL validation scripts: `npm run test:website`, `npm run test:wizard` (serán migrados a vitest progresivamente)
 - All tests must pass before opening a PR
+
+## Pre-commit quality gates
+
+1. `npx tsc --noEmit` — Sin errores de tipo
+2. `npm run lint` — Sin errores de lint (nuevos)
+3. `npx vitest run` — Tests unitarios pasan
+4. `npm audit --audit-level=high` — Sin vulnerabilidades high+
+
+## CI/CD (GitHub Actions)
+
+El workflow en `.github/workflows/ci.yml` ejecuta en cada push/PR:
+- `tsc --noEmit`, `lint`, `vitest run`, `npm audit`
+
+Para deploy, ejecutar manualmente:
+```bash
+npm run build
+npm start
+```
+
+## Cómo añadir una nueva funcionalidad
+
+### 1. Nueva página (ruta)
+1. Crear archivo en `src/app/` (App Router)
+2. Si pertenece al web público, usa `src/app/(landing)/*`
+3. Si pertenece al dashboard, usa `src/app/(dashboard)/dashboard/*`
+4. El layout se hereda automáticamente del segmento de ruta
+
+### 2. Nueva Server Action
+1. Crear archivo en `src/web/actions/` (web) o `src/erp/actions/` (ERP)
+2. Marcar con `"use server"`
+3. Validar entrada con Zod (ver `src/lib/validations/`)
+4. Sanitizar salida con `sanitizeObject` (`src/lib/utils/sanitize.ts`)
+5. Usar logger estructurado (`src/lib/utils/logger.ts`) en vez de `console.*`
+6. Registrar en las migraciones de Supabase si la acción requiere nuevas tablas
+
+### 3. Nueva tabla en Supabase
+1. Crear migración en `supabase/migrations/YYYYMMDDHHMMSS_descripcion.sql`
+2. Incluir: `CREATE TABLE`, `ALTER TABLE ... ENABLE ROW LEVEL SECURITY`, políticas RLS, triggers de trazabilidad
+3. Ejecutar: `npx ts-node scripts/deploy-migrations.ts`
+
+### 4. Nuevo test
+1. Tests unitarios: `src/tests/unit/*.test.ts`
+2. Tests de integración: `src/tests/integration/*.test.ts`
+3. Tests E2E (futuro): `src/tests/e2e/*.test.ts`
+4. Usar `describe`/`it`/`expect` de vitest
+
+## Plan de rollback
+
+### Rollback de código
+```bash
+git revert HEAD --no-edit
+git push origin main
+```
+
+### Rollback de migraciones de BD
+```bash
+# 1. Identificar la migración a revertir
+# 2. Ejecutar SQL de reversión manual (el proyecto no usa down migrations)
+# 3. Opcional: restaurar desde backup de Supabase (Point-in-Time Recovery)
+```
+
+### Rollback completo (código + BD)
+1. `git revert <commit-hash>` del deploy fallido
+2. Restaurar BD desde snapshot de Supabase (PITR)
+3. Re-deployar: `npm run build && npm start`
+
+## Estrategia de migraciones para producción
+
+1. **Desarrollo**: las migraciones se crean en `supabase/migrations/` con timestamp
+2. **Staging**: `npx ts-node scripts/deploy-migrations.ts` (usa `.env.local` apuntando a staging)
+3. **Producción**:
+   - Actualizar `.env.local` para que apunte al proyecto de producción
+   - Revisar SQL manualmente antes de ejecutar
+   - Ejecutar: `npx ts-node scripts/deploy-migrations.ts`
+   - Verificar: `npx ts-node scripts/check-index-collisions.ts`
+4. **Seed de producción**: No hay seed automático. Los datos maestros se insertan manualmente.
+5. **Alternativa**: Usar Supabase Dashboard → SQL Editor para migraciones manuales.
 
 ## Key features (web module)
 
