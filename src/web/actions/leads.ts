@@ -2,8 +2,10 @@
 
 import { z } from "zod";
 import { supabaseAdmin } from "@/platform/auth/clients";
-import { getTenantId } from "@/erp/actions/core";;
+import { getTenantId } from "@/erp/actions/core";
 import { resolveTenantOwnerUserIdAsync } from "@/platform/tenant/tenant-resolver";
+import { sanitizeObject } from "@/lib/utils/sanitize";
+import { checkRateLimit } from "@/lib/utils/rate-limiter";
 
 export interface LeadScoreResult {
   score: number;
@@ -110,10 +112,16 @@ export async function createLeadWithScore(
   const parsed = createLeadSchema.safeParse(rawLeadData);
   if (!parsed.success) {
     throw new Error(
-      `Datos de lead inválidos: ${parsed.error.errors.map((e) => e.message).join(", ")}`
+      `Datos de lead inválidos: ${parsed.error.issues.map((e) => e.message).join(", ")}`
     );
   }
-  const leadData = parsed.data;
+  const leadData = sanitizeObject(parsed.data as Record<string, unknown>) as z.infer<typeof createLeadSchema>;
+
+  // Rate limiting
+  const { allowed } = checkRateLimit(`lead:${leadData.email}`);
+  if (!allowed) {
+    throw new Error("Demasiadas solicitudes. Intente nuevamente en un minuto.");
+  }
 
   const tenantId = await getTenantId(tenantCode);
 
@@ -125,7 +133,8 @@ export async function createLeadWithScore(
     .maybeSingle();
 
   if (tenantErr || !tenantInfo || tenantInfo.status !== "Activo") {
-    throw new Error("El tenant especificado no está activo o no existe.");
+    console.error("Tenant validation error in createLeadWithScore:", tenantErr, tenantInfo);
+    throw new Error("El servicio no está disponible para este tenant.");
   }
 
   const { score, riskLevel } = await calculateLeadScore(leadData.email, leadData.role, leadData.urgency);
@@ -151,7 +160,7 @@ export async function createLeadWithScore(
 
   if (error) {
     console.error("Error creating lead with score:", error);
-    throw new Error(error.message);
+    throw new Error("Error al registrar el lead. Intente nuevamente.");
   }
 
   return data;
@@ -175,10 +184,16 @@ export async function submitContactForm(
   const parsed = contactFormSchema.safeParse(rawLeadData);
   if (!parsed.success) {
     throw new Error(
-      `Datos del formulario de contacto inválidos: ${parsed.error.errors.map((e) => e.message).join(", ")}`
+      `Datos del formulario de contacto inválidos: ${parsed.error.issues.map((e) => e.message).join(", ")}`
     );
   }
-  const leadData = parsed.data;
+  const leadData = sanitizeObject(parsed.data as Record<string, unknown>) as z.infer<typeof contactFormSchema>;
+
+  // Rate limiting
+  const { allowed } = checkRateLimit(`contact:${leadData.email}`);
+  if (!allowed) {
+    throw new Error("Demasiadas solicitudes. Intente nuevamente en un minuto.");
+  }
 
   const tenantId = await getTenantId(tenantCode);
 
@@ -190,7 +205,8 @@ export async function submitContactForm(
     .maybeSingle();
 
   if (tenantErr || !tenantInfo || tenantInfo.status !== "Activo") {
-    throw new Error("El tenant especificado no está activo o no existe.");
+    console.error("Tenant validation error in submitContactForm:", tenantErr, tenantInfo);
+    throw new Error("El servicio no está disponible para este tenant.");
   }
 
   const { score, riskLevel } = await calculateLeadScore(leadData.email, "Otro", leadData.urgency);
@@ -219,7 +235,7 @@ export async function submitContactForm(
 
   if (error) {
     console.error("Error submitting contact lead:", error);
-    throw new Error(error.message);
+    throw new Error("Error al enviar el formulario de contacto. Intente nuevamente.");
   }
 
   return data;

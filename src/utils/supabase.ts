@@ -8,9 +8,9 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env
 const supabaseStorageKey =
   'sb-' + (supabaseUrl.split('//')[1]?.split('.')[0] || 'auth') + '-auth-token';
 
-// Client-safe instance (uses public anon key) — persiste la sesión en el navegador.
-// El storage adapter espeja el access_token a una cookie (sb-access-token)
-// para que el middleware y los Server Components puedan leer la sesión.
+// Deprecated: Usar @/platform/auth/clients en lugar de @/utils/supabase.
+// Esta instancia del cliente anónimo no se usa actualmente.
+// Se mantiene para compatibilidad con imports legacy.
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage: supabaseAuthStorage,
@@ -21,8 +21,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 });
 
-// Server-only instance (uses service role key to bypass RLS in Server Actions)
-// AVISO: supabaseAdmin omite RLS. Siempre filtrar por tenant_id en el código.
-// Reexportamos la instancia única centralizada de la plataforma.
+// Reexport de la instancia única centralizada de plataforma.
+// Deprecated: Usar @/platform/auth/clients directamente.
 export const supabaseAdmin = platformSupabaseAdmin;
 

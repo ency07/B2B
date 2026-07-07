@@ -2,8 +2,10 @@
 
 import { z } from "zod";
 import { supabaseAdmin } from "@/platform/auth/clients";
-import { getTenantId } from "@/erp/actions/core";;
+import { getTenantId } from "@/erp/actions/core";
 import { resolveTenantOwnerUserIdAsync } from "@/platform/tenant/tenant-resolver";
+import { sanitizeObject } from "@/lib/utils/sanitize";
+import { checkRateLimit } from "@/lib/utils/rate-limiter";
 import { calculateRequiredCfm } from "@/utils/engineering";
 import { estimatePrice } from "@/utils/pricing";
 import { createLeadWithScore } from "./leads";
@@ -68,11 +70,20 @@ export async function submitWizardData(
   // 1. Validar datos de entrada con Zod
   const parsed = wizardSubmissionSchema.safeParse(rawData);
   if (!parsed.success) {
-    throw new Error(
-      `Datos de entrada inválidos: ${parsed.error.errors.map((e) => e.message).join(", ")}`
-    );
+    const fieldErrors = parsed.error.issues
+      .map((e) => `${String(e.path?.join(".") ?? "")}: ${e.message}`)
+      .join(". ");
+    throw new Error(`Datos de entrada inválidos: ${fieldErrors}`);
   }
-  const data = parsed.data;
+  // 2. Sanitizar campos de texto contra XSS
+  const data = sanitizeObject(parsed.data as Record<string, unknown>) as z.infer<typeof wizardSubmissionSchema>;
+
+  // 3. Rate limiting por IP (best-effort en serverless)
+  const ip = rawData.email || "unknown";
+  const { allowed } = checkRateLimit(`wizard:${ip}`);
+  if (!allowed) {
+    throw new Error("Demasiadas solicitudes. Intente nuevamente en un minuto.");
+  }
 
   const tenantId = await getTenantId(tenantCode);
 
@@ -84,7 +95,8 @@ export async function submitWizardData(
     .maybeSingle();
 
   if (tenantErr || !tenantInfo || tenantInfo.status !== "Activo") {
-    throw new Error("El tenant especificado no está activo o no existe.");
+    console.error("Tenant validation error:", tenantErr, tenantInfo);
+    throw new Error("El servicio no está disponible para este tenant.");
   }
 
   const userId = await resolveTenantOwnerUserIdAsync(tenantId);
@@ -148,7 +160,7 @@ export async function submitWizardData(
 
     if (clientErr) {
       console.error("Error creating client in wizard:", clientErr);
-      throw new Error(clientErr.message);
+      throw new Error("Error al registrar el cliente. Intente nuevamente.");
     }
     client = newClient;
   }
@@ -189,7 +201,7 @@ export async function submitWizardData(
 
     if (contactErr) {
       console.error("Error creating contact in wizard:", contactErr);
-      throw new Error(contactErr.message);
+      throw new Error("Error al registrar el contacto. Intente nuevamente.");
     }
     contact = newContact;
   }
@@ -242,7 +254,7 @@ export async function submitWizardData(
 
   if (diagErr) {
     console.error("Error creating diagnostic report:", diagErr);
-    throw new Error(diagErr.message);
+    throw new Error("Error al generar el reporte de diagnóstico. Intente nuevamente.");
   }
 
   return {

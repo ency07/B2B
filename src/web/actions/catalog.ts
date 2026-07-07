@@ -1,7 +1,7 @@
 "use server";
 
 import { supabaseAdmin } from "@/platform/auth/clients";
-import { getTenantId } from "@/erp/actions/core";;
+import { getTenantId } from "@/erp/actions/core";
 import { resolveTenantOwnerUserIdAsync } from "@/platform/tenant/tenant-resolver";
 import { requireAction, validateTenantAccess } from "@/platform/auth/server-guards";
 import {
