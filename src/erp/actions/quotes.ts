@@ -1,0 +1,147 @@
+"use server";
+
+import { supabaseAdmin } from "@/platform/auth/clients";
+import { getTenantId } from "@/erp/actions/core";
+import { resolveTenantOwnerUserId } from "@/platform/tenant/tenant-resolver";
+import { requireAction } from "@/platform/auth/server-guards";
+
+export interface QuoteRow {
+  id: string;
+  quote_code: string;
+  client_id: string;
+  requirement_id: string | null;
+  assigned_user_id: string | null;
+  valid_until: string;
+  subtotal: number;
+  total_amount: number;
+  status: "BORRADOR" | "EN_REVISION" | "ENVIADA" | "APROBADA" | "RECHAZADA" | "VENCIDA";
+  created_at: string;
+  client: { legal_name: string } | null;
+}
+
+export async function getQuotes(tenantCode?: string | null): Promise<QuoteRow[]> {
+  const tenantId = await getTenantId(tenantCode ?? null);
+
+  const { data, error } = await supabaseAdmin
+    .from("quotes")
+    .select(`
+      id, quote_code, client_id, requirement_id, assigned_user_id, valid_until, subtotal, total_amount, status, created_at,
+      client:client_id ( legal_name )
+    `)
+    .eq("tenant_id", tenantId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching quotes:", error);
+    return [];
+  }
+
+  const rows = (data ?? []).map((row: any) => ({
+    ...row,
+    client: Array.isArray(row.client) ? row.client[0] ?? null : row.client
+  }));
+
+  return rows as QuoteRow[];
+}
+
+export async function createQuote(
+  tenantCode: string | null,
+  quoteData: { clientId: string; requirementId?: string; validUntil: string }
+) {
+  // P8: Validacion backend. Accion: quotes.create.
+  await requireAction("quotes.create");
+  const tenantId = await getTenantId(tenantCode);
+  const userId = resolveTenantOwnerUserId(tenantId);
+
+  const { data, error } = await supabaseAdmin
+    .from("quotes")
+    .insert({
+      tenant_id: tenantId,
+      client_id: quoteData.clientId,
+      requirement_id: quoteData.requirementId || null,
+      assigned_user_id: userId,
+      valid_until: quoteData.validUntil,
+      status: "BORRADOR",
+      created_by: userId
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error creating quote:", error);
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
+export async function getQuoteItems(quoteId: string) {
+  const { data, error } = await supabaseAdmin
+    .from("quote_items")
+    .select("*")
+    .eq("quote_id", quoteId)
+    .order("item_order", { ascending: true });
+
+  if (error) {
+    console.error("Error fetching quote items:", error);
+    return [];
+  }
+
+  return data;
+}
+
+export async function addQuoteItem(
+  tenantCode: string | null,
+  itemData: {
+    quoteId: string;
+    description: string;
+    itemType: string;
+    quantity: number;
+    unitPrice: number;
+    discountAmount: number;
+    taxPercent: number;
+    itemOrder: number;
+  }
+) {
+  const tenantId = await getTenantId(tenantCode);
+
+  const { data, error } = await supabaseAdmin
+    .from("quote_items")
+    .insert({
+      tenant_id: tenantId,
+      quote_id: itemData.quoteId,
+      item_order: itemData.itemOrder,
+      item_type: itemData.itemType,
+      description: itemData.description,
+      quantity: itemData.quantity,
+      unit: "UNIDAD",
+      unit_price: itemData.unitPrice,
+      discount_amount: itemData.discountAmount,
+      tax_percent: itemData.taxPercent
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error adding quote item:", error);
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
+export async function updateQuoteStatus(quoteId: string, status: string) {
+  const { data, error } = await supabaseAdmin
+    .from("quotes")
+    .update({ status })
+    .eq("id", quoteId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error updating quote status:", error);
+    throw new Error(error.message);
+  }
+
+  return data;
+}

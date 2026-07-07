@@ -3,7 +3,11 @@
  * Lógica pura de cálculo de volumen, cambios de aire por hora (ACH), densidad,
  * pérdidas de carga, consumo eléctrico y dimensionamiento de turbomaquinaria.
  * White-label: sin marcas hardcoded, sin tenant_code quemado.
+ *
+ * TASA DE CAMBIO: Ver src/lib/constants.ts para el valor único.
  */
+
+import { COP_TO_USD_RATE } from "@/lib/constants";
 
 export interface AreaDimensions {
   length: number; // en metros
@@ -58,7 +62,6 @@ export const CRITICALITY_BY_ENVIRONMENT: Record<string, "ALTA" | "MEDIA" | "BAJA
 };
 
 const METERS_TO_FEET_FACTOR = 35.3147; // 1 m³ = 35.3147 pies³
-const COP_TO_USD_RATE = 4000;
 
 /**
  * Obtiene los cambios de aire por hora (ACH) según el ambiente.

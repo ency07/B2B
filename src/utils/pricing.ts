@@ -2,9 +2,14 @@
  * MOTOR DE PRECIOS (Pricing Engine)
  * Lógica pura de estimación de costos B2B en COP y USD con rangos de desviación y urgencia.
  * White-label: sin marcas hardcoded, sin tenant_code quemado.
+ *
+ * TASA DE CAMBIO: Ver src/lib/constants.ts para el valor único.
  */
 
-export const COP_TO_USD_RATE = 4000; // 1 USD = 4000 COP
+import { COP_TO_USD_RATE as _COP_RATE } from "@/lib/constants";
+
+/** @deprecated Importar desde @/lib/constants */
+export const COP_TO_USD_RATE = _COP_RATE;
 
 // Precios base estimados por tipo de servicio en COP
 export const BASE_PRICE_BY_SERVICE: Record<string, number> = {

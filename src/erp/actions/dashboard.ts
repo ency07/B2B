@@ -58,23 +58,52 @@ export async function getDashboardCommandCenter(
   const tenantId = await getTenantId(tenantCode);
   const currentPeriod = new Date().toISOString().substring(0, 7); // e.g. "2026-06"
 
-  // 1. Fetch Tenant Name (white-label: del branding CMS, no hardcoded)
+  // ── Queries paralelas (Promise.all en lugar de secuencial) ────────────
+  const [
+    tenantResult,
+    invoicesResult,
+    eventsResult,
+    auditResult,
+    leadsResult,
+    stockResult,
+    reqsResult,
+  ] = await Promise.all([
+    supabaseAdmin.from("tenants").select("name").eq("id", tenantId).maybeSingle(),
+    supabaseAdmin
+      .from("invoices")
+      .select("total_amount, paid_amount, balance_amount, status, invoice_date")
+      .eq("tenant_id", tenantId)
+      .is("deleted_at", null),
+    supabaseAdmin
+      .from("business_events")
+      .select("id, event_code, entity_type, entity_id, payload, created_at")
+      .eq("tenant_id", tenantId)
+      .neq("event_code", "KPI_HISTORY_UPDATE")
+      .neq("entity_type", "kpi_history")
+      .order("created_at", { ascending: false })
+      .limit(10),
+    supabaseAdmin
+      .from("audit_log")
+      .select("id, event_code, entity_type, entity_id, action, user_id, ip_address, created_at")
+      .eq("tenant_id", tenantId)
+      .neq("event_code", "KPI_HISTORY_UPDATE")
+      .neq("entity_type", "kpi_history")
+      .order("created_at", { ascending: false })
+      .limit(20),
+    supabaseAdmin.from("leads").select("status").eq("tenant_id", tenantId).is("deleted_at", null),
+    supabaseAdmin.from("inventory_stock").select("available_quantity").eq("tenant_id", tenantId),
+    supabaseAdmin.from("requirements").select("status").eq("tenant_id", tenantId).is("deleted_at", null),
+  ]);
+
+  // 1. Tenant Name
   let tenantName = getBrandingDefaults(tenantCode).nombre_comercial;
-  const { data: tenantData } = await supabaseAdmin
-    .from("tenants")
-    .select("name")
-    .eq("id", tenantId)
-    .maybeSingle();
-  if (tenantData?.name) {
-    tenantName = tenantData.name;
+  if (tenantResult.data?.name) {
+    tenantName = tenantResult.data.name;
   }
 
-  // 2. Fetch Outstanding Accounts Receivable (AR) from Invoices
-  const { data: invoicesData, error: invError } = await supabaseAdmin
-    .from("invoices")
-    .select("total_amount, paid_amount, balance_amount, status, invoice_date")
-    .eq("tenant_id", tenantId)
-    .is("deleted_at", null);
+  // 2. Invoices
+  const invError = invoicesResult.error;
+  const invoicesData = invoicesResult.data;
 
   if (invError) {
     console.error("Error fetching invoices for dashboard:", invError);
@@ -170,16 +199,8 @@ export async function getDashboardCommandCenter(
       .reduce((sum: number, i: any) => sum + Number(i.total_amount || 0), 0);
   }
 
-  // 4. Fetch Pulse Feed (Recent events from business_events)
-  const { data: eventsData } = await supabaseAdmin
-    .from("business_events")
-    .select("id, event_code, entity_type, entity_id, payload, created_at")
-    .eq("tenant_id", tenantId)
-    .neq("event_code", "KPI_HISTORY_UPDATE")
-    .neq("entity_type", "kpi_history")
-    .order("created_at", { ascending: false })
-    .limit(10);
-
+  // 4. Pulse feed + Audit log
+  const eventsData = eventsResult.data;
   const recentEvents = (eventsData || []).map((ev: any) => ({
     id: ev.id,
     eventCode: ev.event_code,
@@ -189,19 +210,7 @@ export async function getDashboardCommandCenter(
     createdAt: ev.created_at,
   }));
 
-  // 4b. Fetch Audit Log (matriz RBAC: audit.view_tenant para AUDITOR/Director/Admin)
-  // Tabla audit_log: id, tenant_id, event_code, entity_type, entity_id, action,
-  //                  old_values, new_values, user_id, ip_address, user_agent, created_at
-  const { data: auditData } = await supabaseAdmin
-    .from("audit_log")
-    .select(
-      "id, event_code, entity_type, entity_id, action, user_id, ip_address, created_at"
-    )
-    .eq("tenant_id", tenantId)
-    .neq("event_code", "KPI_HISTORY_UPDATE")
-    .neq("entity_type", "kpi_history")
-    .order("created_at", { ascending: false })
-    .limit(20);
+  const auditData = auditResult.data;
 
   // Enriquecemos con email del usuario (join manual).
   const userIds = Array.from(
@@ -237,24 +246,14 @@ export async function getDashboardCommandCenter(
   }));
 
   // 5. Compute Operations Health
-  // - CRM (leads converted vs total leads, status = NEW count)
-  const { data: leadsData } = await supabaseAdmin
-    .from("leads")
-    .select("status")
-    .eq("tenant_id", tenantId)
-    .is("deleted_at", null);
-
+  const leadsData = leadsResult.data;
   const totalLeads = leadsData?.length || 0;
   const convertedLeads = leadsData?.filter((l: any) => l.status === "CONVERTIDO").length || 0;
   const newLeadsCount = leadsData?.filter((l: any) => l.status === "NUEVO").length || 0;
   const crmScore = totalLeads > 0 ? Math.round((convertedLeads / totalLeads) * 100) : 100;
 
   // - Inventario (SKUs with stock available <= 10)
-  const { data: stockData } = await supabaseAdmin
-    .from("inventory_stock")
-    .select("available_quantity")
-    .eq("tenant_id", tenantId);
-
+  const stockData = stockResult.data;
   const lowStockCount = stockData?.filter((s: any) => Number(s.available_quantity) <= 10).length || 0;
   const inventoryScore = Math.max(0, 100 - lowStockCount * 10);
 
@@ -270,12 +269,7 @@ export async function getDashboardCommandCenter(
   const billingScore = Math.round(collectionRate);
 
   // - Purchases (requirements in BORRADOR or NUEVO status)
-  const { data: reqsData } = await supabaseAdmin
-    .from("requirements")
-    .select("status")
-    .eq("tenant_id", tenantId)
-    .is("deleted_at", null);
-
+  const reqsData = reqsResult.data;
   const pendingPurchasesCount = reqsData?.filter((r: any) => r.status === "BORRADOR" || r.status === "NUEVO").length || 0;
   const purchasesScore = Math.max(0, 100 - pendingPurchasesCount * 8);
 

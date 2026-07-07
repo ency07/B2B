@@ -200,6 +200,25 @@ npm start
 3. Tests E2E (futuro): `src/tests/e2e/*.test.ts`
 4. Usar `describe`/`it`/`expect` de vitest
 
+## Salud y monitoreo
+
+### Health check
+- `GET /api/health` → 200 OK si la app responde
+- `GET /api/health?full=true` → verifica conexión a Supabase (503 si caído)
+
+### Logging
+- Usar `src/lib/utils/logger.ts` en vez de `console.*`
+- Niveles: `debug`, `info`, `warn`, `error` con tags por módulo
+- Integrar Sentry/Datadog reemplazando `setTransport()`
+
+### Trazado de rendimiento
+- `src/lib/utils/timing.ts` — `startTimer("label")` mide duración y logea >300ms como warning
+- Todas las Server Actions deberían envolver operaciones lentas con timing
+
+### Alertas (pendiente)
+- Sin integración activa. Recomendado: Sentry para errores + Datadog para métricas.
+- Monitorear: latencia de catálogo (>1s), errores de wizard, queries lentas del dashboard.
+
 ## Plan de rollback
 
 ### Rollback de código

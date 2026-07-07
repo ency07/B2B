@@ -6,13 +6,12 @@ import { getTenantId } from "@/erp/actions/core";
 import { resolveTenantOwnerUserIdAsync } from "@/platform/tenant/tenant-resolver";
 import { sanitizeObject } from "@/lib/utils/sanitize";
 import { checkRateLimit } from "@/lib/utils/rate-limiter";
+import { PUBLIC_EMAIL_DOMAINS, KNOWN_DISPOSABLE_DOMAINS } from "@/lib/constants";
 
 export interface LeadScoreResult {
   score: number;
   riskLevel: "CALIENTE" | "TIBIO" | "FRIO" | "SPAM";
 }
-
-const PUBLIC_DOMAINS = ["gmail.com", "yahoo.com", "outlook.com", "hotmail.com", "live.com", "icloud.com"];
 
 const createLeadSchema = z.object({
   clientId: z.string().uuid("Client ID inválido"),
@@ -66,7 +65,7 @@ export async function calculateLeadScore(
 
   // 3. Penalización por Dominios de Correo Públicos (No Corporativos)
   const emailDomain = email.split("@")[1]?.toLowerCase() || "";
-  const isPublicDomain = PUBLIC_DOMAINS.includes(emailDomain);
+  const isPublicDomain = PUBLIC_EMAIL_DOMAINS.includes(emailDomain);
   
   if (isPublicDomain) {
     score -= 20; // Penalización de 20 puntos por no usar correo corporativo
@@ -79,8 +78,10 @@ export async function calculateLeadScore(
   let riskLevel: "CALIENTE" | "TIBIO" | "FRIO" | "SPAM" = "FRIO";
 
   // Detección directa de SPAM (correos temporales o sospechosos)
-  const isDisposable = ["yopmail.com", "mailinator.com", "tempmail.com"].includes(emailDomain);
-  if (isDisposable || email.length < 5 || !email.includes("@")) {
+  // Validación de formato email con regex básico (al menos user@domain.tld)
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const isDisposable = KNOWN_DISPOSABLE_DOMAINS.includes(emailDomain);
+  if (isDisposable || !emailRegex.test(email)) {
     riskLevel = "SPAM";
     score = 0;
   } else if (score >= 70) {

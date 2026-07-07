@@ -165,11 +165,7 @@ export async function submitWizardData(
     client = newClient;
   }
 
-  if (!client) {
-    throw new Error("No se pudo obtener o crear el cliente.");
-  }
-
-  const clientId = client.id;
+  const clientId = client!.id;
 
   // 3. Reutilización de Contactos (client_contacts)
   let { data: contact } = await supabaseAdmin
