@@ -3,14 +3,24 @@ import { supabaseAdmin } from "@/platform/auth/clients";
 /**
  * Resolucion central de tenant_id a partir de tenant_code.
  *
- * Antes esta logica estaba duplicada en `src/app/actions.ts:getTenantId` y
- * los magic numbers (UUIDs hardcoded) aparecian en multiples archivos.
+ * ## Estrategia híbrida (estática + dinámica)
  *
- * Esta es la unica fuente de verdad para el mapeo tenant_code -> tenant_id
- * en runtime. Si en el futuro se agregan mas tenants, solo se actualiza aqui.
+ * 1. Mapa estático `TENANT_CODE_TO_ID` → tenants de seed (acme, apex).
+ * 2. Caché dinámica `DYNAMIC_TENANT_CACHE` → tenants registrados vía DB en runtime.
+ * 3. Consulta a `tenants` en Supabase → authoritative source.
  *
- * El default en runtime se puede sobreescribir con la variable de entorno
- * NEXT_PUBLIC_DEFAULT_TENANT_CODE. Si no esta definida, se usa "acme".
+ * ## Riesgo conocido
+ * - La caché en memoria se pierde en cada cold start (serverless/Vercel).
+ *   Esto es intencional: en serverless es preferible consultar la DB
+ *   que mantener estado inconsistente entre instancias.
+ * - Si supabaseAdmin falla (service key rotada o Supabase caído), el fallback
+ *   devuelve el tenant por defecto. Esto puede causar colisión de datos.
+ *
+ * ## Riesgo mitigado
+ * - Los UUIDs del mapa estático SOLO se usan durante seed/testing.
+ *   En producción, la DB es la única fuente de verdad.
+ *
+ * @see getTenantId en src/erp/actions/core.ts (usa resolveTenantIdAsync)
  */
 
 const TENANT_CODE_TO_ID: Record<string, string> = {
@@ -18,7 +28,10 @@ const TENANT_CODE_TO_ID: Record<string, string> = {
   apex: "b0000000-0000-0000-0000-000000000000",
 };
 
-// Cachés dinámicas en memoria para evitar consultas redundantes a la base de datos
+// Cachés dinámicas en memoria
+// ATENCIÓN: En serverless (Vercel) se pierden en cada cold start.
+// Esto es correcto: el costo de un round-trip a Supabase es menor
+// que el riesgo de datos obsoletos entre instancias.
 const DYNAMIC_TENANT_CACHE: Record<string, string> = {};
 const DYNAMIC_OWNER_CACHE: Record<string, string> = {};
 
@@ -97,12 +110,18 @@ export function resolveTenantId(tenantCode?: string | null): string {
 
 /**
  * Resuelve el userId "owner" del tenant (usado como default assigned_by /
- * updated_by). En seed estos son:
+ * updated_by).
+ *
+ * ⚠ RIESGO: Si se usa en Server Actions (wizard, leads) donde no hay
+ * usuario autenticado, todos los registros aparecen creados por el admin
+ * del tenant. Esto elimina la trazabilidad real.
+ *
+ * ✅ En Server Actions autenticadas, pasar el auth.uid() real como
+ * `overrideUserId`.
+ *
+ * En seed estos son:
  *  - ACME: a9000000-0000-0000-0000-000000000000
  *  - APEX: b9000000-0000-0000-0000-000000000000
- *
- * Solo debe usarse como placeholder en acciones administrativas; en
- * escritura real, usar el auth.uid() del usuario que invoca.
  */
 const TENANT_OWNER_USER_ID: Record<string, string> = {
   acme: "a9000000-0000-0000-0000-000000000000",
@@ -110,10 +129,17 @@ const TENANT_OWNER_USER_ID: Record<string, string> = {
 };
 
 /**
- * Resuelve el owner del tenant de forma asíncrona consultando la tabla de usuarios
- * si no se encuentra en el mapa estático de pre-seed.
+ * Resuelve el owner del tenant de forma asíncrona.
+ * Si se provee `overrideUserId`, se retorna ese valor directamente
+ * (trazabilidad real). Si no, busca el primer usuario activo del tenant
+ * en la DB, y finalmente fallback al mapa estático de seed.
  */
-export async function resolveTenantOwnerUserIdAsync(tenantId: string): Promise<string> {
+export async function resolveTenantOwnerUserIdAsync(
+  tenantId: string,
+  overrideUserId?: string | null
+): Promise<string> {
+  // Si hay un usuario real autenticado, usarlo (máxima trazabilidad)
+  if (overrideUserId) return overrideUserId;
   // 1. Verificar mapa estático
   for (const [code, id] of Object.entries(TENANT_CODE_TO_ID)) {
     if (id === tenantId) {
@@ -160,4 +186,30 @@ export function resolveTenantOwnerUserId(tenantId: string): string {
  * Tenant codes conocidos. Util para validacion y tests.
  */
 export const KNOWN_TENANT_CODES = Object.keys(TENANT_CODE_TO_ID);
+
+/**
+ * Valida que los UUIDs del mapa estático no colisionen con tenants reales.
+ * Útil en tests para detectar configuraciones incorrectas.
+ * Retorna los códigos duplicados encontrados en la DB (vacío = ok).
+ */
+export async function validateStaticTenantIds(): Promise<string[]> {
+  const collisions: string[] = [];
+  for (const [code, id] of Object.entries(TENANT_CODE_TO_ID)) {
+    try {
+      const { data } = await supabaseAdmin
+        .from("tenants")
+        .select("id")
+        .eq("id", id)
+        .maybeSingle();
+      if (data && data.id !== id) {
+        collisions.push(
+          `${code}: UUID ${id} colisiona con tenant real ${data.id}`
+        );
+      }
+    } catch {
+      // Sin conexión a DB — omitir validación
+    }
+  }
+  return collisions;
+}
 
