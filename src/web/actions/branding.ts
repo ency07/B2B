@@ -259,6 +259,10 @@ export async function restoreBrandingVersion(
 /**
  * Sube una imagen a Supabase Storage y retorna la URL pública
  */
+export async function getPublicBranding(tenantCode?: string | null): Promise<BrandingConfig> {
+  return getTenantBranding(tenantCode);
+}
+
 export async function uploadBrandingLogo(
   tenantCode: string | null,
   fileType: string, // e.g. logo_claro_url, logo_oscuro_url, favicon_url, etc.

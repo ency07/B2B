@@ -239,6 +239,51 @@ git push origin main
 2. Restaurar BD desde snapshot de Supabase (PITR)
 3. Re-deployar: `npm run build && npm start`
 
+## Despliegue
+
+### Opción 1: Vercel (recomendado)
+```bash
+# Instalar Vercel CLI
+npm i -g vercel
+
+# Configurar variables de entorno
+vercel env add NEXT_PUBLIC_SUPABASE_URL
+vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY
+vercel env add SUPABASE_SERVICE_ROLE_KEY
+vercel env add NEXT_PUBLIC_SITE_URL
+
+# Desplegar
+vercel --prod
+```
+
+### Opción 2: Docker
+```bash
+# Construir imagen
+docker build -t erp-web:latest .
+
+# Ejecutar contenedor
+docker run -d \
+  --name erp-web \
+  -p 3000:3000 \
+  --env-file .env.production \
+  erp-web:latest
+```
+
+### Opción 3: Node.js directo
+```bash
+npm run build
+node .next/standalone/server.js
+```
+
+### CI/CD Pipeline (GitHub Actions)
+El workflow `.github/workflows/ci.yml` ejecuta en cada push/PR:
+1. `tsc --noEmit` - Sin errores de tipo
+2. `npm run lint` - Sin errores de lint
+3. `npx vitest run` - Tests unitarios pasan
+4. `npm audit --audit-level=high` - Sin vulnerabilidades high+
+
+Para deploy a producción, ejecutar manualmente con Vercel CLI o GitHub Actions manual dispatch (TO-DO).
+
 ## Estrategia de migraciones para producción
 
 1. **Desarrollo**: las migraciones se crean en `supabase/migrations/` con timestamp
@@ -250,6 +295,77 @@ git push origin main
    - Verificar: `npx ts-node scripts/check-index-collisions.ts`
 4. **Seed de producción**: No hay seed automático. Los datos maestros se insertan manualmente.
 5. **Alternativa**: Usar Supabase Dashboard → SQL Editor para migraciones manuales.
+
+## Backup y Restauración de Base de Datos
+
+### Backup automático (Supabase Pro)
+Supabase Pro incluye backups diarios automáticos con retención de 7 días.
+- Point-in-Time Recovery (PITR) disponible en plan Pro (retención: 24h-7días según plan)
+- Los backups incluyen: schema completo + datos + storage
+
+### Backup manual (recomendado antes de migraciones críticas)
+```bash
+# Exportar schema y datos (excepto auth schema)
+pg_dump --dbname="$SUPABASE_DATABASE_URL" \
+  --schema=public \
+  --exclude-table-data='audit_logs' \
+  --file=backup_$(date +%Y%m%d).sql
+
+# Exportar solo schema (para control de versiones)
+pg_dump --dbname="$SUPABASE_DATABASE_URL" \
+  --schema=public \
+  --schema-only \
+  --file=schema_$(date +%Y%m%d).sql
+```
+
+### Restauración
+```bash
+# Restaurar backup completo
+psql "$SUPABASE_DATABASE_URL" < backup_20260601.sql
+
+# Restaurar desde Supabase Dashboard
+# Settings → Database → Restore → Point-in-Time
+```
+
+### Verificación post-restauración
+```bash
+npx ts-node scripts/check-rls-coverage.ts
+npx ts-node scripts/check-index-collisions.ts
+```
+
+### Política de retención
+| Tipo | Retención | Responsable |
+|------|-----------|-------------|
+| Automático Supabase | 7 días | Supabase |
+| Manual (pre-migración) | 30 días | Equipo DevOps |
+| Snapshots PITR | 24h-7días | Supabase (según plan) |
+
+## Estrategia de Down Migrations
+
+El proyecto no utiliza down migrations automáticas. Para revertir un cambio:
+
+### Reversión de migración simple (tabla nueva)
+```sql
+DROP TABLE IF EXISTS public.mi_tabla CASCADE;
+```
+
+### Reversión de migración compleja (columnas/políticas)
+```sql
+-- 1. Revertir políticas RLS
+DROP POLICY IF EXISTS mi_policy ON public.mi_tabla;
+
+-- 2. Revertir columnas
+ALTER TABLE public.mi_tabla DROP COLUMN IF EXISTS mi_columna;
+
+-- 3. Revertir índices
+DROP INDEX IF EXISTS idx_mi_tabla_mi_columna;
+```
+
+### Proceso de rollback completo
+1. Identificar el hash del deploy: `git log --oneline`
+2. Revertir código: `git revert <hash> --no-edit`
+3. Ejecutar SQL de reversión manual en Supabase Dashboard
+4. Verificar: `npx ts-node scripts/check-rls-coverage.ts && npx vitest run`
 
 ## Key features (web module)
 

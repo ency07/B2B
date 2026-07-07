@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
+
   // Optimización agresiva de imágenes
   images: {
     qualities: [60, 75, 85],

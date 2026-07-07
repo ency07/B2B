@@ -73,4 +73,14 @@ function createLogger(module: string) {
 
 export type Logger = ReturnType<typeof createLogger>;
 
+const rootLogger = createLogger("app");
+
+export function logError(message: string, opts?: Partial<LogEntry>) {
+  rootLogger.error(message, opts);
+}
+
+export function logWarn(message: string, opts?: Partial<LogEntry>) {
+  rootLogger.warn(message, opts);
+}
+
 export default createLogger;
