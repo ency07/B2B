@@ -29,6 +29,14 @@ const DEFAULT_TENANT_ID =
   TENANT_CODE_TO_ID[DEFAULT_TENANT_CODE] ?? TENANT_CODE_TO_ID.acme;
 
 /**
+ * Flag explícito para controlar warnings de tenant no encontrado.
+ * Reemplaza el uso de process.env.NODE_ENV para evitar que la lógica
+ * de negocio dependa de la variable de entorno de Node.
+ */
+const SUPPRESS_TENANT_WARNINGS =
+  process.env.SUPPRESS_TENANT_WARNINGS === "true";
+
+/**
  * Resuelve el tenant_id a partir del tenant_code de forma asíncrona.
  * Consulta la base de datos de Supabase si no se encuentra en el mapa en memoria
  * y almacena el resultado en caché.
@@ -61,7 +69,7 @@ export async function resolveTenantIdAsync(tenantCode?: string | null): Promise<
   }
 
   // Fallback a default
-  if (process.env.NODE_ENV !== "test") {
+  if (!SUPPRESS_TENANT_WARNINGS) {
     console.warn(
       `[tenant-resolver] Unknown tenant_code "${tenantCode}", falling back to default "${DEFAULT_TENANT_CODE}"`
     );
@@ -77,7 +85,7 @@ export function resolveTenantId(tenantCode?: string | null): string {
   if (!tenantCode) return DEFAULT_TENANT_ID;
   const id = TENANT_CODE_TO_ID[tenantCode] || DYNAMIC_TENANT_CACHE[tenantCode];
   if (!id) {
-    if (process.env.NODE_ENV !== "test") {
+    if (!SUPPRESS_TENANT_WARNINGS) {
       console.warn(
         `[tenant] Unknown tenant_code "${tenantCode}" in sync resolver, falling back to default "${DEFAULT_TENANT_CODE}"`
       );
