@@ -228,7 +228,7 @@ export async function createClientTicket(
 
   const parsed = createTicketSchema.safeParse(input);
   if (!parsed.success) {
-    const firstError = parsed.error.errors[0];
+    const firstError = parsed.error.issues[0];
     throw new Error(`Validación fallida: ${firstError.path.join(".")} — ${firstError.message}`);
   }
 
@@ -320,7 +320,7 @@ export async function sendClientMessage(
 
   const parsed = sendMessageSchema.safeParse({ body });
   if (!parsed.success) {
-    const firstError = parsed.error.errors[0];
+    const firstError = parsed.error.issues[0];
     throw new Error(`Validación fallida: ${firstError.path.join(".")} — ${firstError.message}`);
   }
 
