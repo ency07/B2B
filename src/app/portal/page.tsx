@@ -9,6 +9,7 @@ import {
   getClientPayments,
   getClientTickets,
   getClientMessages,
+  getClientRequirements,
 } from "@/portal/actions/portal";
 import { buildLoginUrl } from "@/utils/auth-redirect";
 import CustomerPortalClient from "./client-page";
@@ -30,7 +31,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
     return {
       title: `${companyName} — Portal`,
     };
-  } catch (error) {
+  } catch {
     return { title: "Portal de Clientes" };
   }
 }
@@ -84,12 +85,13 @@ export default async function PortalPage({ searchParams }: Props) {
   }
 
   // Cargar datos del client (per-client filtering por client_id).
-  const [jobs, invoices, payments, tickets, messages] = await Promise.all([
+  const [jobs, invoices, payments, tickets, messages, requirements] = await Promise.all([
     getClientJobs(previewClientId),
     getClientInvoices(previewClientId),
     getClientPayments(previewClientId),
     getClientTickets(previewClientId),
     getClientMessages(previewClientId),
+    getClientRequirements(previewClientId),
   ]);
 
   // Documentos tecnicos asociados a las OTs del cliente
@@ -101,6 +103,7 @@ export default async function PortalPage({ searchParams }: Props) {
       .select("id, file_name, document_type, storage_path, storage_provider")
       .in("entity_id", jobIds)
       .eq("entity_type", "JOB")
+      .eq("tenant_id", currentClient.tenantId)
       .eq("status", "PUBLICADO")
       .is("deleted_at", null)
       .order("uploaded_at", { ascending: false });
@@ -109,6 +112,7 @@ export default async function PortalPage({ searchParams }: Props) {
       const bucketUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
         ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/`
         : "";
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       documents = docsData.map((d: any) => ({
         id: d.id,
         name: d.file_name,
@@ -138,75 +142,27 @@ export default async function PortalPage({ searchParams }: Props) {
   }
 
   return (
-    <div className="dark">
-      <CustomerPortalClient
-        clientInfo={{
-          legalName: currentClient.legalName,
-          taxId: currentClient.taxId,
-          email: currentClient.email,
-        }}
-        jobs={jobs}
-        invoices={invoices}
-        payments={payments}
-        tickets={tickets}
-        messages={messages}
-        previewClientId={previewClientId}
-        isPlatformAdmin={!!currentClient.isPlatformAdmin}
-        isClientContact={!!currentClient.isClientContact}
-        allClients={allClients}
-        documents={documents}
-      />
-    </div>
+    <CustomerPortalClient
+      clientInfo={{
+        legalName: currentClient.legalName,
+        taxId: currentClient.taxId,
+        email: currentClient.email,
+      }}
+      jobs={jobs}
+      invoices={invoices}
+      payments={payments}
+      tickets={tickets}
+      messages={messages}
+      previewClientId={previewClientId}
+      isPlatformAdmin={!!currentClient.isPlatformAdmin}
+      isClientContact={!!currentClient.isClientContact}
+      allClients={allClients}
+      documents={documents}
+      requirements={requirements}
+    />
   );
 }
 
-/**
- * Estado visible cuando el usuario intenta acceder a un tenant distinto al suyo
- */
-function PortalTenantMismatch({
-  tenantParam,
-  currentClientTenant,
-}: {
-  tenantParam: string;
-  currentClientTenant: string | null | undefined;
-}) {
-  return (
-    <main className="min-h-screen flex items-center justify-center bg-stone-50 p-6">
-      <div className="w-full max-w-md rounded-2xl border border-stone-200 bg-white p-8 text-center shadow-sm">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-700">
-          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M4.93 4.93l14.14 14.14M12 21a9 9 0 100-18 9 9 0 000 18z" />
-          </svg>
-        </div>
-        <h1 className="text-lg font-semibold text-stone-900 tracking-tight">
-          Acceso Restringido por Tenant
-        </h1>
-        <p className="mt-2 text-sm text-stone-600 leading-relaxed">
-          Tu cuenta pertenece a la empresa <span className="font-bold text-stone-900 font-mono">{currentClientTenant || "SIN_TENANT"}</span>, pero estás intentando acceder al espacio de la empresa <span className="font-bold text-stone-900 font-mono">{tenantParam}</span>.
-        </p>
-        <p className="mt-4 text-xs text-stone-500 leading-relaxed">
-          Por razones de confidencialidad y aislamiento de datos entre clientes, no se permite el acceso cruzado.
-        </p>
-        <div className="mt-6 flex justify-center gap-3">
-          <a
-            href={`/portal?tenant=${currentClientTenant || ""}`}
-            className="inline-flex h-9 items-center justify-center rounded-md bg-stone-900 px-4 text-xs font-semibold uppercase tracking-widest text-white hover:bg-stone-850 transition-colors"
-          >
-            Ir a mi Portal
-          </a>
-          <form action="/api/auth/signout" method="post">
-            <button
-              type="submit"
-              className="inline-flex h-9 items-center justify-center rounded-md border border-stone-300 bg-white px-4 text-xs font-semibold uppercase tracking-widest text-stone-700 hover:bg-stone-50 transition-colors"
-            >
-              Cerrar sesión
-            </button>
-          </form>
-        </div>
-      </div>
-    </main>
-  );
-}
 
 /**
  * Estado visible cuando el usuario está autenticado pero no tiene un client
