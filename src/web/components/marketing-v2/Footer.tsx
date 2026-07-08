@@ -12,7 +12,7 @@ interface FooterProps {
   branding?: any;
 }
 
-const NAV_GROUPS = [
+const STATIC_NAV_GROUPS = [
   {
     title: "Capacidades",
     links: [
@@ -31,15 +31,6 @@ const NAV_GROUPS = [
       { label: "Sistemas hongo", href: "#capacidades" },
     ],
   },
-  {
-    title: "Empresa",
-    links: [
-      { label: "Casos de éxito", href: "#casos" },
-      { label: "Calculadora CFM", href: "#calculadora" },
-      { label: "Portal cliente", href: "/portal" },
-      { label: "Cotizador", href: "/wizard" },
-    ],
-  },
 ];
 
 const OFFICES = [
@@ -49,6 +40,22 @@ const OFFICES = [
 
 export function Footer({ siteName, tenantCode, branding = {} }: FooterProps) {
   const year = new Date().getFullYear();
+  const tc = tenantCode || "";
+  const portalHref = tc ? `/portal?tenant=${tc}` : "/portal";
+  const wizardHref = tc ? `/wizard?tenant=${tc}` : "/wizard";
+
+  const NAV_GROUPS = [
+    ...STATIC_NAV_GROUPS,
+    {
+      title: "Empresa",
+      links: [
+        { label: "Casos de éxito", href: "#casos" },
+        { label: "Calculadora CFM", href: "#calculadora" },
+        { label: "Portal cliente", href: portalHref },
+        { label: "Cotizador", href: wizardHref },
+      ],
+    },
+  ];
 
   return (
     <footer className="relative w-full bg-[#081418] text-paper overflow-hidden">
@@ -78,7 +85,7 @@ export function Footer({ siteName, tenantCode, branding = {} }: FooterProps) {
 
           <div className="mt-12 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
             <a
-              href="/wizard"
+              href={wizardHref}
               className="group inline-flex items-center justify-center gap-3 h-16 px-10 bg-paper text-ink text-base font-medium tracking-tight rounded-sm hover:bg-white/90 transition-colors"
             >
               <span>Iniciar Cotización Industrial</span>
@@ -236,7 +243,13 @@ export function Footer({ siteName, tenantCode, branding = {} }: FooterProps) {
           <div className="hidden sm:flex items-center gap-6">
             <span>{branding.nombre_erp || "Sistema B2B"} {branding.version_sistema || "v1.0.0"}</span>
             <span>Bogotá · 4.7110° N</span>
-            <span>Build 2026.06.27</span>
+            <a
+              href="/login"
+              className="hover:text-white/70 transition-colors"
+              title="Acceso personal interno"
+            >
+              Área interna ↗
+            </a>
           </div>
           <span>© 2009 — {year}</span>
         </div>

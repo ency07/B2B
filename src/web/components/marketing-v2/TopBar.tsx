@@ -231,6 +231,17 @@ export function TopBar({ siteName, logoUrl, tenantCode }: TopBarProps) {
               Portal cliente
             </a>
 
+            <a
+              href="/login"
+              title="Acceso personal interno"
+              className={`
+                hidden lg:inline-block text-[11px] font-mono uppercase tracking-wider px-3 py-2 transition-colors duration-300 opacity-40 hover:opacity-80
+                ${onHero ? "text-white" : "text-ink"}
+              `}
+            >
+              Staff
+            </a>
+
             {/* CTA: con microinteracción de "shimmer" al hover */}
             <a
               href={`/wizard?tenant=${tenantCode}`}
@@ -351,6 +362,12 @@ export function TopBar({ siteName, logoUrl, tenantCode }: TopBarProps) {
                     className="block py-2 text-base text-ink-soft hover:text-ink transition-colors font-sans"
                   >
                     Portal cliente
+                  </a>
+                  <a
+                    href="/login"
+                    className="block py-2 text-sm text-ink-muted hover:text-ink-soft transition-colors font-mono uppercase tracking-wider"
+                  >
+                    Acceso Staff (ERP)
                   </a>
                 </div>
               </nav>
