@@ -91,7 +91,6 @@ export async function getCurrentClient(
     if (userErr) return null;
 
     // ── Modo explícito: si el usuario elige "client", saltamos Path A ────────────
-    const isStaffMode = mode === "staff";
     const isClientMode = mode === "client";
 
     if (userRow && !isClientMode) {

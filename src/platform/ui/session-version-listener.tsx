@@ -7,7 +7,7 @@ export function SessionVersionListener() {
   const router = useRouter();
 
   useEffect(() => {
-    let currentVersion = document.cookie
+    const currentVersion = document.cookie
       .split("; ")
       .find((row) => row.startsWith("sb-session-version="))
       ?.split("=")[1];

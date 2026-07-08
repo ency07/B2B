@@ -10,7 +10,7 @@ import * as z from "zod";
 import { Eye, EyeOff, Lock, Mail, ArrowLeft, ShieldCheck } from "lucide-react";
 import { getBrandingDefaults } from "@/platform/branding/branding-defaults";
 import { loginPortal } from "@/portal/actions/auth";
-import { applyTenantToPath, isSafeRedirect } from "@/utils/auth-redirect";
+import { isSafeRedirect } from "@/utils/auth-redirect";
 
 const loginSchema = z.object({
   email: z.string().email("Correo no válido"),
