@@ -228,7 +228,7 @@ export function OrderTrackingSection({
                         <span>RPM: 1,740</span>
                         <span>TEMP: 43.2 °C</span>
                         <span className="ml-auto flex items-center gap-1.5 text-emerald-400">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                           EN TÚNEL
                         </span>
                       </div>

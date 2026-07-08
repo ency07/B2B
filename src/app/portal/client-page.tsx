@@ -737,7 +737,7 @@ export default function CustomerPortal({
                                 <Badge 
                                   variant="secondary"
                                   className={`text-[9px] font-mono border-none ${
-                                    inv.status === "PAGADA" ? "bg-emerald-500/10 text-emerald-500" : "bg-destructive/10 text-destructive animate-pulse"
+                                    inv.status === "PAGADA" ? "bg-emerald-500/10 text-emerald-500" : "bg-destructive/10 text-destructive"
                                   }`}
                                 >
                                   {inv.status}
@@ -970,7 +970,7 @@ export default function CustomerPortal({
                                   {tck.severity}
                                 </Badge>
                                 <Badge className={`text-[8px] font-mono border-none ${
-                                  tck.status === "RESUELTO" ? "bg-emerald-500/15 text-emerald-500" : "bg-sky-500/15 text-sky-500 animate-pulse"
+                                  tck.status === "RESUELTO" ? "bg-emerald-500/15 text-emerald-500" : "bg-sky-500/15 text-sky-500"
                                 }`}>
                                   {tck.status}
                                 </Badge>
