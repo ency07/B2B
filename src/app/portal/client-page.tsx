@@ -891,8 +891,9 @@ export default function CustomerPortal({
                       </h4>
                       <form onSubmit={handleSubmitTicket} className="space-y-4">
                         <div className="space-y-1.5">
-                          <label className="text-[10px] font-mono text-muted-foreground uppercase font-bold">Orden de Trabajo Relacionada:</label>
-                          <select 
+                          <label htmlFor="ticket-ot" className="text-[10px] font-mono text-muted-foreground uppercase font-bold">Orden de Trabajo Relacionada:</label>
+                          <select
+                            id="ticket-ot"
                             value={newTicketOt}
                             onChange={(e) => setNewTicketOt(e.target.value)}
                             className="w-full bg-background border border-border text-foreground text-xs rounded-lg p-2.5 focus:ring-1 focus:ring-primary focus:outline-none"
@@ -903,8 +904,9 @@ export default function CustomerPortal({
                           </select>
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-[10px] font-mono text-muted-foreground uppercase font-bold">Criticidad del Reporte:</label>
-                          <select 
+                          <label htmlFor="ticket-severity" className="text-[10px] font-mono text-muted-foreground uppercase font-bold">Criticidad del Reporte:</label>
+                          <select
+                            id="ticket-severity"
                             value={newTicketSeverity}
                             onChange={(e) => setNewTicketSeverity(e.target.value)}
                             className="w-full bg-background border border-border text-foreground text-xs rounded-lg p-2.5 focus:ring-1 focus:ring-primary focus:outline-none"
@@ -915,8 +917,9 @@ export default function CustomerPortal({
                           </select>
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-[10px] font-mono text-muted-foreground uppercase font-bold">Título / Asunto:</label>
-                          <Input 
+                          <label htmlFor="ticket-subject" className="text-[10px] font-mono text-muted-foreground uppercase font-bold">Título / Asunto:</label>
+                          <Input
+                            id="ticket-subject"
                             placeholder="Asunto breve..."
                             value={newTicketSubject}
                             onChange={(e) => setNewTicketSubject(e.target.value)}
@@ -924,8 +927,9 @@ export default function CustomerPortal({
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-[10px] font-mono text-muted-foreground uppercase font-bold">Descripción Detallada del Suceso:</label>
+                          <label htmlFor="ticket-desc" className="text-[10px] font-mono text-muted-foreground uppercase font-bold">Descripción Detallada del Suceso:</label>
                           <textarea
+                            id="ticket-desc"
                             rows={3}
                             placeholder="Describa el requerimiento de soporte o incidente físico del ventilador..."
                             value={newTicketDesc}
