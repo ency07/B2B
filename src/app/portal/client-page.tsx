@@ -707,15 +707,16 @@ export default function CustomerPortal({
                   {/* Invoices List */}
                   <div className="rounded-xl border border-border bg-background/20 overflow-hidden">
                     <table className="w-full border-collapse text-left text-xs font-mono">
+                      <caption className="sr-only">Lista de facturas del cliente</caption>
                       <thead className="bg-muted/55 border-b border-border text-[9px] uppercase tracking-wider text-muted-foreground font-bold">
                         <tr>
-                          <th className="p-4">Folio Factura</th>
-                          <th className="p-4">Fecha Emisión</th>
-                          <th className="p-4">Detalle del Concepto</th>
-                          <th className="p-4 text-right">Monto Total</th>
-                          <th className="p-4 text-right">Saldo en Mora</th>
-                          <th className="p-4 text-center">Estado</th>
-                          <th className="p-4 text-center">Acciones</th>
+                          <th scope="col" className="p-4">Folio Factura</th>
+                          <th scope="col" className="p-4">Fecha Emisión</th>
+                          <th scope="col" className="p-4">Detalle del Concepto</th>
+                          <th scope="col" className="p-4 text-right">Monto Total</th>
+                          <th scope="col" className="p-4 text-right">Saldo en Mora</th>
+                          <th scope="col" className="p-4 text-center">Estado</th>
+                          <th scope="col" className="p-4 text-center">Acciones</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border text-foreground">
