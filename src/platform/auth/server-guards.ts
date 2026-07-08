@@ -29,6 +29,7 @@ export async function getAuthContext(): Promise<AuthContext | null> {
     const cookieStore = await cookies();
     const accessToken =
       cookieStore.get("sb-erp-access-token")?.value ||
+      cookieStore.get("sb-portal-access-token")?.value ||
       cookieStore.get("sb-access-token")?.value;
     if (!accessToken) return null;
 

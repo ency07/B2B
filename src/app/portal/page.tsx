@@ -38,7 +38,11 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 async function hasAccessTokenCookie(): Promise<boolean> {
   try {
     const store = await cookies();
-    return Boolean(store.get("sb-access-token")?.value);
+    return Boolean(
+      store.get("sb-portal-access-token")?.value ||
+      store.get("sb-erp-access-token")?.value ||
+      store.get("sb-access-token")?.value
+    );
   } catch {
     return false;
   }

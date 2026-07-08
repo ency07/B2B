@@ -1,3 +1,4 @@
+ 
 "use client";
 
 import * as React from "react";
@@ -6,17 +7,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { ArrowRight, ArrowLeft, Eye, EyeOff, Lock, Mail, User } from "lucide-react";
-import { getTenantConfig } from "@/platform/tenant/tenant";
-import { getBrandingDefaults } from "@/platform/branding/branding-defaults";
+import { Eye, EyeOff, Lock, Mail, ArrowLeft, ShieldCheck } from "lucide-react";
 import { getPortalBrowserClient } from "@/platform/auth/clients";
 import { applyTenantToPath, isSafeRedirect } from "@/utils/auth-redirect";
-import { cn } from "@/platform/utils/cn";
-import { getUserRole } from "@/platform/users/users";
+import { getBrandingDefaults } from "@/platform/branding/branding-defaults";
 
 const loginSchema = z.object({
-  email: z.string().email("Correo electrónico no válido"),
-  password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
+  email: z.string().email("Correo no válido"),
+  password: z.string().min(6, "Mínimo 6 caracteres"),
 });
 
 type LoginFields = z.infer<typeof loginSchema>;
@@ -28,8 +26,6 @@ export function PortalLoginFeature() {
   const rawRedirect = searchParams.get("redirect") || "/portal";
   const redirectTo = isSafeRedirect(rawRedirect) ? rawRedirect : "/portal";
   const defaults = getBrandingDefaults(tenantParam);
-  const companyName = defaults.nombre_comercial;
-  const companyRazon = defaults.razon_social;
 
   const supabase = getPortalBrowserClient();
 
@@ -37,19 +33,12 @@ export function PortalLoginFeature() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [authError, setAuthError] = React.useState<string | null>(null);
 
-  // Portal always forces dark mode for the gunmetal visual style
   React.useEffect(() => {
-    const root = document.documentElement;
-    root.classList.add("dark");
-    // Clean up if we unmount
-    return () => root.classList.remove("dark");
+    document.documentElement.classList.add("dark");
+    return () => document.documentElement.classList.remove("dark");
   }, []);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginFields>({
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginFields>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "" },
   });
@@ -73,142 +62,136 @@ export function PortalLoginFeature() {
       return;
     }
 
-    let destination = applyTenantToPath(redirectTo, tenantParam);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const userRole = await getUserRole(user.id);
-        // null → client_contact (not in public.users) → allow portal
-        // "CLIENTE" → legacy portal role → allow portal
-        // anything else (ADMIN, STAFF…) → ERP employee → send to ERP
-        if (userRole !== null && userRole !== "CLIENTE") {
-          destination = applyTenantToPath("/dashboard", tenantParam);
-        }
-      }
-    } catch (err) {
-      console.error("Error al obtener rol del usuario en login:", err);
-    }
-
+    // Portal login always goes to /portal — no getUserRole check needed.
+    // getCurrentClient() in the portal page resolves who the user is:
+    // admin → shows admin view; client_contact → shows their company only.
+    const destination = applyTenantToPath(redirectTo, tenantParam);
     router.push(destination);
     router.refresh();
   };
 
-  const submitLabel = `Entrar a ${defaults.nombre_portal_cliente}`;
   const siteUrl = tenantParam ? `/?tenant=${tenantParam}` : "/";
+  const companyName = defaults.nombre_comercial;
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 transition-colors duration-300 bg-background text-foreground">
-      <div className="w-full max-w-md">
-        <PortalLoginHeader companyName={companyName} companyRazon={companyRazon} />
+    <div className="min-h-screen bg-[#080b12] flex flex-col items-center justify-center p-4 relative overflow-hidden">
+      {/* Background grid */}
+      <div
+        className="absolute inset-0 opacity-[0.03]"
+        style={{
+          backgroundImage:
+            "linear-gradient(#60a5fa 1px, transparent 1px), linear-gradient(90deg, #60a5fa 1px, transparent 1px)",
+          backgroundSize: "40px 40px",
+        }}
+      />
+      {/* Glow top-center */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full bg-blue-600/10 blur-[80px] pointer-events-none" />
 
-        <div className="mt-6 p-8 rounded-2xl border border-border bg-card shadow-xl backdrop-blur-sm">
+      <div className="relative z-10 w-full max-w-sm">
+        {/* Logo / company */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-600/20 border border-blue-500/30 mb-4">
+            <ShieldCheck className="w-6 h-6 text-blue-400" strokeWidth={1.5} />
+          </div>
+          <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-blue-400 mb-1">
+            Portal de Clientes
+          </p>
+          <h1 className="text-xl font-semibold text-white tracking-tight">
+            {companyName}
+          </h1>
+          <p className="text-xs text-zinc-500 mt-1">
+            Proyectos · Facturas · Soporte
+          </p>
+        </div>
+
+        {/* Card */}
+        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 backdrop-blur-sm shadow-2xl shadow-black/40">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {authError && (
-              <div className="px-4 py-3 rounded-lg bg-destructive/10 border border-destructive/20 text-sm text-destructive font-medium">
-                {authError}
+              <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-400">
+                <span className="mt-px shrink-0">⚠</span>
+                <span>{authError}</span>
               </div>
             )}
 
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                Correo Electrónico
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
+                Correo electrónico
               </label>
-              <div className="relative flex items-center">
-                <Mail className="absolute left-3 w-4 h-4 text-muted-foreground shrink-0" />
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                 <input
                   type="email"
                   {...register("email")}
-                  placeholder="nombre@empresa.com"
+                  placeholder="tu@empresa.com"
                   autoComplete="email"
-                  className="w-full pl-10 pr-4 py-2 rounded-lg border border-border bg-background text-sm text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary focus:border-primary transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-blue-500/60 focus:bg-white/[0.07] transition-all"
                 />
               </div>
               {errors.email && (
-                <p className="text-xs text-destructive mt-0.5">{errors.email.message}</p>
+                <p className="text-[11px] text-red-400">{errors.email.message}</p>
               )}
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
                   Contraseña
                 </label>
                 <Link
                   href={`/recovery${tenantParam ? `?tenant=${tenantParam}` : ""}`}
-                  className="text-xs text-primary hover:underline font-medium"
+                  className="text-[11px] text-blue-400 hover:text-blue-300 transition-colors"
                 >
                   ¿La olvidaste?
                 </Link>
               </div>
-              <div className="relative flex items-center">
-                <Lock className="absolute left-3 w-4 h-4 text-muted-foreground shrink-0" />
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                 <input
                   type={showPassword ? "text" : "password"}
                   {...register("password")}
                   placeholder="••••••••"
                   autoComplete="current-password"
-                  className="w-full pl-10 pr-10 py-2 rounded-lg border border-border bg-background text-sm text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary focus:border-primary transition-all"
+                  className="w-full pl-10 pr-10 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-blue-500/60 focus:bg-white/[0.07] transition-all"
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 text-muted-foreground hover:text-foreground cursor-pointer"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
+                  tabIndex={-1}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
               {errors.password && (
-                <p className="text-xs text-destructive mt-0.5">{errors.password.message}</p>
+                <p className="text-[11px] text-red-400">{errors.password.message}</p>
               )}
             </div>
 
             <button
               type="submit"
               disabled={isLoading}
-              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold hover:opacity-90 active:scale-98 transition-all cursor-pointer disabled:opacity-50"
+              className="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
             >
               {isLoading ? (
-                <span className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
-                <>
-                  {submitLabel} <ArrowRight className="w-4 h-4" />
-                </>
+                "Ingresar al Portal"
               )}
             </button>
           </form>
+        </div>
 
-          <div className="pt-4 border-t border-border flex justify-center mt-6">
-            <Link
-              href={siteUrl}
-              className="inline-flex items-center gap-1.5 text-[11px] font-mono text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ArrowLeft className="w-3 h-3" strokeWidth={1.5} />
-              Volver al sitio web
-            </Link>
-          </div>
+        <div className="mt-5 text-center">
+          <Link
+            href={siteUrl}
+            className="inline-flex items-center gap-1.5 text-[11px] font-mono text-zinc-600 hover:text-zinc-400 transition-colors"
+          >
+            <ArrowLeft className="w-3 h-3" strokeWidth={1.5} />
+            Volver al sitio
+          </Link>
         </div>
       </div>
-    </div>
-  );
-}
-
-function PortalLoginHeader({ companyName, companyRazon }: { companyName: string; companyRazon: string; }) {
-  return (
-    <div className="text-center space-y-3">
-      <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/30">
-        <User className="w-7 h-7" strokeWidth={1.5} />
-      </div>
-      <div className="space-y-1">
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-widest border bg-primary/15 text-primary border-primary/40">
-          Portal Cliente
-        </span>
-      </div>
-      <h1 className="text-[20px] font-semibold text-foreground tracking-tight">
-        Bienvenido a tu portal
-      </h1>
-      <p className="text-[12px] text-muted-foreground">
-        {companyRazon} — Seguimiento de proyectos, facturas y soporte
-      </p>
     </div>
   );
 }

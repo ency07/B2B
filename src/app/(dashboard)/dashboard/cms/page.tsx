@@ -1253,7 +1253,7 @@ export default function CmsPage() {
             </div>
             
             <div className="space-y-4 max-w-2xl">
-              {brandingState.chatbot_steps && (brandingState.chatbot_steps as {id: string; sender: string; forWizardStep?: number; [key: string]: unknown}[]).map((step, sIdx: number) => (
+              {brandingState.chatbot_steps && (brandingState.chatbot_steps as any[]).map((step: any, sIdx: number) => (
                 <div key={step.id} className="p-4 rounded-xl border border-border bg-accent/15 space-y-3">
                   <div className="flex items-center justify-between border-b border-border/50 pb-2 mb-1">
                     <span className="text-[10px] font-mono font-bold text-primary uppercase">Mensaje ID: {step.id}</span>
