@@ -42,5 +42,14 @@ export async function POST(request: Request) {
     response.cookies.set(name, "", { path: "/", maxAge: 0, sameSite: "lax" });
   }
 
+  // Increment session version to force other tabs to detect logout
+  const sessionVersion = Number(cookieStore.get("sb-session-version")?.value || "0") + 1;
+  response.cookies.set("sb-session-version", String(sessionVersion), {
+    path: "/",
+    sameSite: "lax",
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+  });
+
   return response;
 }
