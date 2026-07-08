@@ -749,7 +749,7 @@ export default function CustomerPortal({
                                           onClick={() => setSelectedInvoice(inv)}
                                           className="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-mono h-8 px-3 flex items-center gap-1 cursor-pointer"
                                         >
-                                          <CreditCard className="w-3.5 h-3.5" /> Pagar en Línea
+                                          <CreditCard className="w-3.5 h-3.5" /> Ver detalle de factura
                                         </Button>
                                       </SheetTrigger>
 
@@ -758,8 +758,8 @@ export default function CustomerPortal({
                                       <SheetContent className="bg-card border-l border-border max-w-[85vw] sm:max-w-[480px]">
                                         <div className="space-y-6 pt-6 font-sans">
                                           <div className="space-y-1">
-                                            <span className="text-[10px] font-mono text-primary font-bold uppercase tracking-wider">// PAGOS_EN_LINEA</span>
-                                            <h3 className="text-lg font-bold text-foreground">Pago en línea no disponible todavía</h3>
+                                            <span className="text-[10px] font-mono text-primary font-bold uppercase tracking-wider">// DETALLE_FACTURA</span>
+                                            <h3 className="text-lg font-bold text-foreground">Detalle de factura</h3>
                                             <p className="text-xs text-muted-foreground font-sans">
                                               {companyName} está habilitando el pago en línea. Por ahora, coordina el pago de esta factura directamente con tu ejecutivo.
                                             </p>
