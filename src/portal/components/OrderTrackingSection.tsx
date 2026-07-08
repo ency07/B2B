@@ -240,12 +240,17 @@ export function OrderTrackingSection({
           })}
 
           {filtered.length === 0 && (
-            <div className="py-12 text-center">
+            <div className="py-12 text-center space-y-3">
               <p className="text-sm text-muted-foreground">
                 {searchQuery
                   ? `Sin resultados para "${searchQuery}"`
                   : "No hay órdenes de trabajo activas."}
               </p>
+              {!searchQuery && (
+                <p className="text-xs text-muted-foreground">
+                  Si esperas ver una OT activa, contacta a tu ejecutivo para confirmar el estado.
+                </p>
+              )}
             </div>
           )}
         </div>

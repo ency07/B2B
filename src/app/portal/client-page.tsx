@@ -856,12 +856,20 @@ export default function CustomerPortal({
                     </div>
                   </div>
 
-                  <div className="border border-dashed border-border rounded-xl p-10 text-center space-y-2">
+                  <div className="border border-dashed border-border rounded-xl p-10 text-center space-y-4">
                     <FileText className="w-8 h-8 mx-auto text-muted-foreground" />
-                    <p className="text-sm text-foreground font-bold">Todavía no hay documentos disponibles</p>
-                    <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                      Cuando tu ejecutivo suba planos, manuales o certificados de tu OT, aparecerán aquí para descarga.
-                    </p>
+                    <div className="space-y-1">
+                      <p className="text-sm text-foreground font-bold">Todavía no hay documentos disponibles</p>
+                      <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                        Cuando tu ejecutivo suba planos, manuales o certificados de tu OT, aparecerán aquí para descarga.
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() => setIsChatOpen(true)}
+                      className="bg-primary hover:bg-primary/95 text-white text-xs font-mono px-4 py-2 rounded-lg cursor-pointer"
+                    >
+                      Solicitar a mi ejecutivo
+                    </Button>
                   </div>
                 </div>
               )}
