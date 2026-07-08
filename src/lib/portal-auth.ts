@@ -1,17 +1,23 @@
 /**
- * Auth de cliente para el Portal (P8 - portal).
+ * Auth de cliente para el Portal.
  *
- * Helpers server-side para:
- *  - Obtener el client actual del usuario autenticado.
- *  - Validar que el usuario tiene un client asociado.
+ * Dos identidades válidas para entrar al portal:
  *
- * Estrategia:
- *  1. Leer la cookie `sb-access-token` (espejada por supabaseAuthStorage
- *     en el cliente). Contiene el JWT crudo.
- *  2. Validar el JWT con supabase.auth.getUser(token).
- *  3. Buscar la fila en public.users por auth_user_id.
- *  4. Buscar el client en public.clients donde assigned_user_id = users.id.
- *  5. Devolver el client o null si algo falla.
+ *  A) ADMIN en modo revisión (SUPER_ADMIN / ADMIN_DEV de public.users):
+ *     - Puede elegir qué cliente ver vía previewClientId en la URL.
+ *     - Puede cambiar de empresa con el switcher.
+ *     - isPlatformAdmin = true, isClientContact = false.
+ *
+ *  B) CLIENTE REAL (client_contacts.auth_user_id = auth.uid()):
+ *     - Ve solo su propia empresa, sin importar qué llegue en la URL.
+ *     - No puede usar previewClientId para ver datos de otro cliente.
+ *     - isPlatformAdmin = false, isClientContact = true.
+ *
+ * Aislamiento garantizado en dos capas:
+ *  - Layer 1 (TypeScript): el path B ignora previewClientId totalmente.
+ *  - Layer 2 (SQL): las funciones RPC SECURITY DEFINER llaman a
+ *    is_portal_client_for(p_client_id) que verifica auth.uid() ↔ client_id
+ *    en la base de datos — si Layer 1 tuviera un bug, Layer 2 bloquea igual.
  */
 
 import { cookies } from "next/headers";
@@ -29,16 +35,15 @@ export interface CurrentClient {
   email: string;
   status: string;
   isPlatformAdmin?: boolean;
+  isClientContact?: boolean;
   tenantId?: string | null;
   tenantCode?: string | null;
 }
 
 /**
- * Cliente Supabase autenticado con la sesión real del usuario de portal
- * (anon key + JWT de la cookie), NO con service_role. Úsalo para cualquier
- * lectura de datos de negocio (jobs, invoices, payments) en vez de
- * supabaseAdmin, para que RLS/las funciones RPC SECURITY DEFINER se evalúen
- * con la identidad real del invocador en vez de bypasearse por completo.
+ * Cliente Supabase autenticado con la sesión real del usuario del portal
+ * (anon key + JWT de la cookie). NO service_role — las RPC SECURITY DEFINER
+ * re-validan el rol en SQL con el uid() real del invocador.
  */
 export async function getPortalAuthenticatedClient() {
   const cookieStore = await cookies();
@@ -61,8 +66,6 @@ export async function getCurrentClient(previewClientId?: string | null): Promise
       cookieStore.get("sb-access-token")?.value;
     if (!accessToken) return null;
 
-    // Validar sesion con el cliente anon (es server-side, no se persiste la
-    // sesion; solo validamos el JWT y leemos el user del payload).
     const anon = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
@@ -70,97 +73,126 @@ export async function getCurrentClient(previewClientId?: string | null): Promise
     if (error || !data.user) return null;
     const authUser = data.user;
 
-    // Buscar la fila en public.users por auth_user_id.
-    // Usamos el service role key para bypasear RLS y leer users.
     const admin = createSupabaseClient(supabaseUrl, serviceKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
+
+    // ── Path A: usuario de staff / admin (en public.users) ──────────────────
     const { data: userRow, error: userErr } = await admin
       .from("users")
       .select("id, tenant_id")
       .eq("auth_user_id", authUser.id)
       .maybeSingle();
-    if (userErr || !userRow) return null;
 
-    // Resolver roles para verificar si es platform admin
-    const { data: userRoles } = await admin
-      .from("user_roles")
+    if (userErr) return null;
+
+    if (userRow) {
+      // Verificar si es platform admin
+      const { data: userRoles } = await admin
+        .from("user_roles")
+        .select("roles (role_code)")
+        .eq("user_id", userRow.id);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const roleCodes = userRoles?.map((ur: any) => ur.roles?.role_code) || [];
+      const isPlatformAdmin =
+        roleCodes.includes("SUPER_ADMIN") || roleCodes.includes("ADMIN_DEV");
+
+      let clientRow = null;
+
+      if (isPlatformAdmin && previewClientId) {
+        const { data: previewClient } = await admin
+          .from("clients")
+          .select("id, legal_name, tax_id, email, status, tenant_id, tenants(code)")
+          .eq("id", previewClientId)
+          .is("deleted_at", null)
+          .maybeSingle();
+        if (previewClient) clientRow = previewClient;
+      }
+
+      if (!clientRow) {
+        const { data: assignedClient } = await admin
+          .from("clients")
+          .select("id, legal_name, tax_id, email, status, tenant_id, tenants(code)")
+          .eq("assigned_user_id", userRow.id)
+          .is("deleted_at", null)
+          .maybeSingle();
+        if (assignedClient) clientRow = assignedClient;
+      }
+
+      // Fallback para platform admins: mostrar el primer cliente disponible
+      if (!clientRow && isPlatformAdmin) {
+        const query = admin
+          .from("clients")
+          .select("id, legal_name, tax_id, email, status, tenant_id, tenants(code)")
+          .is("deleted_at", null);
+        if (userRow.tenant_id) query.eq("tenant_id", userRow.tenant_id);
+        const { data: fallbackClient } = await query
+          .order("created_at", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        if (fallbackClient) clientRow = fallbackClient;
+      }
+
+      if (!clientRow) return null;
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const tenantCode = (clientRow.tenants as any)?.code || null;
+      return {
+        userId: userRow.id,
+        clientId: clientRow.id,
+        legalName: clientRow.legal_name,
+        taxId: clientRow.tax_id || "",
+        email: clientRow.email || authUser.email || "",
+        status: clientRow.status,
+        isPlatformAdmin,
+        isClientContact: false,
+        tenantId: clientRow.tenant_id,
+        tenantCode,
+      };
+    }
+
+    // ── Path B: client contact real (en client_contacts) ────────────────────
+    // IMPORTANTE: se ignora previewClientId — un cliente real no puede
+    // ver datos de otra empresa aunque manipule la URL.
+    const { data: contactRow } = await admin
+      .from("client_contacts")
       .select(`
-        roles (
-          role_code
+        id, client_id, first_name, last_name,
+        clients (
+          id, legal_name, tax_id, email, status, tenant_id,
+          tenants (code)
         )
       `)
-      .eq("user_id", userRow.id);
+      .eq("auth_user_id", authUser.id)
+      .maybeSingle();
 
-    const roleCodes = userRoles?.map((ur: any) => ur.roles?.role_code) || [];
-    const isPlatformAdmin =
-      roleCodes.includes("SUPER_ADMIN") || roleCodes.includes("ADMIN_DEV");
+    if (!contactRow) return null;
 
-    let clientRow = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const clientObj = contactRow.clients as any;
+    if (!clientObj) return null;
 
-    // Si es platform admin y hay un previewClientId solicitado, cargamos ese directamente
-    if (isPlatformAdmin && previewClientId) {
-      const { data: previewClient } = await admin
-        .from("clients")
-        .select("id, legal_name, tax_id, email, status, tenant_id, tenants(code)")
-        .eq("id", previewClientId)
-        .is("deleted_at", null)
-        .maybeSingle();
-      if (previewClient) {
-        clientRow = previewClient;
-      }
-    }
-
-    // Si no se cargó por preview, buscar el client asociado directamente
-    if (!clientRow) {
-      const clientQuery = await admin
-        .from("clients")
-        .select("id, legal_name, tax_id, email, status, tenant_id, tenants(code)")
-        .eq("assigned_user_id", userRow.id)
-        .is("deleted_at", null)
-        .maybeSingle();
-      
-      if (clientQuery.data) {
-        clientRow = clientQuery.data;
-      }
-    }
-
-    // Fallback de preview para admins de plataforma si no tienen client asignado
-    if (!clientRow && isPlatformAdmin) {
-      const query = admin
-        .from("clients")
-        .select("id, legal_name, tax_id, email, status, tenant_id, tenants(code)")
-        .is("deleted_at", null);
-      
-      if (userRow.tenant_id) {
-        query.eq("tenant_id", userRow.tenant_id);
-      }
-      
-      const { data: fallbackClient } = await query
-        .order("created_at", { ascending: true })
-        .limit(1)
-        .maybeSingle();
-
-      if (fallbackClient) {
-        clientRow = fallbackClient;
-      }
-    }
-
-    if (!clientRow) return null;
-
-    const tenantsObj = clientRow.tenants as any;
-    const tenantCode = tenantsObj?.code || null;
+    // Marcar portal_registered_at si es la primera vez que acceden
+    // (async fire-and-forget: no bloqueamos la respuesta por esto)
+    admin
+      .from("client_contacts")
+      .update({ portal_registered_at: new Date().toISOString() })
+      .eq("id", contactRow.id)
+      .is("portal_registered_at", null)
+      .then(() => {/* sin-op */});
 
     return {
-      userId: userRow.id,
-      clientId: clientRow.id,
-      legalName: clientRow.legal_name,
-      taxId: clientRow.tax_id || "",
-      email: clientRow.email || authUser.email || "",
-      status: clientRow.status,
-      isPlatformAdmin,
-      tenantId: clientRow.tenant_id,
-      tenantCode,
+      userId: contactRow.id,
+      clientId: contactRow.client_id,
+      legalName: clientObj.legal_name,
+      taxId: clientObj.tax_id || "",
+      email: authUser.email || clientObj.email || "",
+      status: clientObj.status,
+      isPlatformAdmin: false,
+      isClientContact: true,
+      tenantId: clientObj.tenant_id,
+      tenantCode: (clientObj.tenants as any)?.code || null,
     };
   } catch {
     return null;

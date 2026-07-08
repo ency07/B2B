@@ -105,6 +105,7 @@ export default function CustomerPortal({
   messages: initialMessages = [],
   previewClientId = null,
   isPlatformAdmin = false,
+  isClientContact = false,
   allClients = [],
 }: {
   clientInfo: PortalClientInfo;
@@ -115,6 +116,7 @@ export default function CustomerPortal({
   messages?: ClientSupportMessage[];
   previewClientId?: string | null;
   isPlatformAdmin?: boolean;
+  isClientContact?: boolean;
   allClients?: Array<{ id: string; legalName: string; tenantCode: string }>;
 }) {
   const searchParams = useSearchParams();
@@ -294,8 +296,8 @@ export default function CustomerPortal({
       const saved = await sendClientMessage(previewClientId, body);
       setChatMessages(prev => [...prev, {
         id: saved.id,
-        sender: "agent",
-        name: saved.senderLabel || "Equipo de soporte",
+        sender: saved.senderType === "CLIENT" ? "client" : "agent",
+        name: saved.senderLabel || (saved.senderType === "CLIENT" ? clientInfo.legalName : "Equipo de soporte"),
         time: new Date(saved.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         text: saved.body,
       }]);
@@ -468,8 +470,8 @@ export default function CustomerPortal({
         </div>
       )}
 
-      {/* Administrator Client Switcher Banner */}
-      {isPlatformAdmin && (
+      {/* Administrator Client Switcher Banner — solo visible para admins, nunca para clientes reales */}
+      {isPlatformAdmin && !isClientContact && (
         <div className="bg-background text-foreground text-xs font-mono py-2 px-4 flex flex-wrap items-center justify-between gap-3 sticky top-0 z-50 border-b border-border shadow-md">
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-emerald-500 animate-pulse" />

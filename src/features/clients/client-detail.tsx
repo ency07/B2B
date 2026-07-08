@@ -24,7 +24,17 @@ import {
   FolderOpen,
   GitBranch,
   AlertTriangle,
+  Send,
+  ShieldOff,
+  CheckCircle2,
+  Clock,
 } from "lucide-react";
+import {
+  getClientContacts,
+  inviteContactToPortal,
+  revokeContactPortalAccess,
+  type ClientContact,
+} from "@/portal/actions/invite";
 import { StatusPill } from "@/erp/components/data-list/status-pill";
 import type { StatusVariant } from "@/erp/components/data-list/status-dot";
 import { cn } from "@/platform/utils/cn";
@@ -150,7 +160,8 @@ export function ClientDetail({
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-0">
           <main className="p-5 space-y-6">
             {tab === "contexto" && <ContextoTab client={client} />}
-            {tab !== "contexto" && <TabPlaceholder tab={tab} />}
+            {tab === "contactos" && <ContactosTab client={client} />}
+            {tab !== "contexto" && tab !== "contactos" && <TabPlaceholder tab={tab} />}
           </main>
 
           <aside className="border-t lg:border-t-0 lg:border-l border-line bg-bg-elevated-1 p-5 space-y-5">
@@ -295,5 +306,143 @@ function TabPlaceholder({ tab }: { tab: DetailTab }) {
         {tabLabel} se conecta al modulo correspondiente.
       </p>
     </div>
+  );
+}
+
+function ContactosTab({ client }: { client: ClientListItem }) {
+  const [contacts, setContacts] = React.useState<ClientContact[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+  const [actionState, setActionState] = React.useState<Record<string, "inviting" | "revoking" | "done" | "error">>({});
+
+  React.useEffect(() => {
+    setLoading(true);
+    setError(null);
+    getClientContacts(client.id)
+      .then(setContacts)
+      .catch((e) => setError(e instanceof Error ? e.message : "Error cargando contactos"))
+      .finally(() => setLoading(false));
+  }, [client.id]);
+
+  const handleInvite = async (contactId: string) => {
+    setActionState((prev) => ({ ...prev, [contactId]: "inviting" }));
+    const result = await inviteContactToPortal(contactId);
+    if (result.ok) {
+      const updated = await getClientContacts(client.id);
+      setContacts(updated);
+      setActionState((prev) => ({ ...prev, [contactId]: "done" }));
+    } else {
+      setActionState((prev) => ({ ...prev, [contactId]: "error" }));
+      alert(result.error || "Error enviando invitación");
+    }
+  };
+
+  const handleRevoke = async (contactId: string) => {
+    if (!confirm("¿Revocar acceso al portal para este contacto? El contacto perderá el acceso inmediatamente.")) return;
+    setActionState((prev) => ({ ...prev, [contactId]: "revoking" }));
+    const result = await revokeContactPortalAccess(contactId);
+    if (result.ok) {
+      const updated = await getClientContacts(client.id);
+      setContacts(updated);
+      setActionState((prev) => ({ ...prev, [contactId]: "done" }));
+    } else {
+      setActionState((prev) => ({ ...prev, [contactId]: "error" }));
+      alert(result.error || "Error revocando acceso");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-10">
+        <span className="text-[11px] font-mono text-ink-muted animate-pulse uppercase tracking-widest">
+          Cargando contactos...
+        </span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-md bg-state-danger/10 border border-state-danger/20 p-4 text-[12px] text-state-danger font-mono">
+        {error}
+      </div>
+    );
+  }
+
+  if (contacts.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed border-line p-6 text-center">
+        <Users className="h-6 w-6 text-ink-muted mx-auto mb-2" strokeWidth={1.5} />
+        <p className="text-[13px] text-ink-soft">Sin contactos registrados para este cliente.</p>
+      </div>
+    );
+  }
+
+  return (
+    <section className="space-y-3">
+      <h3 className="font-mono text-[10px] uppercase tracking-widest text-ink-muted">
+        Contactos y acceso al Portal
+      </h3>
+      <ul className="space-y-2">
+        {contacts.map((c) => {
+          const state = actionState[c.id];
+          const isBusy = state === "inviting" || state === "revoking";
+          return (
+            <li
+              key={c.id}
+              className="flex items-center justify-between gap-3 rounded-lg border border-line bg-bg-elevated-2 px-4 py-3"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] font-medium text-ink truncate">
+                  {c.firstName} {c.lastName || ""}
+                </p>
+                <p className="text-[11px] text-ink-muted truncate">
+                  {c.email || "Sin email"}
+                </p>
+                <div className="mt-1">
+                  {c.hasPortalAccess ? (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-mono text-state-success">
+                      <CheckCircle2 className="h-3 w-3" strokeWidth={1.75} />
+                      {c.portalRegisteredAt ? "Acceso activo" : "Invitación enviada"}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-mono text-ink-muted">
+                      <Clock className="h-3 w-3" strokeWidth={1.75} />
+                      Sin acceso al portal
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {c.hasPortalAccess ? (
+                  <button
+                    type="button"
+                    onClick={() => handleRevoke(c.id)}
+                    disabled={isBusy || !c.email}
+                    className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border border-state-danger/40 text-state-danger text-[11px] font-medium hover:bg-state-danger/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    <ShieldOff className="h-3 w-3" strokeWidth={1.75} />
+                    {state === "revoking" ? "Revocando..." : "Revocar"}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleInvite(c.id)}
+                    disabled={isBusy || !c.email}
+                    className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-primary text-primary-foreground text-[11px] font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    <Send className="h-3 w-3" strokeWidth={1.75} />
+                    {state === "inviting" ? "Enviando..." : c.portalInvitedAt ? "Reenviar invitación" : "Invitar al Portal"}
+                  </button>
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+      <p className="text-[10px] text-ink-muted font-mono pt-1">
+        Al invitar, el contacto recibe un email para crear su contraseña y ver el portal de su empresa.
+      </p>
+    </section>
   );
 }

@@ -127,6 +127,7 @@ export default async function PortalPage({ searchParams }: Props) {
         messages={messages}
         previewClientId={previewClientId}
         isPlatformAdmin={!!currentClient.isPlatformAdmin}
+        isClientContact={!!currentClient.isClientContact}
         allClients={allClients}
       />
     </div>
