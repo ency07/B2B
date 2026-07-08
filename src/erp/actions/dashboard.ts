@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use server";
 
 import { supabaseAdmin } from "@/platform/auth/clients";
 import { getTenantId } from "@/erp/actions/core";
 import { getBrandingDefaults } from "@/platform/branding/branding-defaults";
+import { getAuthContext, validateTenantAccess } from "@/platform/auth/server-guards";
 
 export interface DashboardCommandCenterData {
   tenantName: string;
@@ -55,7 +57,10 @@ export interface DashboardCommandCenterData {
 export async function getDashboardCommandCenter(
   tenantCode: string | null
 ): Promise<DashboardCommandCenterData> {
+  const ctx = await getAuthContext();
+  if (!ctx) throw new Error("No autenticado");
   const tenantId = await getTenantId(tenantCode);
+  await validateTenantAccess(ctx.userId, ctx.role, tenantId);
   const currentPeriod = new Date().toISOString().substring(0, 7); // e.g. "2026-06"
 
   // ── Queries paralelas (Promise.all en lugar de secuencial) ────────────
