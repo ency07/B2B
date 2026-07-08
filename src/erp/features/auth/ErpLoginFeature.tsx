@@ -69,8 +69,9 @@ export function ErpLoginFeature() {
       });
     }
 
+    // router.refresh() eliminado: se ejecutaría antes de que router.push()
+    // complete la navegación (no es awaitable), reiniciando el formulario.
     router.push(result.redirectTo!);
-    router.refresh();
   };
 
   const companyName = defaults.nombre_comercial;
