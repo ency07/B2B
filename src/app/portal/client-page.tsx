@@ -162,7 +162,7 @@ export default function CustomerPortal({
   }, [brandingState]);
   const [isOffline, setIsOffline] = React.useState(false);
   const [hasError, setHasError] = React.useState(false);
-  const [expandedOt, setExpandedOt] = React.useState<string | null>("JOB-2026-001");
+  const [expandedOt, setExpandedOt] = React.useState<string | null>(initialJobs[0]?.code ?? null);
   const router = useRouter();
 
   // Client info derivado directamente desde props del servidor
@@ -224,8 +224,8 @@ export default function CustomerPortal({
   );
   const [isCreatingTicket, setIsCreatingTicket] = React.useState(false);
 
-  // New ticket form
-  const [newTicketOt, setNewTicketOt] = React.useState("JOB-2026-001");
+  // New ticket form — preseleccionar primera OT disponible o vacío
+  const [newTicketOt, setNewTicketOt] = React.useState(ots[0]?.code ?? "");
   const [newTicketSeverity, setNewTicketSeverity] = React.useState("MEDIO");
   const [newTicketSubject, setNewTicketSubject] = React.useState("");
   const [newTicketDesc, setNewTicketDesc] = React.useState("");
