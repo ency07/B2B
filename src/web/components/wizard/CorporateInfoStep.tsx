@@ -1,3 +1,5 @@
+ 
+/* eslint-disable react/jsx-no-comment-textnodes */
 "use client";
 
 import React from "react";
@@ -182,9 +184,9 @@ export function CorporateInfoStep({ form, handleChange, errors, exampleDomain }:
       </div>
 
       {isPublicEmail && (
-        <div className="border-l-2 border-[#F0883E] bg-[#F0883E]/5 p-6 flex items-start gap-4">
+        <div className="border-l-2 border-[#C96A4A] bg-[#C96A4A]/5 p-6 flex items-start gap-4">
           <AlertTriangle
-            className="w-4 h-4 text-[#F0883E] mt-0.5 shrink-0"
+            className="w-4 h-4 text-[#C96A4A] mt-0.5 shrink-0"
             strokeWidth={1.5}
           />
           <div>

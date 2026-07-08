@@ -28,6 +28,11 @@ import {
   ShieldOff,
   CheckCircle2,
   Clock,
+  Pencil,
+  Trash2,
+  Plus,
+  Save,
+  XCircle,
 } from "lucide-react";
 import {
   getClientContacts,
@@ -35,6 +40,11 @@ import {
   revokeContactPortalAccess,
   type ClientContact,
 } from "@/portal/actions/invite";
+import {
+  updateClientContact,
+  addClientContact,
+  deleteClientContact,
+} from "@/portal/actions/contacts";
 import { StatusPill } from "@/erp/components/data-list/status-pill";
 import type { StatusVariant } from "@/erp/components/data-list/status-dot";
 import { cn } from "@/platform/utils/cn";
@@ -309,27 +319,47 @@ function TabPlaceholder({ tab }: { tab: DetailTab }) {
   );
 }
 
+interface EditingContact {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
+const BLANK_NEW: EditingContact = { id: "", firstName: "", lastName: "", email: "" };
+
 function ContactosTab({ client }: { client: ClientListItem }) {
   const [contacts, setContacts] = React.useState<ClientContact[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const [actionState, setActionState] = React.useState<Record<string, "inviting" | "revoking" | "done" | "error">>({});
+  const [actionState, setActionState] = React.useState<Record<string, "inviting" | "revoking" | "saving" | "deleting" | "done" | "error">>({});
+  const [editingId, setEditingId] = React.useState<string | null>(null);
+  const [editForm, setEditForm] = React.useState<EditingContact>(BLANK_NEW);
+  const [isAddingNew, setIsAddingNew] = React.useState(false);
+  const [newForm, setNewForm] = React.useState<EditingContact>(BLANK_NEW);
+  const [formError, setFormError] = React.useState<string | null>(null);
+
+  const refresh = React.useCallback(async () => {
+    try {
+      const data = await getClientContacts(client.id);
+      setContacts(data);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error cargando contactos");
+    } finally {
+      setLoading(false);
+    }
+  }, [client.id]);
 
   React.useEffect(() => {
-    setLoading(true);
-    setError(null);
-    getClientContacts(client.id)
-      .then(setContacts)
-      .catch((e) => setError(e instanceof Error ? e.message : "Error cargando contactos"))
-      .finally(() => setLoading(false));
-  }, [client.id]);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    refresh();
+  }, [refresh]);
 
   const handleInvite = async (contactId: string) => {
     setActionState((prev) => ({ ...prev, [contactId]: "inviting" }));
     const result = await inviteContactToPortal(contactId);
     if (result.ok) {
-      const updated = await getClientContacts(client.id);
-      setContacts(updated);
+      await refresh();
       setActionState((prev) => ({ ...prev, [contactId]: "done" }));
     } else {
       setActionState((prev) => ({ ...prev, [contactId]: "error" }));
@@ -338,16 +368,68 @@ function ContactosTab({ client }: { client: ClientListItem }) {
   };
 
   const handleRevoke = async (contactId: string) => {
-    if (!confirm("¿Revocar acceso al portal para este contacto? El contacto perderá el acceso inmediatamente.")) return;
+    if (!confirm("¿Revocar acceso al portal? El contacto perderá el acceso inmediatamente.")) return;
     setActionState((prev) => ({ ...prev, [contactId]: "revoking" }));
     const result = await revokeContactPortalAccess(contactId);
     if (result.ok) {
-      const updated = await getClientContacts(client.id);
-      setContacts(updated);
+      await refresh();
       setActionState((prev) => ({ ...prev, [contactId]: "done" }));
     } else {
       setActionState((prev) => ({ ...prev, [contactId]: "error" }));
       alert(result.error || "Error revocando acceso");
+    }
+  };
+
+  const handleStartEdit = (c: ClientContact) => {
+    setEditingId(c.id);
+    setFormError(null);
+    setEditForm({ id: c.id, firstName: c.firstName, lastName: c.lastName || "", email: c.email || "" });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingId) return;
+    setActionState((prev) => ({ ...prev, [editingId]: "saving" }));
+    setFormError(null);
+    const result = await updateClientContact(editingId, {
+      firstName: editForm.firstName,
+      lastName: editForm.lastName,
+      email: editForm.email,
+    });
+    if (result.ok) {
+      await refresh();
+      setEditingId(null);
+      setActionState((prev) => ({ ...prev, [editingId]: "done" }));
+    } else {
+      setFormError(result.error || "Error guardando");
+      setActionState((prev) => ({ ...prev, [editingId]: "error" }));
+    }
+  };
+
+  const handleDelete = async (contactId: string) => {
+    if (!confirm("¿Eliminar este contacto? Esta acción no se puede deshacer.")) return;
+    setActionState((prev) => ({ ...prev, [contactId]: "deleting" }));
+    const result = await deleteClientContact(contactId);
+    if (result.ok) {
+      await refresh();
+    } else {
+      setActionState((prev) => ({ ...prev, [contactId]: "error" }));
+      alert(result.error || "Error eliminando contacto");
+    }
+  };
+
+  const handleAddNew = async () => {
+    setFormError(null);
+    const result = await addClientContact(client.id, {
+      firstName: newForm.firstName,
+      lastName: newForm.lastName,
+      email: newForm.email,
+    });
+    if (result.ok) {
+      await refresh();
+      setIsAddingNew(false);
+      setNewForm(BLANK_NEW);
+    } else {
+      setFormError(result.error || "Error creando contacto");
     }
   };
 
@@ -369,79 +451,218 @@ function ContactosTab({ client }: { client: ClientListItem }) {
     );
   }
 
-  if (contacts.length === 0) {
-    return (
-      <div className="rounded-lg border border-dashed border-line p-6 text-center">
-        <Users className="h-6 w-6 text-ink-muted mx-auto mb-2" strokeWidth={1.5} />
-        <p className="text-[13px] text-ink-soft">Sin contactos registrados para este cliente.</p>
-      </div>
-    );
-  }
-
   return (
     <section className="space-y-3">
-      <h3 className="font-mono text-[10px] uppercase tracking-widest text-ink-muted">
-        Contactos y acceso al Portal
-      </h3>
+      <div className="flex items-center justify-between">
+        <h3 className="font-mono text-[10px] uppercase tracking-widest text-ink-muted">
+          Contactos y acceso al Portal
+        </h3>
+        <button
+          type="button"
+          onClick={() => { setIsAddingNew(true); setFormError(null); setNewForm(BLANK_NEW); }}
+          className="inline-flex items-center gap-1 h-7 px-2.5 rounded-md border border-line text-ink-soft text-[11px] hover:text-ink hover:bg-accent transition-colors cursor-pointer"
+        >
+          <Plus className="h-3 w-3" strokeWidth={1.75} />
+          Agregar contacto
+        </button>
+      </div>
+
+      {/* Formulario nuevo contacto */}
+      {isAddingNew && (
+        <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-2">
+          <p className="text-[11px] font-mono text-primary uppercase tracking-widest">Nuevo Contacto</p>
+          {formError && <p className="text-[11px] text-state-danger font-mono">{formError}</p>}
+          <div className="grid grid-cols-2 gap-2">
+            <input
+              type="text"
+              placeholder="Nombre *"
+              value={newForm.firstName}
+              onChange={(e) => setNewForm((p) => ({ ...p, firstName: e.target.value }))}
+              className="col-span-1 h-8 px-2 rounded border border-line bg-bg-elevated-2 text-[12px] text-ink focus:ring-1 focus:ring-primary outline-none"
+            />
+            <input
+              type="text"
+              placeholder="Apellido"
+              value={newForm.lastName}
+              onChange={(e) => setNewForm((p) => ({ ...p, lastName: e.target.value }))}
+              className="col-span-1 h-8 px-2 rounded border border-line bg-bg-elevated-2 text-[12px] text-ink focus:ring-1 focus:ring-primary outline-none"
+            />
+          </div>
+          <input
+            type="email"
+            placeholder="Email (para invitar al Portal)"
+            value={newForm.email}
+            onChange={(e) => setNewForm((p) => ({ ...p, email: e.target.value }))}
+            className="w-full h-8 px-2 rounded border border-line bg-bg-elevated-2 text-[12px] text-ink focus:ring-1 focus:ring-primary outline-none"
+          />
+          <div className="flex gap-2 justify-end">
+            <button
+              type="button"
+              onClick={() => { setIsAddingNew(false); setFormError(null); }}
+              className="h-7 px-2.5 rounded border border-line text-[11px] text-ink-soft hover:text-ink cursor-pointer"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleAddNew}
+              className="inline-flex items-center gap-1 h-7 px-2.5 rounded bg-primary text-primary-foreground text-[11px] font-medium hover:bg-primary/90 cursor-pointer"
+            >
+              <Save className="h-3 w-3" strokeWidth={1.75} />
+              Guardar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {contacts.length === 0 && !isAddingNew && (
+        <div className="rounded-lg border border-dashed border-line p-6 text-center">
+          <Users className="h-6 w-6 text-ink-muted mx-auto mb-2" strokeWidth={1.5} />
+          <p className="text-[13px] text-ink-soft">Sin contactos registrados.</p>
+          <p className="text-[11px] text-ink-muted mt-1">Agrega un contacto para invitarlo al portal.</p>
+        </div>
+      )}
+
       <ul className="space-y-2">
         {contacts.map((c) => {
           const state = actionState[c.id];
-          const isBusy = state === "inviting" || state === "revoking";
+          const isBusy = state === "inviting" || state === "revoking" || state === "saving" || state === "deleting";
+          const isEditing = editingId === c.id;
+
           return (
-            <li
-              key={c.id}
-              className="flex items-center justify-between gap-3 rounded-lg border border-line bg-bg-elevated-2 px-4 py-3"
-            >
-              <div className="min-w-0 flex-1">
-                <p className="text-[13px] font-medium text-ink truncate">
-                  {c.firstName} {c.lastName || ""}
-                </p>
-                <p className="text-[11px] text-ink-muted truncate">
-                  {c.email || "Sin email"}
-                </p>
-                <div className="mt-1">
-                  {c.hasPortalAccess ? (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-mono text-state-success">
-                      <CheckCircle2 className="h-3 w-3" strokeWidth={1.75} />
-                      {c.portalRegisteredAt ? "Acceso activo" : "Invitación enviada"}
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-mono text-ink-muted">
-                      <Clock className="h-3 w-3" strokeWidth={1.75} />
-                      Sin acceso al portal
-                    </span>
+            <li key={c.id} className="rounded-lg border border-line bg-bg-elevated-2 overflow-hidden">
+              {isEditing ? (
+                /* ── Modo edición inline ── */
+                <div className="p-3 space-y-2">
+                  {formError && <p className="text-[11px] text-state-danger font-mono">{formError}</p>}
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      placeholder="Nombre *"
+                      value={editForm.firstName}
+                      onChange={(e) => setEditForm((p) => ({ ...p, firstName: e.target.value }))}
+                      className="h-8 px-2 rounded border border-line bg-bg-elevated-3 text-[12px] text-ink focus:ring-1 focus:ring-primary outline-none"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Apellido"
+                      value={editForm.lastName}
+                      onChange={(e) => setEditForm((p) => ({ ...p, lastName: e.target.value }))}
+                      className="h-8 px-2 rounded border border-line bg-bg-elevated-3 text-[12px] text-ink focus:ring-1 focus:ring-primary outline-none"
+                    />
+                  </div>
+                  <input
+                    type="email"
+                    placeholder="Email"
+                    value={editForm.email}
+                    onChange={(e) => setEditForm((p) => ({ ...p, email: e.target.value }))}
+                    disabled={c.hasPortalAccess}
+                    title={c.hasPortalAccess ? "No se puede cambiar email con acceso al portal activo" : undefined}
+                    className="w-full h-8 px-2 rounded border border-line bg-bg-elevated-3 text-[12px] text-ink focus:ring-1 focus:ring-primary outline-none disabled:opacity-60 disabled:cursor-not-allowed"
+                  />
+                  {c.hasPortalAccess && (
+                    <p className="text-[10px] text-ink-muted font-mono">
+                      El email no se puede cambiar mientras el contacto tiene acceso al portal.
+                    </p>
                   )}
+                  <div className="flex gap-2 justify-end">
+                    <button
+                      type="button"
+                      onClick={() => { setEditingId(null); setFormError(null); }}
+                      className="inline-flex items-center gap-1 h-7 px-2.5 rounded border border-line text-[11px] text-ink-soft hover:text-ink cursor-pointer"
+                    >
+                      <XCircle className="h-3 w-3" strokeWidth={1.75} />
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSaveEdit}
+                      disabled={isBusy}
+                      className="inline-flex items-center gap-1 h-7 px-2.5 rounded bg-primary text-primary-foreground text-[11px] font-medium hover:bg-primary/90 disabled:opacity-50 cursor-pointer"
+                    >
+                      <Save className="h-3 w-3" strokeWidth={1.75} />
+                      {state === "saving" ? "Guardando..." : "Guardar"}
+                    </button>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                {c.hasPortalAccess ? (
-                  <button
-                    type="button"
-                    onClick={() => handleRevoke(c.id)}
-                    disabled={isBusy || !c.email}
-                    className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border border-state-danger/40 text-state-danger text-[11px] font-medium hover:bg-state-danger/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                  >
-                    <ShieldOff className="h-3 w-3" strokeWidth={1.75} />
-                    {state === "revoking" ? "Revocando..." : "Revocar"}
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => handleInvite(c.id)}
-                    disabled={isBusy || !c.email}
-                    className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-primary text-primary-foreground text-[11px] font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                  >
-                    <Send className="h-3 w-3" strokeWidth={1.75} />
-                    {state === "inviting" ? "Enviando..." : c.portalInvitedAt ? "Reenviar invitación" : "Invitar al Portal"}
-                  </button>
-                )}
-              </div>
+              ) : (
+                /* ── Vista normal ── */
+                <div className="flex items-center justify-between gap-3 px-4 py-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13px] font-medium text-ink truncate">
+                      {c.firstName} {c.lastName || ""}
+                    </p>
+                    <p className="text-[11px] text-ink-muted truncate">
+                      {c.email || "Sin email"}
+                    </p>
+                    <div className="mt-0.5 flex items-center gap-2">
+                      {c.hasPortalAccess ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-mono text-state-success">
+                          <CheckCircle2 className="h-3 w-3" strokeWidth={1.75} />
+                          {c.portalRegisteredAt ? "Acceso activo — password establecida" : "Invitación enviada (sin password aún)"}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-mono text-ink-muted">
+                          <Clock className="h-3 w-3" strokeWidth={1.75} />
+                          Sin acceso al portal
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    {/* Editar */}
+                    <button
+                      type="button"
+                      onClick={() => handleStartEdit(c)}
+                      disabled={isBusy}
+                      className="inline-flex items-center gap-1 h-7 w-7 justify-center rounded border border-line text-ink-muted hover:text-ink hover:bg-accent transition-colors disabled:opacity-50 cursor-pointer"
+                      title="Editar contacto"
+                    >
+                      <Pencil className="h-3 w-3" strokeWidth={1.75} />
+                    </button>
+                    {/* Eliminar */}
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(c.id)}
+                      disabled={isBusy}
+                      className="inline-flex items-center gap-1 h-7 w-7 justify-center rounded border border-state-danger/30 text-state-danger/60 hover:text-state-danger hover:bg-state-danger/10 transition-colors disabled:opacity-50 cursor-pointer"
+                      title="Eliminar contacto"
+                    >
+                      <Trash2 className="h-3 w-3" strokeWidth={1.75} />
+                    </button>
+                    {/* Portal invite/revoke */}
+                    {c.hasPortalAccess ? (
+                      <button
+                        type="button"
+                        onClick={() => handleRevoke(c.id)}
+                        disabled={isBusy}
+                        className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded border border-state-danger/40 text-state-danger text-[11px] font-medium hover:bg-state-danger/10 transition-colors disabled:opacity-50 cursor-pointer"
+                      >
+                        <ShieldOff className="h-3 w-3" strokeWidth={1.75} />
+                        {state === "revoking" ? "Revocando..." : "Revocar"}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleInvite(c.id)}
+                        disabled={isBusy || !c.email}
+                        title={!c.email ? "Agrega un email primero" : undefined}
+                        className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded bg-primary text-primary-foreground text-[11px] font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      >
+                        <Send className="h-3 w-3" strokeWidth={1.75} />
+                        {state === "inviting" ? "Enviando..." : c.portalInvitedAt ? "Reenviar" : "Invitar al Portal"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
             </li>
           );
         })}
       </ul>
+
       <p className="text-[10px] text-ink-muted font-mono pt-1">
-        Al invitar, el contacto recibe un email para crear su contraseña y ver el portal de su empresa.
+        &quot;Acceso activo&quot; = contacto recibió invitación y estableció su contraseña. Puede iniciar sesión en /portal.
       </p>
     </section>
   );

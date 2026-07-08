@@ -1,5 +1,8 @@
+ 
+ 
+ 
 import React, { Suspense } from "react";
-import { getTenantSettings } from "@/erp/actions/core";;
+import { getTenantBranding } from "@/web/actions/branding";
 import WizardStepper from "@/web/components/WizardStepper";
 import { Metadata } from "next";
 
@@ -9,7 +12,10 @@ export async function generateMetadata(props: { searchParams: Promise<{ tenant?:
   try {
     const searchParams = await props.searchParams;
     const tenant = searchParams.tenant || "acme";
-    const branding = await getTenantSettings(tenant);
+    // getTenantBranding es de solo lectura y no requiere auth — el Wizard es
+    // una página pública. getTenantSettings (usado antes) exige sesión y
+    // fallaba silenciosamente para todo visitante anónimo.
+    const branding = await getTenantBranding(tenant);
     const siteName = branding.nombre_comercial || "Sistemas de Ventilación";
     const title = branding.titulo_navegador || `Cotizador Inteligente HVAC | ${siteName}`;
     const favicon = branding.favicon_url || "/favicon.ico";
@@ -31,28 +37,23 @@ export async function generateMetadata(props: { searchParams: Promise<{ tenant?:
 export default async function WizardPage(props: { searchParams: Promise<{ tenant?: string }> }) {
   const searchParams = await props.searchParams;
   const tenant = searchParams.tenant || "acme";
-  let branding = {};
+  let branding: Record<string, unknown> = {};
 
   try {
-    branding = await getTenantSettings(tenant);
+    branding = await getTenantBranding(tenant) as unknown as Record<string, unknown>;
   } catch (error) {
     console.error("Error al cargar branding en el Wizard:", error);
   }
 
   return (
-    <main className="flex flex-col min-h-screen bg-zinc-50 text-zinc-900 py-12 px-6 justify-center items-center relative overflow-hidden">
-      {/* Background gradients */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-zinc-100 via-zinc-50 to-zinc-50 pointer-events-none" />
-      
-      <div className="relative z-10 w-full max-w-4xl">
-        <Suspense fallback={
-          <div className="w-full max-w-4xl bg-white border border-zinc-200 rounded-2xl p-12 text-center text-zinc-500 shadow-sm">
-            Cargando asistente de preingeniería...
-          </div>
-        }>
-          <WizardStepper branding={branding} tenantCode={tenant} />
-        </Suspense>
-      </div>
+    <main className="min-h-screen bg-paper text-ink">
+      <Suspense fallback={
+        <div className="max-w-[1600px] mx-auto p-12 text-center text-ink-soft">
+          Cargando asistente de preingeniería...
+        </div>
+      }>
+        <WizardStepper branding={branding} tenantCode={tenant} />
+      </Suspense>
     </main>
   );
 }

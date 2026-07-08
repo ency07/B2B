@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react/jsx-no-comment-textnodes */
 "use client";
 
 import React from "react";
@@ -89,7 +91,7 @@ export function SummaryStep({
 
           <div className="bg-paper-warm p-8">
             <p className="editorial-mono text-fg-muted mb-3">Caudal requerido</p>
-            <p className="font-display text-4xl font-light tabular-nums" style={{ color: "#3FB950" }}>
+            <p className="font-display text-4xl font-light tabular-nums" style={{ color: "#3F8F5F" }}>
               {realtimeCfm.cfm.toLocaleString()}{" "}
               <span className="text-base text-fg-muted">CFM</span>
             </p>

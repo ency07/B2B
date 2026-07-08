@@ -92,7 +92,7 @@ export interface BrandingConfig {
 
   // === CONTENIDO EDITORIAL DE LA LANDING (editable desde CMS, sin tocar código) ===
   sectores: SectorContent[];
-  caso_destacado: FeaturedCaseContent;
+  casos: CaseSlideContent[];
   meta_title: string;
   meta_description: string;
   meta_keywords: string;
@@ -173,6 +173,8 @@ export interface HeroSlideContent {
   tag: string;
   duration: string;
   mediaLabel: string;
+  photoUrl: string;
+  photoAlt: string;
 }
 
 export interface CaseResultRow {
@@ -181,10 +183,12 @@ export interface CaseResultRow {
   after: string;
 }
 
-export interface FeaturedCaseContent {
-  headline: string;
-  headlineHighlight: string;
-  meta: string;
+export interface CaseSlideContent {
+  sector: string;
+  location: string;
+  year: string;
+  titleMain: string;
+  titleItalic: string;
   photoUrl: string;
   photoAlt: string;
   results: CaseResultRow[];
@@ -193,36 +197,10 @@ export interface FeaturedCaseContent {
   quoteRole: string;
 }
 
-// Presets curados del esquema de color del Hero — evita que el hex libre
-// rompa el contraste sobre el fondo oscuro de la foto/video de portada.
-export const HERO_COLOR_SCHEMES: Record<
-  "clasico" | "calido" | "marca",
-  { label: string; titulo: string; subtitulo: string; eyebrow: string }
-> = {
-  clasico: {
-    label: "Clásico (blanco frío)",
-    titulo: "#F0F6FC",
-    subtitulo: "rgba(240,246,252,0.75)",
-    eyebrow: "rgba(255,255,255,0.55)",
-  },
-  calido: {
-    label: "Cálido (marfil)",
-    titulo: "#FFF4E6",
-    subtitulo: "rgba(255,244,230,0.75)",
-    eyebrow: "rgba(255,244,230,0.55)",
-  },
-  marca: {
-    label: "Color de marca (eyebrow acentuado)",
-    titulo: "#FFFFFF",
-    subtitulo: "rgba(255,255,255,0.75)",
-    // Sentinel: Hero.tsx lo reemplaza por branding.color_primario en render.
-    eyebrow: "__brand__",
-  },
-};
-
 // Default settings. Genericos: cualquier tenant recibe estos defaults si
 // no tiene tenant_settings propio en Supabase. La personalizacion se
 // hace desde el CMS de branding (no hay hardcoded por tenant).
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function getBrandingDefaults(_tenantCode?: string | null): BrandingConfig {
   return {
     // Subsection A
@@ -309,6 +287,8 @@ export function getBrandingDefaults(_tenantCode?: string | null): BrandingConfig
         tag: "INSTRUMENTACIÓN CALIBRADA",
         duration: "5–8 días de diagnóstico",
         mediaLabel: "video: medición en planta",
+        photoUrl: "/industrial_plant_ventilation.webp",
+        photoAlt: "Instrumentación calibrada midiendo caudal en planta",
       },
       {
         eyebrow: "SIMULACIÓN Y DISEÑO",
@@ -318,6 +298,8 @@ export function getBrandingDefaults(_tenantCode?: string | null): BrandingConfig
         tag: "SIMULACIÓN CFD 3D",
         duration: "10–14 días de diseño",
         mediaLabel: "video: simulación CFD del flujo de aire",
+        photoUrl: "/axial_duct_fan.webp",
+        photoAlt: "Simulación y diseño de ductos de ventilación axial",
       },
       {
         eyebrow: "EJECUCIÓN DE INGENIERÍA",
@@ -327,6 +309,8 @@ export function getBrandingDefaults(_tenantCode?: string | null): BrandingConfig
         tag: "ZONA DE COLADA · +45°C",
         duration: "20–35 días de ejecución",
         mediaLabel: "foto: fabricación y montaje certificado",
+        photoUrl: "/industrial_centrifugal_fan.webp",
+        photoAlt: "Fabricación y montaje certificado de ventilador centrífugo",
       },
       {
         eyebrow: "RESULTADOS GARANTIZADOS",
@@ -336,6 +320,8 @@ export function getBrandingDefaults(_tenantCode?: string | null): BrandingConfig
         tag: "RESULTADOS AUDITADOS",
         duration: "Continuo · mantenimiento programado",
         mediaLabel: "foto: medición y certificación post-instalación",
+        photoUrl: "/rotor_dynamic_balancing.webp",
+        photoAlt: "Medición y certificación de balanceo dinámico post-instalación",
       },
     ],
 
@@ -445,24 +431,62 @@ export function getBrandingDefaults(_tenantCode?: string | null): BrandingConfig
       { name: "Manufactura y alimentos", shortDescription: "Ventilación general, extracción localizada en soldadura, cabinas de pintura. Materiales sanitizables (acero galvanizado, inoxidable). Cumplimiento HACCP / INVIMA." },
       { name: "Procesamiento químico", shortDescription: "Extracción de vapores en áreas clasificadas ATEX Zone 1. Materiales resistentes a ambientes agresivos (PVC, PP, FRP). Sistemas cerrados con monitoreo continuo." },
     ],
-    caso_destacado: {
-      headline: "Planta Paz del Río.",
-      headlineHighlight: "22°C menos. Sin paradas.",
-      meta: "Siderurgia · Colombia · 2024",
-      // Foto distinta a la del Hero (evita repetir la misma imagen genérica
-      // en dos secciones — reemplace por una foto real del proyecto cuando esté disponible).
-      photoUrl: "/rotor_dynamic_balancing.webp",
-      photoAlt: "Balanceo dinámico de rotor en planta",
-      results: [
-        { label: "Temperatura en zona de colada", before: "47°C", after: "25°C" },
-        { label: "Renovaciones por hora (ACH)", before: "18", after: "42" },
-        { label: "Costo anual de paradas no planificadas", before: "USD 2.4M", after: "USD 0.8M" },
-        { label: "Cumplimiento RETIE", before: "62%", after: "100%" },
-      ],
-      quote: "Pasamos de operar a la defensiva a operar con margen. La diferencia fue la ingeniería, no el equipo.",
-      quoteAuthor: "Carlos Mendoza",
-      quoteRole: "Director de Operaciones · Paz del Río",
-    },
+    // Foto distinta por caso (evita repetir la misma imagen genérica en
+    // varias secciones) — reemplace por fotos reales del proyecto cuando estén disponibles.
+    casos: [
+      {
+        sector: "Siderurgia", location: "Colombia", year: "2024",
+        titleMain: "Planta Paz del Río.", titleItalic: "22°C menos. Sin paradas.",
+        photoUrl: "/rotor_dynamic_balancing.webp", photoAlt: "Balanceo dinámico de rotor en planta",
+        results: [
+          { label: "Temperatura en zona de colada", before: "47°C", after: "25°C" },
+          { label: "Renovaciones por hora (ACH)", before: "18", after: "42" },
+          { label: "Costo anual de paradas no planificadas", before: "USD 2.4M", after: "USD 0.8M" },
+          { label: "Cumplimiento RETIE", before: "62%", after: "100%" },
+        ],
+        quote: "Pasamos de operar a la defensiva a operar con margen. La diferencia fue la ingeniería, no el equipo.",
+        quoteAuthor: "Carlos Mendoza", quoteRole: "Director de Operaciones · Paz del Río",
+      },
+      {
+        sector: "Minería", location: "Colombia", year: "2023",
+        titleMain: "Complejo El Cerrejón.", titleItalic: "Aire limpio a 200°C.",
+        photoUrl: "/industrial_centrifugal_fan.webp", photoAlt: "Extracción en planta de trituración",
+        results: [
+          { label: "Concentración de partículas", before: "340 µg/m³", after: "48 µg/m³" },
+          { label: "Horas de exposición crítica", before: "6h/día", after: "0h/día" },
+          { label: "Vida útil de motores", before: "3 años", after: "7 años" },
+          { label: "Cumplimiento OSHA", before: "58%", after: "100%" },
+        ],
+        quote: "La diferencia se sintió en la planta el primer día. El equipo ya no respira polvo.",
+        quoteAuthor: "Ana Restrepo", quoteRole: "Gerente HSE · El Cerrejón",
+      },
+      {
+        sector: "Data centers", location: "Colombia", year: "2024",
+        titleMain: "Data Center Claro.", titleItalic: "Uptime 99.99% garantizado.",
+        photoUrl: "/axial_duct_fan.webp", photoAlt: "Sala de servidores con climatización de precisión",
+        results: [
+          { label: "Redundancia de climatización", before: "N", after: "N+1" },
+          { label: "Consumo eléctrico HVAC", before: "100%", after: "71%" },
+          { label: "Incidentes térmicos anuales", before: "4", after: "0" },
+          { label: "Cumplimiento TIA-942", before: "Tier II", after: "Tier IV" },
+        ],
+        quote: "Ganamos margen operativo sin sacrificar continuidad. Eso no tiene precio en este negocio.",
+        quoteAuthor: "Julián Torres", quoteRole: "Director de Infraestructura · Claro",
+      },
+      {
+        sector: "Manufactura y alimentos", location: "Colombia", year: "2023",
+        titleMain: "Planta Nutresa Medellín.", titleItalic: "HACCP sin fricción.",
+        photoUrl: "/extractor_hongo_inox.webp", photoAlt: "Línea de producción con extracción localizada",
+        results: [
+          { label: "Cumplimiento HACCP", before: "71%", after: "100%" },
+          { label: "Renovaciones por hora (ACH)", before: "12", after: "30" },
+          { label: "Tiempo de auditoría anual", before: "3 semanas", after: "4 días" },
+          { label: "Paradas por mantenimiento", before: "14/año", after: "2/año" },
+        ],
+        quote: "La auditoría dejó de ser una amenaza. Ahora es un trámite de rutina.",
+        quoteAuthor: "Marcela Gómez", quoteRole: "Jefe de Planta · Nutresa",
+      },
+    ],
     certificaciones: ["AMCA", "ISO 1940 G2.5", "ASHRAE 62.1"],
     meta_title: "Sistemas de Ventilación Industrial Premium",
     meta_description: "Diseño, fabricación e instalación de sistemas industriales de ventilación B2B.",

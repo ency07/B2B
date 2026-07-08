@@ -119,7 +119,7 @@ export function ProcessPipeline({ content }: ProcessPipelineProps = {}) {
                 delay: idx * 0.08,
                 ease: [0.16, 1, 0.3, 1],
               }}
-              className="bg-paper-warm group hover:bg-paper transition-colors duration-500"
+              className={`group hover:bg-paper transition-colors duration-500 ${idx % 2 === 0 ? "bg-paper-warm" : "bg-paper"}`}
             >
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 px-6 sm:px-10 lg:px-14 py-10 lg:py-16">
                 {/* Number + name */}

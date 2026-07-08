@@ -45,6 +45,7 @@ export const ACH_BY_ENVIRONMENT: Record<string, number> = {
   datacenter: 30,   // Data Center
   warehouse: 8,     // Bodega / Almacén
   almacen: 8,       // Bodega / Almacén
+  mining: 55,       // Minería subterránea / túneles
   default: 10
 };
 
@@ -58,6 +59,7 @@ export const CRITICALITY_BY_ENVIRONMENT: Record<string, "ALTA" | "MEDIA" | "BAJA
   datacenter: "ALTA",
   warehouse: "BAJA",
   almacen: "BAJA",
+  mining: "ALTA",
   default: "BAJA"
 };
 
@@ -69,6 +71,22 @@ const METERS_TO_FEET_FACTOR = 35.3147; // 1 m³ = 35.3147 pies³
 export function getAchForEnvironment(environment: string): number {
   return ACH_BY_ENVIRONMENT[environment] || ACH_BY_ENVIRONMENT.default;
 }
+
+/**
+ * Catálogo único de entornos operativos para toda la UI (Calculadora pública
+ * y Wizard). El ACH se lee siempre de ACH_BY_ENVIRONMENT — nunca hardcodeado
+ * en el componente — para que la calculadora y el wizard nunca se desincronicen.
+ */
+// Nota: limitado a los 5 valores aceptados por el enum de envío del Wizard
+// (ver src/web/actions/wizard.ts, contactFormSchema.environment) — agregar
+// una opción aquí sin agregarla también a ese enum rompe el submit.
+export const ENVIRONMENT_OPTIONS: { value: string; label: string; desc: string; ach: number }[] = [
+  { value: "default", label: "Área Común", desc: "Comercial · Oficinas" },
+  { value: "warehouse", label: "Bodega", desc: "Almacenamiento estándar" },
+  { value: "data_center", label: "Data Center", desc: "Servidores · Salas técnicas" },
+  { value: "heavy_plant", label: "Planta Pesada", desc: "Siderurgia · Fundición · Química" },
+  { value: "mining", label: "Minería", desc: "Subterránea · Túneles" },
+].map((env) => ({ ...env, ach: getAchForEnvironment(env.value) }));
 
 /**
  * Calcula la densidad del aire corregida por altitud y temperatura (Fórmula Neumática).

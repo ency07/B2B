@@ -99,15 +99,16 @@ export default async function PortalPage({ searchParams }: Props) {
   if (currentClient.isPlatformAdmin && supabaseAdmin) {
     const { data: clientsData } = await supabaseAdmin
       .from("clients")
-      .select("id, legal_name, tenants(code)")
+      .select("id, legal_name, tenants(tenant_code)")
       .is("deleted_at", null)
       .order("legal_name", { ascending: true });
-      
+
     if (clientsData) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       allClients = clientsData.map((c: any) => ({
         id: c.id,
         legalName: c.legal_name,
-        tenantCode: c.tenants?.code || "default",
+        tenantCode: c.tenants?.tenant_code || "default",
       }));
     }
   }

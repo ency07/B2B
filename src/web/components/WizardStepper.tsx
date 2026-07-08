@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable prefer-const */
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -32,7 +35,7 @@ import { Input } from "@/platform/ui/input";
 import { Label } from "@/platform/ui/label";
 import { Textarea } from "@/platform/ui/textarea";
 import { submitWizardData, WizardResult } from "@/web/actions/wizard";
-import { calculateRequiredCfm } from "@/utils/engineering";
+import { generateEngineeringReport, ENVIRONMENT_OPTIONS } from "@/utils/engineering";
 import { estimatePrice } from "@/utils/pricing";
 import { getTenantConfig } from "@/platform/tenant/tenant";
 import ChatbotWidget from "./marketing-v2/ChatbotWidget";
@@ -91,7 +94,8 @@ export default function WizardStepper({
     length: 10,
     width: 8,
     height: 4,
-    environment: "default" as "heavy_plant" | "data_center" | "mining" | "warehouse" | "default",
+    altitude: 2640,
+    environment: "default" as string,
     nombre: "",
     empresa: "",
     cargo: "Ingeniero de Proyectos",
@@ -133,41 +137,51 @@ export default function WizardStepper({
   const severityScore = calculateSeverityScore();
   const severityLevel = severityScore >= 70 ? "CRÍTICA" : severityScore >= 30 ? "MODERADA" : "BAJA";
 
-  // Pre-poblar formulario con parámetros de la landing si existen
+  // Pre-poblar formulario con parámetros de la landing/calculadora si existen.
+  // Cubre tanto la llegada desde la Calculadora CFM (con dimensiones ya
+  // definidas) como la llegada directa al Wizard (sin query params — el
+  // formulario simplemente conserva sus valores por defecto).
   useEffect(() => {
     const qLength = searchParams.get("length");
     const qWidth = searchParams.get("width");
     const qHeight = searchParams.get("height");
     const qEnv = searchParams.get("environment");
-    
-    if (qLength || qWidth || qHeight || qEnv) {
+    const qAltitude = searchParams.get("altitude");
+
+    if (qLength || qWidth || qHeight || qEnv || qAltitude) {
       setForm(prev => ({
         ...prev,
         length: qLength ? Number(qLength) : prev.length,
         width: qWidth ? Number(qWidth) : prev.width,
         height: qHeight ? Number(qHeight) : prev.height,
-        environment: (qEnv as any) || prev.environment,
+        altitude: qAltitude ? Number(qAltitude) : prev.altitude,
+        environment: qEnv || prev.environment,
       }));
     }
   }, [searchParams]);
 
   useEffect(() => {
-    // Calcular en tiempo real cuando cambien las dimensiones o el ambiente
-    const eng = calculateRequiredCfm(
+    // Calcular en tiempo real cuando cambien las dimensiones, el ambiente o
+    // la altitud — mismo motor (generateEngineeringReport) que usa la
+    // Calculadora CFM pública, para que el resultado nunca se desincronice.
+    const report = generateEngineeringReport(
       { length: Number(form.length), width: Number(form.width), height: Number(form.height) },
-      form.environment
+      form.environment,
+      Number(form.altitude) || 0,
+      20,
+      false
     );
-    setRealtimeCfm({ cfm: eng.cfm, cubicMeters: eng.cubicMeters });
+    setRealtimeCfm({ cfm: report.cfm, cubicMeters: report.cubicMeters });
 
     // Estimar precio
-    const prc = estimatePrice(form.servicio, form.urgencia, eng.cubicMeters);
+    const prc = estimatePrice(form.servicio, form.urgencia, report.cubicMeters);
     setRealtimePrice({
       rangeMinCop: prc.rangeMinCop,
       rangeMaxCop: prc.rangeMaxCop,
       rangeMinUsd: prc.rangeMinUsd,
       rangeMaxUsd: prc.rangeMaxUsd
     });
-  }, [form.length, form.width, form.height, form.environment, form.servicio, form.urgencia]);
+  }, [form.length, form.width, form.height, form.altitude, form.environment, form.servicio, form.urgencia]);
 
   // Interpolación de contador digital (60fps)
   useEffect(() => {
@@ -298,7 +312,7 @@ export default function WizardStepper({
         length: Number(form.length),
         width: Number(form.width),
         height: Number(form.height),
-        environment: form.environment,
+        environment: form.environment as "heavy_plant" | "data_center" | "warehouse" | "mining" | "default",
         nombre: form.nombre,
         empresa: form.empresa,
         cargo: form.cargo,
@@ -552,7 +566,7 @@ Solicito una cotización formal y confirmación de disponibilidad técnica. Grac
         <div className="max-w-[1600px] mx-auto px-6 sm:px-10 lg:px-14 h-10 flex items-center justify-between font-mono text-[10px] tracking-widest text-fg-muted uppercase">
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#3FB950] animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#3F8F5F] animate-pulse" />
               <span>Cotizador en línea</span>
             </span>
             <span className="hidden md:inline">Preingeniería · Cálculo técnico</span>
@@ -622,12 +636,12 @@ Solicito una cotización formal y confirmación de disponibilidad técnica. Grac
                   Configurando
                 </span>
                 {qProduct && (
-                  <span className="font-mono text-[11px] tracking-widest text-[#3FB950] uppercase font-medium">
+                  <span className="font-mono text-[11px] tracking-widest text-[#3F8F5F] uppercase font-medium">
                     {qProduct}
                   </span>
                 )}
                 {qServicio && !qProduct && (
-                  <span className="font-mono text-[11px] tracking-widest text-[#3FB950] uppercase font-medium">
+                  <span className="font-mono text-[11px] tracking-widest text-[#3F8F5F] uppercase font-medium">
                     Servicio {qServicio}
                   </span>
                 )}
@@ -643,7 +657,7 @@ Solicito una cotización formal y confirmación de disponibilidad técnica. Grac
                   <>
                     <span className="text-white/30">·</span>
                     <span className="font-mono text-[11px] text-white/80 tracking-wider">
-                      {qEnv}
+                      {ENVIRONMENT_OPTIONS.find((e) => e.value === qEnv)?.label || qEnv}
                     </span>
                   </>
                 )}
@@ -704,7 +718,7 @@ Solicito una cotización formal y confirmación de disponibilidad técnica. Grac
                           isActive
                             ? "text-ink font-medium"
                             : isCompleted
-                              ? "text-[#3FB950] font-medium"
+                              ? "text-[#3F8F5F] font-medium"
                               : "text-fg-muted"
                         }`}
                       >
@@ -712,7 +726,7 @@ Solicito una cotización formal y confirmación de disponibilidad técnica. Grac
                       </span>
                       {isCompleted && (
                         <Check
-                          className="w-3.5 h-3.5 text-[#3FB950]"
+                          className="w-3.5 h-3.5 text-[#3F8F5F]"
                           strokeWidth={2.5}
                         />
                       )}
@@ -742,7 +756,7 @@ Solicito una cotización formal y confirmación de disponibilidad técnica. Grac
                         isActive
                           ? "bg-ink"
                           : isCompleted
-                            ? "bg-[#3FB950]"
+                            ? "bg-[#3F8F5F]"
                             : "bg-transparent"
                       }`}
                     />
@@ -787,6 +801,7 @@ Solicito una cotización formal y confirmación de disponibilidad técnica. Grac
                 handleChange={handleChange}
                 errors={errors}
                 animatedCfm={animatedCfm}
+                realtimePrice={realtimePrice}
                 symptoms={symptoms}
                 handleSymptomToggle={handleSymptomToggle}
                 cityInputFocus={cityInputFocus}

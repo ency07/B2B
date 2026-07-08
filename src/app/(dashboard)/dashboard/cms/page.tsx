@@ -1,3 +1,7 @@
+/* eslint-disable react/jsx-no-comment-textnodes */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react/no-unescaped-entities */
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import * as React from "react";
@@ -140,7 +144,7 @@ export default function CmsPage() {
   // Additional mock settings for detailed Hero settings
 
   // ===== SECTORES / CASOS DE ÉXITO =====
-  // Estos viven dentro de brandingState (sectores, caso_destacado) y se
+  // Estos viven dentro de brandingState (sectores, casos) y se
   // publican junto con el Hero mediante handleSaveBranding — la landing
   // pública los lee directamente de ahí (Sectors.tsx / FeaturedCase.tsx).
 
@@ -436,14 +440,18 @@ export default function CmsPage() {
                         <label className="text-[10px] text-muted-foreground">Descripción</label>
                         <Textarea rows={2} value={slide.desc} onChange={(e) => { const next = [...brandingState.hero_slides]; next[idx] = { ...next[idx], desc: e.target.value }; handleBrandingChange("hero_slides", next); }} className="bg-background border-border text-xs text-foreground" />
                       </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] text-muted-foreground">Tag técnico (badge)</label>
+                        <Input value={slide.tag} onChange={(e) => { const next = [...brandingState.hero_slides]; next[idx] = { ...next[idx], tag: e.target.value }; handleBrandingChange("hero_slides", next); }} className="bg-background border-border text-xs text-foreground font-mono" />
+                      </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div className="space-y-1">
-                          <label className="text-[10px] text-muted-foreground">Tag técnico (badge)</label>
-                          <Input value={slide.tag} onChange={(e) => { const next = [...brandingState.hero_slides]; next[idx] = { ...next[idx], tag: e.target.value }; handleBrandingChange("hero_slides", next); }} className="bg-background border-border text-xs text-foreground font-mono" />
+                          <label className="text-[10px] text-muted-foreground">URL de la foto de fondo</label>
+                          <Input value={slide.photoUrl} onChange={(e) => { const next = [...brandingState.hero_slides]; next[idx] = { ...next[idx], photoUrl: e.target.value }; handleBrandingChange("hero_slides", next); }} placeholder="/mi-foto-real.webp" className="bg-background border-border text-xs text-foreground font-mono" />
                         </div>
                         <div className="space-y-1">
-                          <label className="text-[10px] text-muted-foreground">Descripción del panel visual</label>
-                          <Input value={slide.mediaLabel} onChange={(e) => { const next = [...brandingState.hero_slides]; next[idx] = { ...next[idx], mediaLabel: e.target.value }; handleBrandingChange("hero_slides", next); }} className="bg-background border-border text-xs text-foreground" />
+                          <label className="text-[10px] text-muted-foreground">Texto alternativo de la foto</label>
+                          <Input value={slide.photoAlt} onChange={(e) => { const next = [...brandingState.hero_slides]; next[idx] = { ...next[idx], photoAlt: e.target.value }; handleBrandingChange("hero_slides", next); }} className="bg-background border-border text-xs text-foreground" />
                         </div>
                       </div>
                     </div>
@@ -755,89 +763,98 @@ export default function CmsPage() {
         {activeTab === "cases" && (
           <div className="space-y-6 animate-in fade-in duration-150">
             <div>
-              <span className="text-[10px] font-mono text-primary uppercase font-bold">// Case Study</span>
-              <h3 className="text-sm font-semibold text-foreground mt-0.5">Caso Destacado de la Landing</h3>
-              <p className="text-xs text-muted-foreground">La landing pública muestra un único caso de éxito en detalle. Edite su titular, métricas y testimonio.</p>
+              <span className="text-[10px] font-mono text-primary uppercase font-bold">// Case Studies</span>
+              <h3 className="text-sm font-semibold text-foreground mt-0.5">Casos Destacados (carrusel de 4)</h3>
+              <p className="text-xs text-muted-foreground">La landing pública muestra estos 4 casos en un carrusel. Use fotos reales de cada proyecto — evite repetir la misma imagen entre casos.</p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <label className="text-[10px] text-muted-foreground">Titular</label>
-                <Input value={brandingState.caso_destacado.headline} onChange={(e) => handleBrandingChange("caso_destacado", { ...brandingState.caso_destacado, headline: e.target.value })} className="bg-background border-border text-xs text-foreground" />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] text-muted-foreground">Titular (resaltado en cursiva)</label>
-                <Input value={brandingState.caso_destacado.headlineHighlight} onChange={(e) => handleBrandingChange("caso_destacado", { ...brandingState.caso_destacado, headlineHighlight: e.target.value })} className="bg-background border-border text-xs text-foreground" />
-              </div>
-            </div>
-            <div className="space-y-1">
-              <label className="text-[10px] text-muted-foreground">Línea de contexto (industria · país · año)</label>
-              <Input value={brandingState.caso_destacado.meta} onChange={(e) => handleBrandingChange("caso_destacado", { ...brandingState.caso_destacado, meta: e.target.value })} className="bg-background border-border text-xs text-foreground font-mono" />
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <label className="text-[10px] text-muted-foreground">URL de la foto</label>
-                <Input value={brandingState.caso_destacado.photoUrl || ""} onChange={(e) => handleBrandingChange("caso_destacado", { ...brandingState.caso_destacado, photoUrl: e.target.value })} placeholder="/mi-foto-real-del-proyecto.webp" className="bg-background border-border text-xs text-foreground font-mono" />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] text-muted-foreground">Texto alternativo de la foto</label>
-                <Input value={brandingState.caso_destacado.photoAlt || ""} onChange={(e) => handleBrandingChange("caso_destacado", { ...brandingState.caso_destacado, photoAlt: e.target.value })} className="bg-background border-border text-xs text-foreground" />
-              </div>
-            </div>
-            <p className="text-[10px] text-muted-foreground -mt-1">Use una foto real de este proyecto — evite reutilizar la misma imagen del Hero o de otras secciones.</p>
+            {brandingState.casos.map((cs, idx) => {
+              const update = (patch: Partial<typeof cs>) => {
+                const next = [...brandingState.casos];
+                next[idx] = { ...next[idx], ...patch };
+                handleBrandingChange("casos", next);
+              };
+              return (
+                <div key={idx} className="p-4 rounded-xl border border-border bg-card/40 space-y-3">
+                  <div className="text-[10px] font-mono text-muted-foreground uppercase">Caso {idx + 1}</div>
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-muted-foreground">Sector / industria</label>
+                      <Input value={cs.sector} onChange={(e) => update({ sector: e.target.value })} className="bg-background border-border text-xs text-foreground" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-muted-foreground">País</label>
+                      <Input value={cs.location} onChange={(e) => update({ location: e.target.value })} className="bg-background border-border text-xs text-foreground" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-muted-foreground">Año</label>
+                      <Input value={cs.year} onChange={(e) => update({ year: e.target.value })} className="bg-background border-border text-xs text-foreground font-mono" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-muted-foreground">Titular</label>
+                      <Input value={cs.titleMain} onChange={(e) => update({ titleMain: e.target.value })} className="bg-background border-border text-xs text-foreground" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-muted-foreground">Titular (resaltado en cursiva)</label>
+                      <Input value={cs.titleItalic} onChange={(e) => update({ titleItalic: e.target.value })} className="bg-background border-border text-xs text-foreground" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-muted-foreground">URL de la foto</label>
+                      <Input value={cs.photoUrl || ""} onChange={(e) => update({ photoUrl: e.target.value })} placeholder="/mi-foto-real-del-proyecto.webp" className="bg-background border-border text-xs text-foreground font-mono" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-muted-foreground">Texto alternativo de la foto</label>
+                      <Input value={cs.photoAlt || ""} onChange={(e) => update({ photoAlt: e.target.value })} className="bg-background border-border text-xs text-foreground" />
+                    </div>
+                  </div>
 
-            <div className="space-y-2">
-              <label className="text-[10px] text-muted-foreground uppercase font-mono font-bold">Métricas antes / después</label>
-              {brandingState.caso_destacado.results.map((row, idx) => (
-                <div key={idx} className="grid grid-cols-[1fr_auto_auto] gap-2 items-center">
-                  <Input
-                    value={row.label}
-                    onChange={(e) => {
-                      const next = [...brandingState.caso_destacado.results];
-                      next[idx] = { ...next[idx], label: e.target.value };
-                      handleBrandingChange("caso_destacado", { ...brandingState.caso_destacado, results: next });
-                    }}
-                    placeholder="Métrica"
-                    className="bg-background border-border text-xs text-foreground"
-                  />
-                  <Input
-                    value={row.before}
-                    onChange={(e) => {
-                      const next = [...brandingState.caso_destacado.results];
-                      next[idx] = { ...next[idx], before: e.target.value };
-                      handleBrandingChange("caso_destacado", { ...brandingState.caso_destacado, results: next });
-                    }}
-                    placeholder="Antes"
-                    className="bg-background border-border text-xs text-foreground w-24 font-mono"
-                  />
-                  <Input
-                    value={row.after}
-                    onChange={(e) => {
-                      const next = [...brandingState.caso_destacado.results];
-                      next[idx] = { ...next[idx], after: e.target.value };
-                      handleBrandingChange("caso_destacado", { ...brandingState.caso_destacado, results: next });
-                    }}
-                    placeholder="Después"
-                    className="bg-background border-border text-xs text-foreground w-24 font-mono"
-                  />
+                  <div className="space-y-2">
+                    <label className="text-[10px] text-muted-foreground uppercase font-mono font-bold">Métricas antes / después</label>
+                    {cs.results.map((row, ridx) => (
+                      <div key={ridx} className="grid grid-cols-[1fr_auto_auto] gap-2 items-center">
+                        <Input
+                          value={row.label}
+                          onChange={(e) => { const results = [...cs.results]; results[ridx] = { ...results[ridx], label: e.target.value }; update({ results }); }}
+                          placeholder="Métrica"
+                          className="bg-background border-border text-xs text-foreground"
+                        />
+                        <Input
+                          value={row.before}
+                          onChange={(e) => { const results = [...cs.results]; results[ridx] = { ...results[ridx], before: e.target.value }; update({ results }); }}
+                          placeholder="Antes"
+                          className="bg-background border-border text-xs text-foreground w-24 font-mono"
+                        />
+                        <Input
+                          value={row.after}
+                          onChange={(e) => { const results = [...cs.results]; results[ridx] = { ...results[ridx], after: e.target.value }; update({ results }); }}
+                          placeholder="Después"
+                          className="bg-background border-border text-xs text-foreground w-24 font-mono"
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-muted-foreground">Cita textual del cliente</label>
+                    <Textarea rows={2} value={cs.quote} onChange={(e) => update({ quote: e.target.value })} className="bg-background border-border text-xs text-foreground" />
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-muted-foreground">Nombre de quien firma la cita</label>
+                      <Input value={cs.quoteAuthor} onChange={(e) => update({ quoteAuthor: e.target.value })} className="bg-background border-border text-xs text-foreground" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-muted-foreground">Cargo · Empresa</label>
+                      <Input value={cs.quoteRole} onChange={(e) => update({ quoteRole: e.target.value })} className="bg-background border-border text-xs text-foreground" />
+                    </div>
+                  </div>
                 </div>
-              ))}
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-[10px] text-muted-foreground">Cita textual del cliente</label>
-              <Textarea rows={3} value={brandingState.caso_destacado.quote} onChange={(e) => handleBrandingChange("caso_destacado", { ...brandingState.caso_destacado, quote: e.target.value })} className="bg-background border-border text-xs text-foreground" />
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <label className="text-[10px] text-muted-foreground">Nombre de quien firma la cita</label>
-                <Input value={brandingState.caso_destacado.quoteAuthor} onChange={(e) => handleBrandingChange("caso_destacado", { ...brandingState.caso_destacado, quoteAuthor: e.target.value })} className="bg-background border-border text-xs text-foreground" />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] text-muted-foreground">Cargo · Empresa</label>
-                <Input value={brandingState.caso_destacado.quoteRole} onChange={(e) => handleBrandingChange("caso_destacado", { ...brandingState.caso_destacado, quoteRole: e.target.value })} className="bg-background border-border text-xs text-foreground" />
-              </div>
-            </div>
+              );
+            })}
           </div>
         )}
 
@@ -1182,7 +1199,7 @@ export default function CmsPage() {
         {activeTab === "footer" && (
           <div className="space-y-6 animate-in fade-in duration-150">
             <div>
-              <span className="text-[10px] font-mono text-primary uppercase font-bold">// Footer Columns</span>
+              <span className="text-[10px] font-mono text-primary uppercase font-bold">{"// Footer Columns"}</span>
               <h3 className="text-sm font-semibold text-foreground mt-0.5">Información de Contacto y Enlaces del Footer</h3>
               <p className="text-xs text-muted-foreground">Configure los links y textos informativos del pie de página público.</p>
             </div>
@@ -1230,13 +1247,13 @@ export default function CmsPage() {
         {activeTab === "chatbot" && (
           <div className="space-y-6 animate-in fade-in duration-150">
             <div>
-              <span className="text-[10px] font-mono text-primary uppercase font-bold">// Chatbot Steps & Dialog Flow</span>
+              <span className="text-[10px] font-mono text-primary uppercase font-bold">{"// Chatbot Steps & Dialog Flow"}</span>
               <h3 className="text-sm font-semibold text-foreground mt-0.5">Gestión de Diálogos del Asistente Virtual</h3>
               <p className="text-xs text-muted-foreground">Configure las respuestas y opciones que ofrece el chatbot a los clientes.</p>
             </div>
             
             <div className="space-y-4 max-w-2xl">
-              {brandingState.chatbot_steps && brandingState.chatbot_steps.map((step: any, sIdx: number) => (
+              {brandingState.chatbot_steps && (brandingState.chatbot_steps as {id: string; sender: string; forWizardStep?: number; [key: string]: unknown}[]).map((step, sIdx: number) => (
                 <div key={step.id} className="p-4 rounded-xl border border-border bg-accent/15 space-y-3">
                   <div className="flex items-center justify-between border-b border-border/50 pb-2 mb-1">
                     <span className="text-[10px] font-mono font-bold text-primary uppercase">Mensaje ID: {step.id}</span>
@@ -1251,6 +1268,7 @@ export default function CmsPage() {
                         const newSteps = [...brandingState.chatbot_steps];
                         const value = e.target.value;
                         newSteps[sIdx].forWizardStep = value === "" ? undefined : Number(value);
+                         
                         handleBrandingChange("chatbot_steps" as any, newSteps as any);
                       }}
                       className="w-full bg-background border border-border text-foreground text-xs rounded-lg p-2 focus:ring-1 focus:ring-primary focus:outline-none"
@@ -1272,6 +1290,7 @@ export default function CmsPage() {
                       onChange={(e) => {
                         const newSteps = [...brandingState.chatbot_steps];
                         newSteps[sIdx].text = e.target.value;
+                         
                         handleBrandingChange("chatbot_steps" as any, newSteps as any);
                       }} 
                       className="bg-background border-border text-xs text-foreground font-sans leading-relaxed" 
@@ -1291,7 +1310,8 @@ export default function CmsPage() {
                                 const newSteps = [...brandingState.chatbot_steps];
                                 if (newSteps[sIdx].options) {
                                   newSteps[sIdx].options![oIdx].label = e.target.value;
-                                  handleBrandingChange("chatbot_steps" as any, newSteps as any);
+                                   
+                        handleBrandingChange("chatbot_steps" as any, newSteps as any);
                                 }
                               }}
                               placeholder="Texto del botón..."
@@ -1303,7 +1323,8 @@ export default function CmsPage() {
                                 const newSteps = [...brandingState.chatbot_steps];
                                 if (newSteps[sIdx].options) {
                                   newSteps[sIdx].options![oIdx].action = e.target.value;
-                                  handleBrandingChange("chatbot_steps" as any, newSteps as any);
+                                   
+                        handleBrandingChange("chatbot_steps" as any, newSteps as any);
                                 }
                               }}
                               placeholder="Acción (ID de destino)..."
@@ -1371,10 +1392,10 @@ export default function CmsPage() {
                         className="text-xs font-black uppercase text-slate-900 leading-tight truncate"
                         style={{ color: brandingState.color_primario, fontFamily: brandingState.tipografia_principal }}
                       >
-                        {brandingState.landing_titulo || "ESPECIALISTAS"}
+                        {brandingState.hero_slides[0]?.titleMain || "ESPECIALISTAS"}
                       </h4>
                       <p className="text-[8px] text-slate-500 leading-relaxed line-clamp-3 font-sans">
-                        {brandingState.landing_subtitulo || "Diseño, venta e instalación..."}
+                        {brandingState.hero_slides[0]?.desc || "Diseño, venta e instalación..."}
                       </p>
 
                       <div className="flex gap-1.5 pt-1.5">

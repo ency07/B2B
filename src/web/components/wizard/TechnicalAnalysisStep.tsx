@@ -1,28 +1,31 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react/jsx-no-comment-textnodes */
 "use client";
 
 import React from "react";
 import { motion } from "framer-motion";
 import { Wind, Check } from "lucide-react";
+import { ENVIRONMENT_OPTIONS } from "@/utils/engineering";
+
+interface RealtimePrice {
+  rangeMinCop: number;
+  rangeMaxCop: number;
+  rangeMinUsd: number;
+  rangeMaxUsd: number;
+}
 
 interface TechnicalAnalysisStepProps {
   form: any;
   handleChange: (key: string, val: any) => void;
   errors: Record<string, string>;
   animatedCfm: number;
+  realtimePrice: RealtimePrice;
   symptoms: any;
   handleSymptomToggle: (key: "heat" | "dust" | "humidity" | "gases") => void;
   cityInputFocus: boolean;
   setCityInputFocus: (val: boolean) => void;
   filteredCities: { name: string; search: string }[];
 }
-
-const ENVIRONMENTS = [
-  { value: "default", label: "Área Común", ach: 10, desc: "Comercial · Oficinas" },
-  { value: "warehouse", label: "Bodega", ach: 12, desc: "Almacenamiento estándar" },
-  { value: "data_center", label: "Data Center", ach: 25, desc: "Servidores · Salas técnicas" },
-  { value: "heavy_plant", label: "Planta Pesada", ach: 35, desc: "Siderurgia · Química" },
-  { value: "mining", label: "Minería", ach: 55, desc: "Subterránea · Túneles" },
-];
 
 const SYMPTOMS = [
   { key: "heat", label: "Alta carga térmica", desc: "Sensación de sofoco o temperaturas > 35°C." },
@@ -31,11 +34,16 @@ const SYMPTOMS = [
   { key: "gases", label: "Emisión de gases / olores", desc: "Monóxido, solventes, soldadura o químicos." },
 ];
 
+function formatCop(value: number): string {
+  return `$${Math.round(value).toLocaleString("es-CO")}`;
+}
+
 export function TechnicalAnalysisStep({
   form,
   handleChange,
   errors,
   animatedCfm,
+  realtimePrice,
   symptoms,
   handleSymptomToggle,
   cityInputFocus,
@@ -67,24 +75,44 @@ export function TechnicalAnalysisStep({
           </p>
         </div>
 
-        {/* Live CFM Ticker */}
-        <div className="bg-paper-warm px-8 py-6 shrink-0">
-          <p className="editorial-mono text-fg-muted mb-2">Caudal requerido</p>
-          <div className="flex items-baseline gap-2">
-            <span className="font-display text-4xl lg:text-5xl font-light text-ink tracking-[-0.03em] leading-none tabular-nums">
-              {animatedCfm.toLocaleString("es-CO")}
-            </span>
-            <span className="font-mono text-[10px] tracking-widest text-fg-muted uppercase">
-              CFM
-            </span>
+        {/* Live: Caudal + estimado de inversión */}
+        <div className="bg-paper-warm px-8 py-6 shrink-0 grid grid-cols-2 gap-8">
+          <div>
+            <p className="editorial-mono text-fg-muted mb-2">Caudal requerido</p>
+            <div className="flex items-baseline gap-2">
+              <span className="font-display text-4xl lg:text-5xl font-light text-ink tracking-[-0.03em] leading-none tabular-nums">
+                {animatedCfm.toLocaleString("es-CO")}
+              </span>
+              <span className="font-mono text-[10px] tracking-widest text-fg-muted uppercase">
+                CFM
+              </span>
+            </div>
+            <div className="mt-3 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#3F8F5F] animate-pulse" />
+              <span className="font-mono text-[9px] tracking-widest text-fg-muted uppercase">
+                Live
+              </span>
+            </div>
           </div>
-          <div className="mt-3 flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#3FB950] animate-pulse" />
-            <span className="font-mono text-[9px] tracking-widest text-fg-muted uppercase">
-              Live
-            </span>
+          <div className="border-l border-line pl-8">
+            <p className="editorial-mono text-fg-muted mb-2">Inversión estimada</p>
+            <div className="leading-tight">
+              <span className="font-display text-lg lg:text-xl font-light text-ink tracking-[-0.02em] tabular-nums">
+                {formatCop(realtimePrice.rangeMinCop)}
+              </span>
+              <span className="mx-1 text-fg-muted">—</span>
+              <span className="font-display text-lg lg:text-xl font-light text-ink tracking-[-0.02em] tabular-nums">
+                {formatCop(realtimePrice.rangeMaxCop)}
+              </span>
+            </div>
+            <p className="mt-1 font-mono text-[10px] text-fg-muted tabular-nums">
+              USD {realtimePrice.rangeMinUsd.toLocaleString("es-CO")} — {realtimePrice.rangeMaxUsd.toLocaleString("es-CO")}
+            </p>
           </div>
         </div>
+        <p className="col-span-2 font-mono text-[10px] leading-relaxed text-fg-muted">
+          Estimado preliminar, no es cotización final. Un ingeniero de nuestro equipo valida el presupuesto y el diagnóstico definitivo.
+        </p>
       </div>
 
       {/* === Dimensiones con padding generoso === */}
@@ -128,8 +156,8 @@ export function TechnicalAnalysisStep({
         </div>
       </div>
 
-      {/* === Entorno + Ciudad con padding === */}
-      <div className="grid gap-6 sm:grid-cols-2">
+      {/* === Entorno + Altitud + Ciudad con padding === */}
+      <div className="grid gap-6 sm:grid-cols-3">
         <div>
           <label className="editorial-mono text-fg-muted mb-4 block">
             Entorno de trabajo
@@ -139,12 +167,33 @@ export function TechnicalAnalysisStep({
             onChange={(e) => handleChange("environment", e.target.value)}
             className="w-full h-14 px-5 bg-paper-warm border-0 text-ink text-base font-sans focus:bg-paper focus:ring-1 focus:ring-ink focus:outline-none transition-colors appearance-none cursor-pointer"
           >
-            {ENVIRONMENTS.map((env) => (
+            {ENVIRONMENT_OPTIONS.map((env) => (
               <option key={env.value} value={env.value} className="bg-paper">
                 {env.label} · {env.ach} ACH
               </option>
             ))}
           </select>
+        </div>
+
+        <div>
+          <div className="flex justify-between mb-4">
+            <label className="editorial-mono text-fg-muted">Altitud</label>
+            <span className="font-mono text-[9px] text-fg-muted tracking-wider">0—3500m</span>
+          </div>
+          <div className="relative">
+            <input
+              type="number"
+              min={0}
+              max={3500}
+              step={1}
+              value={form.altitude}
+              onChange={(e) => handleChange("altitude", Number(e.target.value))}
+              className="w-full h-14 pl-5 pr-16 bg-paper-warm border-0 text-ink font-mono text-base tabular-nums focus:bg-paper focus:ring-1 focus:ring-ink focus:outline-none transition-colors"
+            />
+            <span className="absolute right-5 top-1/2 -translate-y-1/2 font-mono text-[10px] tracking-widest text-fg-muted uppercase">
+              msnm
+            </span>
+          </div>
         </div>
 
         <div className="relative">

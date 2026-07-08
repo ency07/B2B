@@ -6,7 +6,7 @@ import dynamic from "next/dynamic";
 import { TopBar } from "./TopBar";
 import { Hero } from "./Hero";
 import { TrustMarquee } from "./TrustMarquee";
-import type { FeaturedCaseContent } from "./FeaturedCase";
+import type { CaseSlideContent } from "@/platform/branding/branding-defaults";
 
 // Skeleton liviano para evitar layout shift mientras cargan las secciones
 const SectionSkeleton = () => (
@@ -60,10 +60,6 @@ const CfmCalculator = dynamic(
   () => import("./CfmCalculator").then((mod) => mod.CfmCalculator),
   { ssr: false, loading: () => <SectionSkeleton /> }
 );
-const ContactSection = dynamic(
-  () => import("./ContactSection").then((mod) => mod.ContactSection),
-  { ssr: true, loading: () => <SectionSkeleton /> }
-);
 const Footer = dynamic(
   () => import("./Footer").then((mod) => mod.Footer),
   { ssr: true, loading: () => <SectionSkeleton /> }
@@ -85,7 +81,7 @@ export function MarketingShell({ catalog, branding, tenantCode }: Props) {
 
   return (
     <div className="min-h-screen bg-paper text-ink">
-      <TopBar siteName={siteName} logoUrl={logoUrl} tenantCode={tenantCode} certificaciones={branding.certificaciones as string[] | undefined} />
+      <TopBar siteName={siteName} logoUrl={logoUrl} tenantCode={tenantCode} />
       <main>
         <Hero siteName={siteName} tenantCode={tenantCode} branding={branding} />
         <TrustMarquee content={branding.trust_marquee as { eyebrow: string; statLine: string; clients: { name: string; logoUrl?: string }[] } | undefined} />
@@ -95,9 +91,8 @@ export function MarketingShell({ catalog, branding, tenantCode }: Props) {
         <Services tenantCode={tenantCode} content={branding.services as { name: string; shortDescription: string; longDescription: string; deliverable: string }[] | undefined} />
         <EngineeringCapabilities catalog={catalog} tenantCode={tenantCode} branding={branding} />
         <Sectors content={branding.sectores as { name: string; shortDescription: string }[] | undefined} />
-        <FeaturedCase content={branding.caso_destacado as FeaturedCaseContent | undefined} />
+        <FeaturedCase content={branding.casos as CaseSlideContent[] | undefined} />
         <CfmCalculator />
-        <ContactSection tenantCode={tenantCode} branding={branding} />
       </main>
       <Footer siteName={siteName} tenantCode={tenantCode} branding={branding} />
       <FloatingCta tenantCode={tenantCode} />

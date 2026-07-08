@@ -1,16 +1,15 @@
+ 
 "use client";
 
 import * as React from "react";
 import Image from "next/image";
 import { Menu, X, Command } from "lucide-react";
 import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion";
-import { CertBadgeRow } from "./primitives/CertBadge";
 
 interface TopBarProps {
   siteName: string;
   logoUrl?: string;
   tenantCode: string;
-  certificaciones?: string[];
 }
 
 const NAV_ITEMS = [
@@ -22,7 +21,7 @@ const NAV_ITEMS = [
   { id: "calculadora", label: "Calculadora", path: "#calculadora", number: "06" },
 ];
 
-export function TopBar({ siteName, logoUrl, tenantCode, certificaciones = ["AMCA", "ISO 1940 G2.5"] }: TopBarProps) {
+export function TopBar({ siteName, logoUrl, tenantCode }: TopBarProps) {
   const [open, setOpen] = React.useState(false);
   const [scrolled, setScrolled] = React.useState(false);
   const [activeSection, setActiveSection] = React.useState<string>("inicio");
@@ -92,38 +91,11 @@ export function TopBar({ siteName, logoUrl, tenantCode, certificaciones = ["AMCA
             onHero
               ? "bg-transparent"
               : scrolled
-                ? "bg-[#FAFAF7]/85 backdrop-blur-xl border-b border-line"
+                ? "bg-paper/85 backdrop-blur-xl border-b border-line"
                 : "bg-transparent border-b border-transparent"
           }
         `}
       >
-        {/* === TOP META BAR: indicador técnico sutil === */}
-        <motion.div
-          initial={{ height: 0, opacity: 0 }}
-          animate={{
-            height: onHero ? 28 : 0,
-            opacity: onHero ? 1 : 0,
-          }}
-          transition={{ duration: 0.4 }}
-          className="overflow-hidden border-b border-white/10"
-        >
-          <div className="max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-14 h-7 flex items-center justify-between font-mono text-[10px] sm:text-[10px] tracking-widest text-white/50 uppercase">
-            <div className="flex items-center gap-4 reveal-stagger">
-              <span className="flex items-center gap-1.5">
-                <span className="w-1 h-1 rounded-full bg-[#3FB950] animate-pulse" />
-                <span>Operativo</span>
-              </span>
-              <span className="hidden md:inline">22 años · 312 plantas</span>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="hidden md:flex">
-                <CertBadgeRow labels={certificaciones} />
-              </div>
-              <span>LATAM</span>
-            </div>
-          </div>
-        </motion.div>
-
         {/* === MAIN BAR === */}
         <div className="max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-14 h-20 flex items-center justify-between">
           {/* Logo con badge técnico al lado */}
@@ -163,7 +135,7 @@ export function TopBar({ siteName, logoUrl, tenantCode, certificaciones = ["AMCA
                   <span
                     className={`
                       absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full
-                      ${onHero ? "bg-[#3FB950]" : "bg-[#3FB950]"}
+                      bg-[#7FC98F]
                       animate-pulse
                     `}
                   />
@@ -385,10 +357,10 @@ export function TopBar({ siteName, logoUrl, tenantCode, certificaciones = ["AMCA
 
               <div className="p-7 border-t border-line">
                 <button
-                  onClick={() => go("#contacto")}
+                  onClick={() => go(`/wizard?tenant=${tenantCode}`)}
                   className="btn-primary w-full justify-center"
                 >
-                  <span>Consultar con un ingeniero</span>
+                  <span>Iniciar cotización</span>
                   <svg
                     width="14"
                     height="14"

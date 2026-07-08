@@ -1,18 +1,16 @@
+ 
+ 
 "use client";
 
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Play, Cpu, Activity, Wind, BarChart3 } from "lucide-react";
-import { generateEngineeringReport } from "@/utils/engineering";
+import { generateEngineeringReport, ENVIRONMENT_OPTIONS } from "@/utils/engineering";
 
-const ACTIVITIES = [
-  { id: "manufactura", label: "Manufactura", ach: 6 },
-  { id: "soldadura", label: "Soldadura", ach: 12 },
-  { id: "quimico", label: "Químico", ach: 15 },
-  { id: "almacenamiento", label: "Almacén", ach: 3 },
-  { id: "data_center", label: "Data center", ach: 20 },
-  { id: "alimentos", label: "Alimentos", ach: 10 },
-];
+// Mismo catálogo de entornos que usa el Wizard (ENVIRONMENT_OPTIONS) — así el
+// resultado que se ve aquí es garantizado el mismo que se recalcula al pasar
+// al Wizard con "Cotizar con estos datos".
+const ACTIVITIES = ENVIRONMENT_OPTIONS;
 
 function useCountUp(target: number | null, duration = 1100) {
   const [value, setValue] = React.useState(0);
@@ -41,7 +39,7 @@ function CircularGauge({
   max,
   label,
   unit,
-  color = "#3FB950",
+  color = "#7FC98F",
 }: {
   value: number;
   max: number;
@@ -119,7 +117,7 @@ export function CfmCalculator() {
   const [length, setLength] = React.useState("50");
   const [width, setWidth] = React.useState("30");
   const [height, setHeight] = React.useState("8");
-  const [activity, setActivity] = React.useState(ACTIVITIES[1].label);
+  const [activity, setActivity] = React.useState(ACTIVITIES[3].value);
   const [altitude, setAltitude] = React.useState("2640");
   const [computed, setComputed] = React.useState<number | null>(null);
   const [isCalc, setIsCalc] = React.useState(false);
@@ -136,7 +134,6 @@ export function CfmCalculator() {
     : 0;
   const volumeM3 = parseFloat(length || "0") * parseFloat(width || "0") * parseFloat(height || "0");
   const volumeFt3 = volumeM3 * 35.3147;
-  const activityConfig = ACTIVITIES.find((a) => a.label === activity)!;
 
   const handleCalc = (e: React.FormEvent) => {
     e.preventDefault();
@@ -149,7 +146,9 @@ export function CfmCalculator() {
     setComputed(null);
     setProgress(0);
 
-    // Simula proceso de cálculo con barra de progreso
+    // Simula proceso de cálculo con barra de progreso — el número final usa
+    // el mismo motor (generateEngineeringReport) que el paso 2 del Wizard,
+    // para que el resultado nunca se desincronice entre ambos.
     const start = performance.now();
     const duration = 1100;
     const tick = (now: number) => {
@@ -158,10 +157,8 @@ export function CfmCalculator() {
       if (p < 1) {
         requestAnimationFrame(tick);
       } else {
-        const volFt3 = L * W * H * 35.31;
-        const cfm = (volFt3 * activityConfig.ach) / 60;
-        const altFactor = 1 + (A / 1000) * 0.085;
-        setComputed(Math.round(cfm * altFactor));
+        const report = generateEngineeringReport({ length: L, width: W, height: H }, activity, A, 20, false);
+        setComputed(report.cfm);
         setIsCalc(false);
         setTimeout(() => setProgress(100), 200);
       }
@@ -172,7 +169,7 @@ export function CfmCalculator() {
   return (
     <section
       id="calculadora"
-      className="relative w-full bg-ink text-paper section-py overflow-hidden"
+      className="relative w-full bg-[#0A181D] text-paper section-py overflow-hidden"
     >
       {/* Grid background técnico */}
       <div className="absolute inset-0 opacity-[0.04]">
@@ -222,14 +219,14 @@ export function CfmCalculator() {
           {/* === LEFT: Inputs como terminal === */}
           <form
             onSubmit={handleCalc}
-            className="lg:col-span-5 bg-ink p-8 lg:p-10"
+            className="lg:col-span-5 bg-[#0A181D] p-8 lg:p-10"
           >
             {/* Terminal header */}
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-[#FF7B72]" />
-                <div className="w-2 h-2 rounded-full bg-[#F0883E]" />
-                <div className="w-2 h-2 rounded-full bg-[#3FB950]" />
+                <div className="w-2 h-2 rounded-full bg-[#E8896B]" />
+                <div className="w-2 h-2 rounded-full bg-[#E0C86B]" />
+                <div className="w-2 h-2 rounded-full bg-[#7FC98F]" />
               </div>
               <p className="font-mono text-[10px] tracking-widest text-white/40 uppercase">
                 input.terminal
@@ -279,7 +276,7 @@ export function CfmCalculator() {
                   className="w-full h-12 px-4 bg-white/5 text-paper text-sm font-sans focus-expand focus:bg-white/10 focus:ring-0 focus:outline-none transition-colors appearance-none cursor-pointer"
                 >
                   {ACTIVITIES.map((a) => (
-                    <option key={a.id} value={a.label} className="bg-ink text-paper">
+                    <option key={a.value} value={a.value} className="bg-[#0A181D] text-paper">
                       {a.label} · {a.ach} ACH
                     </option>
                   ))}
@@ -291,7 +288,7 @@ export function CfmCalculator() {
                 unit="msnm"
                 value={altitude}
                 onChange={setAltitude}
-                step="50"
+                step="1"
                 min="0"
                 max="3500"
               />
@@ -308,7 +305,7 @@ export function CfmCalculator() {
                 </div>
                 <div className="relative h-1 bg-white/10 overflow-hidden">
                   <motion.div
-                    className="absolute inset-y-0 left-0 bg-[#3FB950]"
+                    className="absolute inset-y-0 left-0 bg-[#7FC98F]"
                     style={{ width: `${isCalc ? progress : 0}%` }}
                     transition={{ duration: 0.1 }}
                   />
@@ -340,7 +337,7 @@ export function CfmCalculator() {
           </form>
 
           {/* === RIGHT: Output como dashboard === */}
-          <div className="lg:col-span-7 bg-ink p-8 lg:p-10 flex flex-col">
+          <div className="lg:col-span-7 bg-[#0A181D] p-8 lg:p-10 flex flex-col">
             <div className="flex items-center justify-between mb-8">
               <p className="font-mono text-[10px] tracking-widest text-white/40 uppercase">
                 Resultado
@@ -349,9 +346,9 @@ export function CfmCalculator() {
                 <span
                   className={`w-1.5 h-1.5 rounded-full ${
                     isCalc
-                      ? "bg-[#F0883E] animate-pulse"
+                      ? "bg-[#E0C86B] animate-pulse"
                       : computed
-                        ? "bg-[#3FB950]"
+                        ? "bg-[#7FC98F]"
                         : "bg-white/30"
                   }`}
                 />
@@ -369,7 +366,7 @@ export function CfmCalculator() {
                   max={100000}
                   label="Caudal"
                   unit="CFM"
-                  color="#3FB950"
+                  color="#7FC98F"
                 />
               </div>
               <div className="flex flex-col items-center">
@@ -378,7 +375,7 @@ export function CfmCalculator() {
                   max={60}
                   label="Renovación"
                   unit="ACH"
-                  color="#4C8DFF"
+                  color="#6699FF"
                 />
               </div>
               <div className="flex flex-col items-center">
@@ -387,7 +384,7 @@ export function CfmCalculator() {
                   max={50000}
                   label="Volumen"
                   unit="m³"
-                  color="#F0883E"
+                  color="#E0A05F"
                 />
               </div>
             </div>
@@ -437,7 +434,7 @@ export function CfmCalculator() {
                   window.location.href = `/wizard?${params.toString()}`;
                 }}
                 disabled={!computed}
-                className="group flex-1 h-12 bg-[#3FB950] text-ink text-sm font-medium tracking-tight rounded-sm hover:bg-[#4ac95c] transition-colors flex items-center justify-center gap-2 disabled:opacity-30"
+                className="group flex-1 h-12 bg-[#7FC98F] text-ink text-sm font-medium tracking-tight rounded-sm hover:bg-[#93d4a1] transition-colors flex items-center justify-center gap-2 disabled:opacity-30"
               >
                 <span>Cotizar con estos datos</span>
                 <ArrowRight

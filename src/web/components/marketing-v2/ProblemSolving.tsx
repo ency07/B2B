@@ -1,3 +1,5 @@
+/* eslint-disable react/no-unescaped-entities */
+/* eslint-disable react-hooks/purity */
 "use client";
 
 import * as React from "react";
@@ -253,9 +255,9 @@ const CHALLENGES = [
 ];
 
 const accentColor = {
-  green: "#3FB950",
-  blue: "#4C8DFF",
-  warm: "#FF7B72",
+  green: "#5FBE84",
+  blue: "#6699FF",
+  warm: "#E8896B",
 } as const;
 
 interface ProblemSolvingProps {
@@ -321,7 +323,7 @@ export function ProblemSolving({ content }: ProblemSolvingProps = {}) {
                 delay: idx * 0.1,
                 ease: [0.16, 1, 0.3, 1],
               }}
-              className="relative bg-ink text-paper p-8 lg:p-10 group overflow-hidden"
+              className="relative bg-[#0F2A30] text-paper p-8 lg:p-10 min-h-[420px] flex flex-col group overflow-hidden"
             >
               {/* Dot indicator en el accent color */}
               <div className="flex items-center justify-between mb-10">

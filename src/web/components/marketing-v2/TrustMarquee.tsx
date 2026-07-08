@@ -37,7 +37,7 @@ export function TrustMarquee({ content }: TrustMarqueeProps = {}) {
   return (
     <section
       id="confianza"
-      className="relative w-full bg-paper-warm border-y border-line section-py-bleed overflow-hidden"
+      className="relative w-full bg-[#E4E9EA] border-y border-line section-py-bleed overflow-hidden"
     >
       <div className="max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-14 mb-6">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
@@ -51,8 +51,8 @@ export function TrustMarquee({ content }: TrustMarqueeProps = {}) {
       </div>
 
       <div className="relative h-16">
-        <div className="absolute left-0 top-0 bottom-0 w-32 z-10 bg-gradient-to-r from-paper-warm to-transparent pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-0 w-32 z-10 bg-gradient-to-l from-paper-warm to-transparent pointer-events-none" />
+        <div className="absolute left-0 top-0 bottom-0 w-32 z-10 bg-gradient-to-r from-[#E4E9EA] to-transparent pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-32 z-10 bg-gradient-to-l from-[#E4E9EA] to-transparent pointer-events-none" />
 
         <div className="marquee-track h-full flex items-center">
           {items.map((client, idx) => (

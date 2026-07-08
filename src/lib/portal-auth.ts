@@ -93,7 +93,7 @@ export async function getCurrentClient(previewClientId?: string | null): Promise
         .select("roles (role_code)")
         .eq("user_id", userRow.id);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any — user_roles join con roles: TS no infiere shape exacto de la relación
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const roleCodes = userRoles?.map((ur: any) => ur.roles?.role_code) || [];
       const isPlatformAdmin =
         roleCodes.includes("SUPER_ADMIN") || roleCodes.includes("ADMIN_DEV");
@@ -103,7 +103,7 @@ export async function getCurrentClient(previewClientId?: string | null): Promise
       if (isPlatformAdmin && previewClientId) {
         const { data: previewClient } = await admin
           .from("clients")
-          .select("id, legal_name, tax_id, email, status, tenant_id, tenants(code)")
+          .select("id, legal_name, tax_id, email, status, tenant_id, tenants(tenant_code)")
           .eq("id", previewClientId)
           .is("deleted_at", null)
           .maybeSingle();
@@ -113,7 +113,7 @@ export async function getCurrentClient(previewClientId?: string | null): Promise
       if (!clientRow) {
         const { data: assignedClient } = await admin
           .from("clients")
-          .select("id, legal_name, tax_id, email, status, tenant_id, tenants(code)")
+          .select("id, legal_name, tax_id, email, status, tenant_id, tenants(tenant_code)")
           .eq("assigned_user_id", userRow.id)
           .is("deleted_at", null)
           .maybeSingle();
@@ -124,7 +124,7 @@ export async function getCurrentClient(previewClientId?: string | null): Promise
       if (!clientRow && isPlatformAdmin) {
         const query = admin
           .from("clients")
-          .select("id, legal_name, tax_id, email, status, tenant_id, tenants(code)")
+          .select("id, legal_name, tax_id, email, status, tenant_id, tenants(tenant_code)")
           .is("deleted_at", null);
         if (userRow.tenant_id) query.eq("tenant_id", userRow.tenant_id);
         const { data: fallbackClient } = await query
@@ -136,8 +136,8 @@ export async function getCurrentClient(previewClientId?: string | null): Promise
 
       if (!clientRow) return null;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any — tenants es join dinámico; cast a any es simple que tipar manualmente
-      const tenantCode = (clientRow.tenants as any)?.code || null;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const tenantCode = (clientRow.tenants as any)?.tenant_code || null;
       return {
         userId: userRow.id,
         clientId: clientRow.id,
@@ -161,7 +161,7 @@ export async function getCurrentClient(previewClientId?: string | null): Promise
         id, client_id, first_name, last_name,
         clients (
           id, legal_name, tax_id, email, status, tenant_id,
-          tenants (code)
+          tenants (tenant_code)
         )
       `)
       .eq("auth_user_id", authUser.id)
@@ -192,8 +192,8 @@ export async function getCurrentClient(previewClientId?: string | null): Promise
       isPlatformAdmin: false,
       isClientContact: true,
       tenantId: clientObj.tenant_id,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any — tenants join dinámico
-      tenantCode: (clientObj.tenants as any)?.code || null,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      tenantCode: (clientObj.tenants as any)?.tenant_code || null,
     };
   } catch {
     return null;

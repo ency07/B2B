@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import * as React from "react";
@@ -32,7 +33,7 @@ const DISCIPLINES: Discipline[] = [
     ],
     stat: { value: "10-14", label: "días de diseño" },
     code: "ING-DSG-01",
-    color: "#4C8DFF", // azul aero
+    color: "#3F8F5F", // verde
     Icon: DraftingCompass,
   },
   {
@@ -50,7 +51,7 @@ const DISCIPLINES: Discipline[] = [
     ],
     stat: { value: "5-10", label: "días de montaje" },
     code: "INS-MNT-02",
-    color: "#F0883E", // naranja aero
+    color: "#C96A4A", // terracota
     Icon: HardHat,
   },
   {
@@ -68,7 +69,7 @@ const DISCIPLINES: Discipline[] = [
     ],
     stat: { value: "12", label: "meses entre visitas" },
     code: "MTT-PRV-03",
-    color: "#3FB950", // verde aero
+    color: "#3B6FD6", // azul
     Icon: Wrench,
   },
   {
@@ -86,7 +87,7 @@ const DISCIPLINES: Discipline[] = [
     ],
     stat: { value: "100%", label: "normas AMCA" },
     code: "AUD-AMD-04",
-    color: "#A78BFA", // violeta aero
+    color: "#8B7FD1", // violeta
     Icon: ClipboardCheck,
   },
 ];
@@ -157,7 +158,7 @@ export function Disciplines({ tenantCode, content }: Props) {
                   delay: idx * 0.08,
                   ease: [0.16, 1, 0.3, 1],
                 }}
-                className="relative bg-paper p-8 lg:p-10 group hover:bg-paper-warm transition-colors duration-500 flex flex-col"
+                className="relative bg-paper p-8 lg:p-10 min-h-[400px] group hover:bg-paper-warm transition-colors duration-500 flex flex-col"
               >
                 {/* === HEADER: número + icon + accent === */}
                 <div className="flex items-start justify-between mb-8">

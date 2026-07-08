@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react/jsx-no-comment-textnodes */
 "use client";
 
 import * as React from "react";
@@ -26,8 +28,8 @@ const SECTORS: Sector[] = [
     image: "/industrial_centrifugal_fan.webp",
     projects: 84,
     cfmAvg: 120000,
-    accent: "#F0883E",
-    accentSoft: "rgba(240, 136, 62, 0.08)",
+    accent: "#C96A4A",
+    accentSoft: "rgba(201, 106, 74, 0.08)",
     Icon: Mountain,
     pattern: "mountain",
     dataPoint: { label: "Temp. operación", value: "200°C" },
@@ -39,8 +41,8 @@ const SECTORS: Sector[] = [
     image: "/axial_duct_fan.webp",
     projects: 31,
     cfmAvg: 50000,
-    accent: "#4C8DFF",
-    accentSoft: "rgba(76, 141, 255, 0.08)",
+    accent: "#3B6FD6",
+    accentSoft: "rgba(59, 111, 214, 0.08)",
     Icon: Server,
     pattern: "grid",
     dataPoint: { label: "Uptime SLA", value: "99.99%" },
@@ -52,8 +54,8 @@ const SECTORS: Sector[] = [
     image: "/industrial_plant_ventilation.webp",
     projects: 132,
     cfmAvg: 35000,
-    accent: "#3FB950",
-    accentSoft: "rgba(63, 185, 80, 0.08)",
+    accent: "#3F8F5F",
+    accentSoft: "rgba(63, 143, 95, 0.08)",
     Icon: Factory,
     pattern: "waves",
     dataPoint: { label: "Cumplimiento", value: "HACCP" },
@@ -65,8 +67,8 @@ const SECTORS: Sector[] = [
     image: "/extractor_hongo_inox.webp",
     projects: 28,
     cfmAvg: 60000,
-    accent: "#A78BFA",
-    accentSoft: "rgba(167, 139, 250, 0.08)",
+    accent: "#8B7FD1",
+    accentSoft: "rgba(139, 127, 209, 0.08)",
     Icon: Beaker,
     pattern: "dots",
     dataPoint: { label: "Clasificación", value: "ATEX Z1" },

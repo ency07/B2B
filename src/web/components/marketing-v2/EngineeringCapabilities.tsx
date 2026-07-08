@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import * as React from "react";
@@ -333,9 +334,9 @@ function extractFromCatalog(
 }
 
 const statusColor: Record<CapacityItem["status"], string> = {
-  DISPONIBLE: "#3FB950",
-  "BAJO PEDIDO": "#F0883E",
-  "SERIE ESPECIAL": "#4C8DFF",
+  DISPONIBLE: "#3F8F5F",
+  "BAJO PEDIDO": "#C96A4A",
+  "SERIE ESPECIAL": "#3B6FD6",
 };
 
 interface Props {

@@ -22,7 +22,7 @@ export function FloatingCta({ tenantCode }: FloatingCtaProps) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Detectar sección activa para ocultar el CTA cuando estamos en el contacto
+  // Detectar sección activa para ocultar el CTA mientras estamos en el Hero
   React.useEffect(() => {
     const sections = [
       "inicio",
@@ -34,7 +34,6 @@ export function FloatingCta({ tenantCode }: FloatingCtaProps) {
       "sectores",
       "casos",
       "calculadora",
-      "contacto",
     ];
 
     const observer = new IntersectionObserver(
@@ -57,8 +56,8 @@ export function FloatingCta({ tenantCode }: FloatingCtaProps) {
     return () => observer.disconnect();
   }, []);
 
-  // Ocultar cuando estamos en el Hero o en el Contacto
-  const isHidden = activeSection === "inicio" || activeSection === "contacto";
+  // Ocultar cuando estamos en el Hero (ya tiene su propio CTA visible)
+  const isHidden = activeSection === "inicio";
 
   return (
     <AnimatePresence>

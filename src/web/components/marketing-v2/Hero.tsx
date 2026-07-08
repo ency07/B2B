@@ -1,9 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getTenantConfig } from "@/platform/tenant/tenant";
 import { CertBadgeRow } from "./primitives/CertBadge";
+import { CinematicPhoto } from "./primitives/CinematicPhoto";
 import type { HeroSlideContent } from "@/platform/branding/branding-defaults";
 
 interface HeroProps {
@@ -13,32 +15,43 @@ interface HeroProps {
 }
 
 const SLIDE_STYLE = [
-  { accent: "#9FD9B4", imgBg: "radial-gradient(circle at 25% 15%, rgba(159,217,180,0.16), transparent 60%), #0F2A30" },
-  { accent: "#6699FF", imgBg: "radial-gradient(circle at 25% 15%, rgba(102,153,255,0.18), transparent 60%), #101D2E" },
-  { accent: "#E8896B", imgBg: "radial-gradient(circle at 25% 15%, rgba(232,137,107,0.18), transparent 60%), #2E1D16" },
-  { accent: "#8B7FD1", imgBg: "radial-gradient(circle at 25% 15%, rgba(139,127,209,0.18), transparent 60%), #211A2E" },
+  { accent: "#9FD9B4" },
+  { accent: "#6699FF" },
+  { accent: "#E8896B" },
+  { accent: "#8B7FD1" },
 ];
 
 const DEFAULT_SLIDES: HeroSlideContent[] = [
-  { eyebrow: "DIAGNÓSTICO TÉCNICO", titleMain: "El control del aire", titleItalic: "empieza por medirlo.", desc: "Visita en planta con instrumentación calibrada. Mapeo de caudales, presión y temperatura antes de proponer una sola pieza de equipo.", tag: "INSTRUMENTACIÓN CALIBRADA", duration: "5–8 días de diagnóstico", mediaLabel: "video: medición en planta" },
-  { eyebrow: "SIMULACIÓN Y DISEÑO", titleMain: "El aire se diseña", titleItalic: "antes de fabricarse.", desc: "Modelado CFD 3D del comportamiento del aire. Selección de equipos y memoria de cálculo firmada por ingeniero responsable.", tag: "SIMULACIÓN CFD 3D", duration: "10–14 días de diseño", mediaLabel: "video: simulación CFD del flujo de aire" },
-  { eyebrow: "EJECUCIÓN DE INGENIERÍA", titleMain: "El control del aire", titleItalic: "que sostiene su planta.", desc: "Fabricación en planta propia con acero certificado. Balanceo ISO 1940 G2.5 e instalación con cero paradas no planificadas.", tag: "ZONA DE COLADA · +45°C", duration: "20–35 días de ejecución", mediaLabel: "foto: fabricación y montaje certificado" },
-  { eyebrow: "RESULTADOS GARANTIZADOS", titleMain: "El aire, verificado.", titleItalic: "no prometido.", desc: "Medición post-instalación y reporte de cumplimiento frente al diseño. Línea directa con ingeniería, sin intermediarios.", tag: "RESULTADOS AUDITADOS", duration: "Continuo · mantenimiento programado", mediaLabel: "foto: medición y certificación post-instalación" },
+  { eyebrow: "DIAGNÓSTICO TÉCNICO", titleMain: "El control del aire", titleItalic: "empieza por medirlo.", desc: "Visita en planta con instrumentación calibrada. Mapeo de caudales, presión y temperatura antes de proponer una sola pieza de equipo.", tag: "INSTRUMENTACIÓN CALIBRADA", duration: "5–8 días de diagnóstico", mediaLabel: "video: medición en planta", photoUrl: "/industrial_plant_ventilation.webp", photoAlt: "Instrumentación calibrada midiendo caudal en planta" },
+  { eyebrow: "SIMULACIÓN Y DISEÑO", titleMain: "El aire se diseña", titleItalic: "antes de fabricarse.", desc: "Modelado CFD 3D del comportamiento del aire. Selección de equipos y memoria de cálculo firmada por ingeniero responsable.", tag: "SIMULACIÓN CFD 3D", duration: "10–14 días de diseño", mediaLabel: "video: simulación CFD del flujo de aire", photoUrl: "/axial_duct_fan.webp", photoAlt: "Simulación y diseño de ductos de ventilación axial" },
+  { eyebrow: "EJECUCIÓN DE INGENIERÍA", titleMain: "El control del aire", titleItalic: "que sostiene su planta.", desc: "Fabricación en planta propia con acero certificado. Balanceo ISO 1940 G2.5 e instalación con cero paradas no planificadas.", tag: "ZONA DE COLADA · +45°C", duration: "20–35 días de ejecución", mediaLabel: "foto: fabricación y montaje certificado", photoUrl: "/industrial_centrifugal_fan.webp", photoAlt: "Fabricación y montaje certificado de ventilador centrífugo" },
+  { eyebrow: "RESULTADOS GARANTIZADOS", titleMain: "El aire, verificado.", titleItalic: "no prometido.", desc: "Medición post-instalación y reporte de cumplimiento frente al diseño. Línea directa con ingeniería, sin intermediarios.", tag: "RESULTADOS AUDITADOS", duration: "Continuo · mantenimiento programado", mediaLabel: "foto: medición y certificación post-instalación", photoUrl: "/rotor_dynamic_balancing.webp", photoAlt: "Medición y certificación de balanceo dinámico post-instalación" },
 ];
+
+const AUTOPLAY_MS = 7000;
 
 export function Hero({ tenantCode, branding = {} }: HeroProps) {
   const slides: HeroSlideContent[] = branding.hero_slides?.length ? branding.hero_slides : DEFAULT_SLIDES;
-  const heroEyebrow = (branding.hero_eyebrow as string) || "Ingeniería de ventilación industrial";
   const ctaPrimarioLabel = (branding.hero_cta_primario_label as string) || "Iniciar Cotización Industrial";
   const ctaSecundarioLabel = (branding.hero_cta_secundario_label as string) || "Conocer el proceso";
   const certificaciones: string[] = (branding.certificaciones as string[]) || ["AMCA", "ISO 1940 G2.5", "ASHRAE 62.1"];
 
   const [idx, setIdx] = React.useState(0);
+  const [paused, setPaused] = React.useState(false);
   const count = slides.length;
   const goPrev = () => setIdx((i) => (i + count - 1) % count);
   const goNext = () => setIdx((i) => (i + 1) % count);
   const slide = slides[idx];
   const style = SLIDE_STYLE[idx % SLIDE_STYLE.length];
+
+  // Auto-avance del carrusel — se pausa al pasar el mouse por encima.
+  React.useEffect(() => {
+    if (count <= 1 || paused) return;
+    const timer = setInterval(() => {
+      setIdx((i) => (i + 1) % count);
+    }, AUTOPLAY_MS);
+    return () => clearInterval(timer);
+  }, [count, paused, idx]);
 
   const config = getTenantConfig(tenantCode);
   const heroMetrics = config.heroMetrics || {};
@@ -70,15 +83,65 @@ export function Hero({ tenantCode, branding = {} }: HeroProps) {
   }, [targetCfm, targetPower, targetTemp]);
 
   return (
-    <section id="inicio" className="relative w-full flex flex-col" style={{ background: "#0A181D" }}>
-      {/* Textura diagonal de fondo */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage:
-            "repeating-linear-gradient(115deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 2px, transparent 2px, transparent 26px)",
-        }}
-      />
+    <section
+      id="inicio"
+      className="relative w-full min-h-[100svh] flex flex-col bg-ink overflow-hidden"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      {/* === FONDO: foto de cada slide a pantalla completa, con crossfade === */}
+      <div className="absolute inset-0">
+        <AnimatePresence mode="sync">
+          <motion.div
+            key={idx}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute inset-0"
+          >
+            <CinematicPhoto
+              src={slide.photoUrl}
+              alt={slide.photoAlt}
+              sizes="100vw"
+              priority={idx === 0}
+              className="!relative w-full h-full"
+            />
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Gradiente editorial para legibilidad del texto */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(6,10,13,0.75) 0%, rgba(6,10,13,0.25) 30%, rgba(6,10,13,0.35) 60%, rgba(6,10,13,0.88) 100%)",
+          }}
+        />
+        <div
+          className="absolute inset-y-0 left-0 w-2/3"
+          style={{
+            background: "linear-gradient(90deg, rgba(6,10,13,0.6) 0%, rgba(6,10,13,0.15) 65%, transparent 100%)",
+          }}
+        />
+        {/* Acento de color sutil por etapa, para que el carrusel se sienta cohesivo */}
+        <motion.div
+          key={`accent-${idx}`}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.25 }}
+          transition={{ duration: 1 }}
+          className="absolute inset-0 mix-blend-screen pointer-events-none"
+          style={{ background: `radial-gradient(circle at 15% 85%, ${style.accent}, transparent 55%)` }}
+        />
+        {/* Textura diagonal técnica */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-60"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(115deg, rgba(255,255,255,0.035) 0px, rgba(255,255,255,0.035) 2px, transparent 2px, transparent 26px)",
+          }}
+        />
+      </div>
 
       {/* Franja meta superior */}
       <div className="relative z-10 flex items-center justify-between px-6 sm:px-10 lg:px-14 py-2.5 border-b border-white/10 font-mono text-[11px] tracking-[0.06em] text-white/55">
@@ -91,75 +154,60 @@ export function Hero({ tenantCode, branding = {} }: HeroProps) {
         </div>
       </div>
 
-      {/* Carrusel de etapas */}
-      <div className="relative z-10 px-6 sm:px-10 lg:px-14 pt-12 max-w-[1280px] mx-auto w-full">
+      {/* Spacer: empuja el contenido al tercio inferior, sobre la foto */}
+      <div className="flex-1" />
+
+      {/* Contenido de la etapa activa */}
+      <div className="relative z-10 px-6 sm:px-10 lg:px-14 pb-10 max-w-[1440px] mx-auto w-full">
         <AnimatePresence mode="wait">
           <motion.div
             key={idx}
-            initial={{ opacity: 0, x: 24 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -24 }}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-            className="grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-10 lg:gap-14 items-center"
+            className="max-w-2xl"
           >
-            <div>
-              <div className="flex items-center gap-2.5 font-mono text-xs tracking-[0.1em] mb-5" style={{ color: style.accent }}>
-                <span className="w-6 h-px inline-block" style={{ backgroundColor: style.accent }} />
-                ETAPA {String(idx + 1).padStart(2, "0")}/{String(count).padStart(2, "0")} · {slide.eyebrow}
-              </div>
-              <h1 className="font-display font-light tracking-[-0.03em] leading-[1.05] text-[clamp(36px,4.6vw,60px)] text-white mb-1.5">
-                {slide.titleMain}
-              </h1>
-              <h1 className="font-display italic font-light tracking-[-0.03em] leading-[1.05] text-[clamp(36px,4.6vw,60px)] mb-6" style={{ color: "#9BB0B6" }}>
-                {slide.titleItalic}
-              </h1>
-              <p className="text-[17px] leading-[1.6] text-white/75 max-w-md mb-9">{slide.desc}</p>
+            <div className="flex items-center gap-2.5 font-mono text-xs tracking-[0.1em] mb-5" style={{ color: style.accent }}>
+              <span className="w-6 h-px inline-block" style={{ backgroundColor: style.accent }} />
+              ETAPA {String(idx + 1).padStart(2, "0")}/{String(count).padStart(2, "0")} · {slide.eyebrow}
+            </div>
+            <h1 className="font-display font-light tracking-[-0.03em] leading-[1.05] text-[clamp(36px,4.6vw,60px)] text-white mb-1.5">
+              {slide.titleMain}
+            </h1>
+            <h1 className="font-display italic font-light tracking-[-0.03em] leading-[1.05] text-[clamp(36px,4.6vw,60px)] mb-6" style={{ color: "#C9D6D9" }}>
+              {slide.titleItalic}
+            </h1>
+            <p className="text-[17px] leading-[1.6] text-white/80 max-w-md mb-9">{slide.desc}</p>
 
-              <div className="flex items-center gap-4 flex-wrap">
-                <a
-                  href={`/wizard?tenant=${tenantCode}`}
-                  className="group inline-flex items-center gap-2.5 h-14 px-7 bg-white text-ink text-sm font-medium tracking-tight hover:bg-white/90 transition-colors"
-                >
-                  <span>{ctaPrimarioLabel}</span>
-                  <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
-                </a>
-                <div className="border border-white/25 px-5 py-3.5 text-white">
-                  <div className="flex items-center gap-1.5 font-mono text-[10px] mb-1" style={{ color: style.accent }}>
-                    <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ backgroundColor: style.accent }} />
-                    {slide.tag}
-                  </div>
-                  <div className="font-semibold text-sm">{slide.duration}</div>
-                </div>
-              </div>
-
-              <button
-                onClick={() => document.getElementById("proceso")?.scrollIntoView({ behavior: "smooth" })}
-                className="mt-5 text-sm text-white/60 hover:text-white transition-colors underline underline-offset-4"
+            <div className="flex items-center gap-4 flex-wrap">
+              <a
+                href={`/wizard?tenant=${tenantCode}`}
+                className="group inline-flex items-center gap-2.5 h-14 px-7 bg-white text-ink text-sm font-medium tracking-tight hover:bg-white/90 transition-colors"
               >
-                {ctaSecundarioLabel}
-              </button>
+                <span>{ctaPrimarioLabel}</span>
+                <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+              </a>
+              <div className="border border-white/25 px-5 py-3.5 text-white bg-black/20 backdrop-blur-sm">
+                <div className="flex items-center gap-1.5 font-mono text-[10px] mb-1" style={{ color: style.accent }}>
+                  <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ backgroundColor: style.accent }} />
+                  {slide.tag}
+                </div>
+                <div className="font-semibold text-sm">{slide.duration}</div>
+              </div>
             </div>
 
-            <div
-              className="relative aspect-[4/3] border border-white/12 flex items-center justify-center overflow-hidden"
-              style={{ background: style.imgBg }}
+            <button
+              onClick={() => document.getElementById("proceso")?.scrollIntoView({ behavior: "smooth" })}
+              className="mt-5 text-sm text-white/65 hover:text-white transition-colors underline underline-offset-4"
             >
-              <div
-                className="absolute inset-0"
-                style={{
-                  backgroundImage:
-                    "repeating-linear-gradient(115deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 2px, transparent 2px, transparent 26px)",
-                }}
-              />
-              <span className="relative font-mono text-[11px] tracking-[0.06em] text-white/70 bg-black/40 px-3.5 py-1.5">
-                {slide.mediaLabel}
-              </span>
-            </div>
+              {ctaSecundarioLabel}
+            </button>
           </motion.div>
         </AnimatePresence>
 
         {/* Dots + prev/next */}
-        <div className="flex items-center justify-between mt-11 pb-10 flex-wrap gap-4">
+        <div className="flex items-center justify-between mt-10 flex-wrap gap-4">
           <div className="flex gap-2">
             {slides.map((_, i) => (
               <button
@@ -167,25 +215,25 @@ export function Hero({ tenantCode, branding = {} }: HeroProps) {
                 onClick={() => setIdx(i)}
                 aria-label={`Ir a la etapa ${i + 1}`}
                 className="h-1 transition-all duration-300"
-                style={{ width: i === idx ? 28 : 8, backgroundColor: i === idx ? "#fff" : "rgba(255,255,255,0.25)" }}
+                style={{ width: i === idx ? 28 : 8, backgroundColor: i === idx ? "#fff" : "rgba(255,255,255,0.3)" }}
               />
             ))}
           </div>
           <div className="flex items-center gap-3.5">
-            <span className="font-mono text-[11px] text-white/45">
+            <span className="font-mono text-[11px] text-white/50">
               {String(idx + 1).padStart(2, "0")} / {String(count).padStart(2, "0")}
             </span>
             <div className="flex gap-2">
-              <button onClick={goPrev} aria-label="Etapa anterior" className="w-[34px] h-[34px] border border-white/20 text-white hover:bg-white/10 transition-colors">←</button>
-              <button onClick={goNext} aria-label="Etapa siguiente" className="w-[34px] h-[34px] border border-white/20 text-white hover:bg-white/10 transition-colors">→</button>
+              <button onClick={goPrev} aria-label="Etapa anterior" className="w-[34px] h-[34px] border border-white/25 text-white hover:bg-white/10 transition-colors">←</button>
+              <button onClick={goNext} aria-label="Etapa siguiente" className="w-[34px] h-[34px] border border-white/25 text-white hover:bg-white/10 transition-colors">→</button>
             </div>
           </div>
         </div>
       </div>
 
       {/* Barra de telemetría */}
-      <div className="relative z-10 border-t border-white/12" style={{ backgroundColor: "rgba(5,12,15,0.55)" }}>
-        <div className="max-w-[1280px] mx-auto grid grid-cols-2 sm:grid-cols-4 divide-x divide-white/10">
+      <div className="relative z-10 border-t border-white/12 bg-black/45 backdrop-blur-md">
+        <div className="max-w-[1440px] mx-auto grid grid-cols-2 sm:grid-cols-4 divide-x divide-white/10">
           <TelemetryStat label="Caudal" value={displayCfm?.toLocaleString("es-CO") || "0"} unit="CFM" isLoading={displayCfm === null} />
           <TelemetryStat label="Potencia" value={displayPower?.toFixed(1) || "0"} unit="HP" isLoading={displayPower === null} />
           <TelemetryStat label="Equipos" value={targetEqCount.toString()} unit="sugeridos" />
