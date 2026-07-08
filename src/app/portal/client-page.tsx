@@ -652,7 +652,7 @@ export default function CustomerPortal({
           <div className={`space-y-6 transition-all duration-300 ${isChatOpen ? "lg:col-span-8" : "lg:col-span-12"}`}>
             
             {/* Tabbed Navigation */}
-            <div className="flex border-b border-border pb-px text-xs font-mono overflow-x-auto gap-2">
+            <div role="tablist" className="flex border-b border-border pb-px text-xs font-mono overflow-x-auto gap-2">
               {[
                 { id: "ots", label: "Taller en Vivo (OTs)" },
                 { id: "invoices", label: "Facturas y Recibos" },
@@ -661,6 +661,8 @@ export default function CustomerPortal({
               ].map((tab) => (
                 <button
                   key={tab.id}
+                  role="tab"
+                  aria-selected={activeSection === tab.id}
                   onClick={() => setActiveSection(tab.id as any)}
                   className={`pb-3 px-4 font-bold border-b-2 tracking-wide transition-all cursor-pointer whitespace-nowrap ${
                     activeSection === tab.id 
