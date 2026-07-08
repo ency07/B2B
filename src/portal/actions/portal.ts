@@ -15,6 +15,7 @@
 import { getCurrentClient, getPortalAuthenticatedClient } from "@/lib/portal-auth";
 import { notifyStaffClientUpdate } from "./notifications";
 import { createTicketSchema, sendMessageSchema } from "@/lib/validations/portal";
+import { checkRateLimit } from "@/lib/utils/rate-limiter";
 
 export interface ClientJob {
   id: string;
@@ -226,6 +227,11 @@ export async function createClientTicket(
     throw new Error("No autorizado: Sesión de cliente inválida.");
   }
 
+  const { allowed } = await checkRateLimit(`portal:ticket:${client.clientId}`, 5, 60_000);
+  if (!allowed) {
+    throw new Error("Has excedido el límite de tickets. Intenta de nuevo en un minuto.");
+  }
+
   const parsed = createTicketSchema.safeParse(input);
   if (!parsed.success) {
     const firstError = parsed.error.issues[0];
@@ -316,6 +322,11 @@ export async function sendClientMessage(
   const authClient = await getPortalAuthenticatedClient();
   if (!authClient) {
     throw new Error("No autorizado: Sesión de cliente inválida.");
+  }
+
+  const { allowed } = await checkRateLimit(`portal:message:${client.clientId}`, 20, 60_000);
+  if (!allowed) {
+    throw new Error("Has excedido el límite de mensajes. Intenta de nuevo en un minuto.");
   }
 
   const parsed = sendMessageSchema.safeParse({ body });
