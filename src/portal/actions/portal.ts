@@ -13,7 +13,7 @@
 "use server";
 
 import { getCurrentClient, getPortalAuthenticatedClient } from "@/lib/portal-auth";
-import { notifyStaffClientUpdate } from "./notifications";
+import { notifyClientMessageFromStaff, notifyStaffClientUpdate } from "./notifications";
 import { createTicketSchema, sendMessageSchema } from "@/lib/validations/portal";
 import { checkRateLimit } from "@/lib/utils/rate-limiter";
 
@@ -359,6 +359,12 @@ export async function sendClientMessage(
       tenantId: client.tenantId || "",
       messageBody: body.substring(0, 100),
     }).catch((err) => console.error("Error notificando staff:", err));
+  }
+
+  // Si el mensaje viene del staff, notificar al cliente por email
+  if (data.sender_type === "STAFF" && client.email) {
+    notifyClientMessageFromStaff(client.email, client.legalName, body)
+      .catch((err) => console.error("Error notificando cliente:", err));
   }
 
   return message;

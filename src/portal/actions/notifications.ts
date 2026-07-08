@@ -188,8 +188,83 @@ export async function notifyStaffClientUpdate(
 }
 
 /**
- * Template HTML para email de confirmación de ticket al cliente.
+ * Notifica al cliente por email cuando el staff responde en la bitácora.
  */
+export async function notifyClientMessageFromStaff(
+  clientEmail: string,
+  clientName: string,
+  messageBody: string
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const resendKey = process.env.RESEND_API_KEY;
+    const fromEmail = process.env.NOTIFICATION_FROM_EMAIL || "noreply@example.com";
+
+    if (!resendKey) {
+      console.log(`[notifications] RESEND_API_KEY no configurado — email de respuesta omitido.`);
+      return { ok: true };
+    }
+
+    const { Resend } = await import("resend");
+    const resend = new Resend(resendKey);
+
+    const { error: emailErr } = await resend.emails.send({
+      from: fromEmail,
+      to: clientEmail,
+      subject: `Tu ejecutivo ha respondido en la bitácora de soporte`,
+      html: `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1a1a1a; margin: 0; padding: 0; background: #f4f4f5; }
+    .wrapper { max-width: 580px; margin: 32px auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .header { background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%); padding: 32px 28px; }
+    .header h1 { color: white; margin: 0; font-size: 22px; font-weight: 700; }
+    .body { padding: 28px; }
+    .message { background: #f0f7ff; border-radius: 8px; padding: 16px; border-left: 4px solid #2563eb; margin: 16px 0; }
+    .message p { margin: 0; font-size: 14px; color: #1e40af; }
+    .cta { margin-top: 24px; }
+    .cta a { display: inline-block; padding: 12px 24px; background: #2563eb; color: white; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 600; }
+    .footer { padding: 20px 28px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #9ca3af; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="header">
+      <h1>Tu ejecutivo te ha respondido</h1>
+    </div>
+    <div class="body">
+      <p>Hola <strong>${clientName}</strong>,</p>
+      <p>Tu ejecutivo ha dejado un mensaje en la bitácora de soporte de tu portal de clientes:</p>
+      <div class="message">
+        <p>${messageBody}</p>
+      </div>
+      <div class="cta">
+        <a href="${process.env.NEXT_PUBLIC_SITE_URL || "https://portal.ventitech.com"}/portal">Ir al Portal</a>
+      </div>
+    </div>
+    <div class="footer">
+      Este es un mensaje automático. No responder a este correo.<br>
+      Para responder, accede al portal de clientes.
+    </div>
+  </div>
+</body>
+</html>`,
+    });
+
+    if (emailErr) {
+      console.error("[notifications] Resend error (staff reply):", emailErr);
+      return { ok: false, error: String(emailErr) };
+    }
+
+    console.log(`[notifications] Email de respuesta enviado a ${clientEmail}`);
+    return { ok: true };
+  } catch (error) {
+    console.error("[notifications] Error en notifyClientMessageFromStaff:", error);
+    return { ok: false, error: error instanceof Error ? error.message : "Error" };
+  }
+}
 function renderTicketEmailTemplate(notification: TicketNotification): string {
   const severityColor =
     notification.severity === "ALTO"
