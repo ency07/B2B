@@ -626,10 +626,10 @@ export default function CustomerPortal({
                 {formatCurrency(unpaidTotal)}
               </span>
               <Badge variant="secondary" className={`text-[9px] font-mono border-none ${unpaidTotal > 0 ? "bg-destructive/10 text-destructive" : "bg-emerald-500/10 text-emerald-500"}`}>
-                {unpaidTotal > 0 ? "Folios en Mora" : "Cuenta al Día"}
+                {unpaidTotal > 0 ? "Pendiente de pago" : "Cuenta al Día"}
               </Badge>
             </div>
-            <p className="text-[11px] text-muted-foreground mt-2 font-sans">Plazo máximo de saldo final: 2026-07-05</p>
+            <p className="text-[11px] text-muted-foreground mt-2 font-sans">Consulte la fecha de vencimiento en cada factura</p>
           </div>
 
           {/* Metric 3 */}
@@ -638,9 +638,9 @@ export default function CustomerPortal({
             <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider block">Casos de Soporte / Garantías</span>
             <div className="flex items-baseline justify-between mt-2">
               <span className="text-3xl font-bold font-mono text-foreground">{activeTicketsCount} Activos</span>
-              <Badge variant="secondary" className="text-[9px] font-mono bg-amber-500/10 text-amber-600 border-none">Checklist Técnico</Badge>
+              <Badge variant="secondary" className="text-[9px] font-mono bg-amber-500/10 text-amber-600 border-none">En seguimiento</Badge>
             </div>
-            <p className="text-[11px] text-muted-foreground mt-2 font-sans">Interventoría de obra y calibración</p>
+            <p className="text-[11px] text-muted-foreground mt-2 font-sans">Soporte técnico y garantías</p>
           </div>
 
         </div>
@@ -657,7 +657,7 @@ export default function CustomerPortal({
                 { id: "ots", label: "Taller en Vivo (OTs)" },
                 { id: "invoices", label: "Facturas y Recibos" },
                 { id: "docs", label: "Planos y Archivos CAD" },
-                { id: "tickets", label: "Garantías e Interventoría" }
+                { id: "tickets", label: "Garantías y soporte técnico" }
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -701,7 +701,7 @@ export default function CustomerPortal({
                       <span className="text-[10px] font-mono tracking-widest text-primary uppercase font-bold">// FACTURACION</span>
                       <h3 className="text-lg font-bold text-foreground mt-0.5">Cartera de Facturación Industrial</h3>
                       <p className="text-xs text-muted-foreground mt-1 font-sans">
-                        Consulte los vencimientos, descargue los folios y realice abonos a través del gateway bancario.
+                        Consulte los vencimientos, descargue las facturas y realice abonos a través del gateway bancario.
                       </p>
                     </div>
                   </div>
@@ -712,11 +712,11 @@ export default function CustomerPortal({
                       <caption className="sr-only">Lista de facturas del cliente</caption>
                       <thead className="bg-muted/55 border-b border-border text-[9px] uppercase tracking-wider text-muted-foreground font-bold">
                         <tr>
-                          <th scope="col" className="p-4">Folio Factura</th>
+                          <th scope="col" className="p-4">Nro. Factura</th>
                           <th scope="col" className="p-4">Fecha Emisión</th>
                           <th scope="col" className="p-4">Detalle del Concepto</th>
                           <th scope="col" className="p-4 text-right">Monto Total</th>
-                          <th scope="col" className="p-4 text-right">Saldo en Mora</th>
+                          <th scope="col" className="p-4 text-right">Saldo pendiente</th>
                           <th scope="col" className="p-4 text-center">Estado</th>
                           <th scope="col" className="p-4 text-center">Acciones</th>
                         </tr>
@@ -874,7 +874,7 @@ export default function CustomerPortal({
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border/60 pb-4">
                     <div>
                       <span className="text-[10px] font-mono tracking-widest text-primary uppercase font-bold">// GARANTIAS_SOPORTE</span>
-                      <h3 className="text-lg font-bold text-foreground mt-0.5">Garantías y Casos de Interventoría</h3>
+                      <h3 className="text-lg font-bold text-foreground mt-0.5">Garantías y Casos de Soporte</h3>
                       <p className="text-xs text-muted-foreground mt-1 font-sans">
                         Reporte incidentes en taller o ensamble, adjunte evidencias y supervise la respuesta técnica.
                       </p>
