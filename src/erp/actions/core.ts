@@ -564,6 +564,17 @@ export async function getPublicTenantSettings(tenantCode?: string | null) {
   // Obtener tenantId sin auth - usa el tenantCode directamente
   const tenantId = await getTenantId(tenantCode);
 
+  // Verificar que el tenant esté Activo (no servir branding de tenants suspendidos)
+  const { data: tenantInfo } = await supabaseAdmin
+    .from("tenants")
+    .select("status")
+    .eq("id", tenantId)
+    .maybeSingle();
+
+  if (!tenantInfo || tenantInfo.status !== "Activo") {
+    return {};
+  }
+
   // Solo traer campos públicos de branding
   const publicKeys = [
     "nombre_comercial",
