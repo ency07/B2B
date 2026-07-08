@@ -10,6 +10,7 @@ import { Eye, EyeOff, Lock, Mail, LayoutGrid } from "lucide-react";
 import { getBrandingDefaults } from "@/platform/branding/branding-defaults";
 import { loginErp } from "@/erp/actions/auth";
 import { isSafeRedirect } from "@/utils/auth-redirect";
+import { getErpBrowserClient } from "@/platform/auth/clients";
 
 const loginSchema = z.object({
   email: z.string().email("Correo no válido"),
@@ -55,6 +56,17 @@ export function ErpLoginFeature() {
       setAuthError(result.error ?? "Error desconocido");
       setIsLoading(false);
       return;
+    }
+
+    // Hidratar la sesión en el cliente (localStorage) para que el
+    // dashboard layout pueda leerla con supabase.auth.getUser().
+    // Las cookies HttpOnly ya fueron fijadas server-side en loginErp.
+    if (result.session) {
+      const supabase = getErpBrowserClient();
+      await supabase.auth.setSession({
+        access_token: result.session.access_token,
+        refresh_token: result.session.refresh_token,
+      });
     }
 
     router.push(result.redirectTo!);

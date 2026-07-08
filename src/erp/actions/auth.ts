@@ -74,5 +74,16 @@ export async function loginErp(data: {
     maxAge: 60 * 60 * 24 * 2,
   });
 
-  return { success: true, redirectTo: destination };
+  // Devolver los tokens al cliente para que pueda hidratar su sesión
+  // en localStorage (el layout del dashboard usa supabase.auth.getUser()
+  // del cliente browser que lee de localStorage, no de las cookies HttpOnly).
+  return {
+    success: true,
+    redirectTo: destination,
+    session: {
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
+      expires_in: session.expires_in ?? 3600,
+    },
+  };
 }
