@@ -916,7 +916,7 @@ export default function CustomerPortal({
                           >
                             <option value="BAJO">BAJO (Dudas técnicas, planos)</option>
                             <option value="MEDIO">MEDIO (Ajustes menores de anclaje)</option>
-                            <option value="CRÍTICO">CRÍTICO (Vibración excesiva, fallo de motor)</option>
+                            <option value="ALTO">ALTO (Vibración excesiva, fallo de motor)</option>
                           </select>
                         </div>
                         <div className="space-y-1.5">
@@ -958,7 +958,7 @@ export default function CustomerPortal({
                               <span className="font-mono text-xs font-bold text-primary">{tck.code}</span>
                               <div className="flex gap-1.5">
                                 <Badge className={`text-[8px] font-mono border-none ${
-                                  tck.severity === "CRÍTICO" ? "bg-destructive/15 text-destructive" : tck.severity === "MEDIO" ? "bg-amber-500/15 text-amber-600" : "bg-primary/15 text-primary"
+                                  tck.severity === "ALTO" || tck.severity === "CRÍTICO" ? "bg-destructive/15 text-destructive" : tck.severity === "MEDIO" ? "bg-amber-500/15 text-amber-600" : "bg-primary/15 text-primary"
                                 }`}>
                                   {tck.severity}
                                 </Badge>
