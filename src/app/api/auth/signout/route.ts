@@ -8,6 +8,25 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 export async function POST(request: Request) {
   const cookieStore = await cookies();
 
+  // Try to get user info before revoking tokens (for audit logging)
+  let userId: string | null = null;
+  for (const name of ["sb-portal-access-token", "sb-erp-access-token"]) {
+    const token = cookieStore.get(name)?.value;
+    if (token) {
+      try {
+        const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+          auth: { persistSession: false, autoRefreshToken: false },
+          global: { headers: { Authorization: `Bearer ${token}` } },
+        });
+        const { data: { user } } = await supabase.auth.getUser(token);
+        if (user) userId = user.id;
+      } catch {
+        // Continue
+      }
+      break;
+    }
+  }
+
   // Try to revoke each active session token gracefully
   const tokenNames = [
     "sb-portal-access-token",
@@ -50,6 +69,13 @@ export async function POST(request: Request) {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
   });
+
+  // Log logout event (fire-and-forget)
+  if (userId) {
+    import("@/lib/utils/audit-logger").then(({ logAuthEvent }) =>
+      logAuthEvent("LOGOUT", userId, {})
+    );
+  }
 
   return response;
 }
