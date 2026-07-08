@@ -1,11 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { getTenantConfig } from "@/platform/tenant/tenant";
-import { CinematicPhoto } from "./primitives/CinematicPhoto";
 import { CertBadgeRow } from "./primitives/CertBadge";
-import { HERO_COLOR_SCHEMES } from "@/platform/branding/branding-defaults";
+import type { HeroSlideContent } from "@/platform/branding/branding-defaults";
 
 interface HeroProps {
   siteName: string;
@@ -13,49 +12,33 @@ interface HeroProps {
   branding?: any;
 }
 
-// Caso de demo (usado para anotaciones visuales fijas)
-const DEMO_DIMENSIONS = { length: 50, width: 30, height: 12 };
+const SLIDE_STYLE = [
+  { accent: "#9FD9B4", imgBg: "radial-gradient(circle at 25% 15%, rgba(159,217,180,0.16), transparent 60%), #0F2A30" },
+  { accent: "#6699FF", imgBg: "radial-gradient(circle at 25% 15%, rgba(102,153,255,0.18), transparent 60%), #101D2E" },
+  { accent: "#E8896B", imgBg: "radial-gradient(circle at 25% 15%, rgba(232,137,107,0.18), transparent 60%), #2E1D16" },
+  { accent: "#8B7FD1", imgBg: "radial-gradient(circle at 25% 15%, rgba(139,127,209,0.18), transparent 60%), #211A2E" },
+];
 
-// Validador: convierte saltos de línea manuales del CMS en <br />
-function renderMultilineText(text: string) {
-  if (!text) return null;
-  return text.split("\n").map((line, idx) => (
-    <React.Fragment key={idx}>
-      {line}
-      {idx < text.split("\n").length - 1 && <br />}
-    </React.Fragment>
-  ));
-}
+const DEFAULT_SLIDES: HeroSlideContent[] = [
+  { eyebrow: "DIAGNÓSTICO TÉCNICO", titleMain: "El control del aire", titleItalic: "empieza por medirlo.", desc: "Visita en planta con instrumentación calibrada. Mapeo de caudales, presión y temperatura antes de proponer una sola pieza de equipo.", tag: "INSTRUMENTACIÓN CALIBRADA", duration: "5–8 días de diagnóstico", mediaLabel: "video: medición en planta" },
+  { eyebrow: "SIMULACIÓN Y DISEÑO", titleMain: "El aire se diseña", titleItalic: "antes de fabricarse.", desc: "Modelado CFD 3D del comportamiento del aire. Selección de equipos y memoria de cálculo firmada por ingeniero responsable.", tag: "SIMULACIÓN CFD 3D", duration: "10–14 días de diseño", mediaLabel: "video: simulación CFD del flujo de aire" },
+  { eyebrow: "EJECUCIÓN DE INGENIERÍA", titleMain: "El control del aire", titleItalic: "que sostiene su planta.", desc: "Fabricación en planta propia con acero certificado. Balanceo ISO 1940 G2.5 e instalación con cero paradas no planificadas.", tag: "ZONA DE COLADA · +45°C", duration: "20–35 días de ejecución", mediaLabel: "foto: fabricación y montaje certificado" },
+  { eyebrow: "RESULTADOS GARANTIZADOS", titleMain: "El aire, verificado.", titleItalic: "no prometido.", desc: "Medición post-instalación y reporte de cumplimiento frente al diseño. Línea directa con ingeniería, sin intermediarios.", tag: "RESULTADOS AUDITADOS", duration: "Continuo · mantenimiento programado", mediaLabel: "foto: medición y certificación post-instalación" },
+];
 
-export function Hero({ siteName, tenantCode, branding = {} }: HeroProps) {
-  // === Lectura de configuración del CMS con fallbacks seguros ===
-  const heroTipoFondo = (branding.hero_tipo_fondo as string) || "imagen";
-  // Solo usar video si hay una URL real configurada en el CMS (no el placeholder hardcodeado)
-  const rawVideoUrl = branding.landing_video_url as string | undefined;
-  const landingVideoUrl =
-    rawVideoUrl && rawVideoUrl.trim() !== "" && rawVideoUrl !== "/video_hero.mp4"
-      ? rawVideoUrl
-      : null;
-  const landingImagenUrl =
-    (branding.landing_imagen_url as string) || "/industrial_plant_ventilation.webp";
-  const heroEyebrow =
-    (branding.hero_eyebrow as string) || "Ingeniería de ventilación industrial";
-  const heroTitulo =
-    (branding.landing_titulo as string) || "El control del aire";
-  const heroSubtitulo =
-    (branding.landing_subtitulo as string) || "que sostiene su planta.";
-  // Esquema de color curado — nunca hex libre, para garantizar contraste
-  // sobre el fondo oscuro del Hero (ver HERO_COLOR_SCHEMES).
-  const scheme = HERO_COLOR_SCHEMES[(branding.hero_color_scheme as keyof typeof HERO_COLOR_SCHEMES) || "clasico"];
-  const heroTituloColor = scheme.titulo;
-  const heroSubtituloColor = scheme.subtitulo;
-  const heroEyebrowColor = scheme.eyebrow === "__brand__" ? (branding.color_primario as string) || "#4C8DFF" : scheme.eyebrow;
-  const heroLayout = (branding.hero_layout as string) || "stack"; // stack | inline
-  const ctaPrimarioLabel =
-    (branding.hero_cta_primario_label as string) || "Iniciar Cotización Industrial";
-  const ctaSecundarioLabel =
-    (branding.hero_cta_secundario_label as string) || "Conocer el proceso";
+export function Hero({ tenantCode, branding = {} }: HeroProps) {
+  const slides: HeroSlideContent[] = branding.hero_slides?.length ? branding.hero_slides : DEFAULT_SLIDES;
+  const heroEyebrow = (branding.hero_eyebrow as string) || "Ingeniería de ventilación industrial";
+  const ctaPrimarioLabel = (branding.hero_cta_primario_label as string) || "Iniciar Cotización Industrial";
+  const ctaSecundarioLabel = (branding.hero_cta_secundario_label as string) || "Conocer el proceso";
   const certificaciones: string[] = (branding.certificaciones as string[]) || ["AMCA", "ISO 1940 G2.5", "ASHRAE 62.1"];
+
+  const [idx, setIdx] = React.useState(0);
+  const count = slides.length;
+  const goPrev = () => setIdx((i) => (i + count - 1) % count);
+  const goNext = () => setIdx((i) => (i + 1) % count);
+  const slide = slides[idx];
+  const style = SLIDE_STYLE[idx % SLIDE_STYLE.length];
 
   const config = getTenantConfig(tenantCode);
   const heroMetrics = config.heroMetrics || {};
@@ -87,324 +70,129 @@ export function Hero({ siteName, tenantCode, branding = {} }: HeroProps) {
   }, [targetCfm, targetPower, targetTemp]);
 
   return (
-    <section
-      id="inicio"
-      className="relative w-full min-h-[100svh] flex flex-col bg-ink"
-    >
-      {/* === BACKGROUND: Foto industrial o Video según CMS === */}
-      <div className="absolute inset-0">
-        {heroTipoFondo === "video" && landingVideoUrl ? (
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            poster={landingImagenUrl}
-            className="w-full h-full object-cover"
-          >
-            <source src={landingVideoUrl} type="video/mp4" />
-          </video>
-        ) : (
-          <CinematicPhoto
-            src={landingImagenUrl}
-            alt="Planta industrial"
-            sizes="100vw"
-            priority
-            className="!relative w-full h-full"
-          />
-        )}
-        {/* Gradiente editorial */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(180deg, rgba(7,9,12,0.85) 0%, rgba(7,9,12,0.25) 25%, rgba(7,9,12,0.15) 55%, rgba(7,9,12,0.75) 85%, rgba(7,9,12,0.95) 100%)",
-          }}
-        />
-        {/* Viñeta lateral izquierda */}
-        <div
-          className="absolute inset-y-0 left-0 w-2/3"
-          style={{
-            background:
-              "linear-gradient(90deg, rgba(7,9,12,0.55) 0%, rgba(7,9,12,0.15) 60%, transparent 100%)",
-          }}
-        />
+    <section id="inicio" className="relative w-full flex flex-col" style={{ background: "#0A181D" }}>
+      {/* Textura diagonal de fondo */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage:
+            "repeating-linear-gradient(115deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 2px, transparent 2px, transparent 26px)",
+        }}
+      />
+
+      {/* Franja meta superior */}
+      <div className="relative z-10 flex items-center justify-between px-6 sm:px-10 lg:px-14 py-2.5 border-b border-white/10 font-mono text-[11px] tracking-[0.06em] text-white/55">
+        <div className="flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ backgroundColor: "#5FBE84" }} />
+          <span>OPERATIVO · 22 AÑOS · 312 PLANTAS</span>
+        </div>
+        <div className="hidden md:block">
+          <CertBadgeRow labels={certificaciones} />
+        </div>
       </div>
 
-      {/* === OVERLAY TÉCNICO: cotas y anotaciones === */}
-      <TechnicalOverlay />
-
-      {/* === CONTENT === */}
-      <div className="relative z-10 flex-1 flex flex-col pt-28 sm:pt-32 pb-4">
-        {/* Top brand identifier */}
-        <div className="px-6 sm:px-10 lg:px-14 mb-6 sm:mb-10">
+      {/* Carrusel de etapas */}
+      <div className="relative z-10 px-6 sm:px-10 lg:px-14 pt-12 max-w-[1280px] mx-auto w-full">
+        <AnimatePresence mode="wait">
           <motion.div
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="flex items-center justify-between max-w-[1440px] mx-auto"
+            key={idx}
+            initial={{ opacity: 0, x: 24 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -24 }}
+            transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+            className="grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-10 lg:gap-14 items-center"
           >
-            <div
-              className="flex items-center gap-3 font-mono text-[10px] sm:text-[10px] tracking-[0.2em] uppercase"
-              style={{ color: heroEyebrowColor }}
-            >
-              <span className="w-6 h-px bg-white/40" />
-              <span>{heroEyebrow}</span>
-            </div>
-            <div className="hidden md:block" style={{ color: "rgba(255,255,255,0.55)" }}>
-              <CertBadgeRow labels={certificaciones} />
-            </div>
-          </motion.div>
-        </div>
+            <div>
+              <div className="flex items-center gap-2.5 font-mono text-xs tracking-[0.1em] mb-5" style={{ color: style.accent }}>
+                <span className="w-6 h-px inline-block" style={{ backgroundColor: style.accent }} />
+                ETAPA {String(idx + 1).padStart(2, "0")}/{String(count).padStart(2, "0")} · {slide.eyebrow}
+              </div>
+              <h1 className="font-display font-light tracking-[-0.03em] leading-[1.05] text-[clamp(36px,4.6vw,60px)] text-white mb-1.5">
+                {slide.titleMain}
+              </h1>
+              <h1 className="font-display italic font-light tracking-[-0.03em] leading-[1.05] text-[clamp(36px,4.6vw,60px)] mb-6" style={{ color: "#9BB0B6" }}>
+                {slide.titleItalic}
+              </h1>
+              <p className="text-[17px] leading-[1.6] text-white/75 max-w-md mb-9">{slide.desc}</p>
 
-        {/* Spacer que empuja el headline al bottom del hero */}
-        <div className="flex-1" />
-
-        {/* Headline + CTAs */}
-        <div className="px-6 sm:px-10 lg:px-14 pb-6 sm:pb-8 max-w-[1440px] mx-auto w-full">
-          {/* TÍTULO COMERCIAL — color y saltos de línea controlados por el CMS */}
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="font-display font-light tracking-[-0.04em] leading-[0.95] text-[clamp(36px,5.4vw,84px)] max-w-[1100px]"
-            style={{
-              color: heroTituloColor,
-              wordBreak: "normal",
-              hyphens: "none",
-            }}
-          >
-            {heroLayout === "stack" ? (
-              <>
-                {renderMultilineText(heroTitulo)}
-                <br />
-                <span
-                  className="italic font-light"
-                  style={{ color: heroSubtituloColor }}
+              <div className="flex items-center gap-4 flex-wrap">
+                <a
+                  href={`/wizard?tenant=${tenantCode}`}
+                  className="group inline-flex items-center gap-2.5 h-14 px-7 bg-white text-ink text-sm font-medium tracking-tight hover:bg-white/90 transition-colors"
                 >
-                  {renderMultilineText(heroSubtitulo)}
-                </span>
-              </>
-            ) : (
-              <>
-                {heroTitulo}{" "}
-                <span
-                  className="italic font-light"
-                  style={{ color: heroSubtituloColor }}
-                >
-                  {heroSubtitulo}
-                </span>
-              </>
-            )}
-          </motion.h1>
+                  <span>{ctaPrimarioLabel}</span>
+                  <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+                </a>
+                <div className="border border-white/25 px-5 py-3.5 text-white">
+                  <div className="flex items-center gap-1.5 font-mono text-[10px] mb-1" style={{ color: style.accent }}>
+                    <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ backgroundColor: style.accent }} />
+                    {slide.tag}
+                  </div>
+                  <div className="font-semibold text-sm">{slide.duration}</div>
+                </div>
+              </div>
 
-          {/* Descripción + CTAs */}
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.55 }}
-            className="mt-8 lg:mt-10 flex flex-col md:flex-row md:items-end md:justify-between gap-6 lg:gap-10"
-          >
-            <p
-              className="text-base sm:text-lg leading-[1.55] max-w-md font-sans font-light"
-              style={{ color: heroSubtituloColor }}
-            >
-              Diseño, simulación y ejecución de sistemas críticos de extracción
-              y climatización para industrias B2B.
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
-              <a
-                href={`/wizard?tenant=${tenantCode}`}
-                className="group inline-flex items-center justify-center gap-3 h-14 px-7 bg-white text-ink text-sm font-medium tracking-tight rounded-sm hover:bg-white/90 transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] shine"
-              >
-                <span>{ctaPrimarioLabel}</span>
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  className="transition-transform duration-300 group-hover:translate-x-1"
-                >
-                  <path d="M5 12h14M13 5l7 7-7 7" />
-                </svg>
-              </a>
               <button
-                onClick={() =>
-                  document
-                    .getElementById("proceso")
-                    ?.scrollIntoView({ behavior: "smooth" })
-                }
-                className="group inline-flex items-center justify-center gap-3 h-14 px-7 bg-transparent text-white text-sm font-medium tracking-tight rounded-sm border border-white/30 hover:bg-white/10 transition-all duration-300 hover:scale-[1.01] active:scale-[0.99]"
+                onClick={() => document.getElementById("proceso")?.scrollIntoView({ behavior: "smooth" })}
+                className="mt-5 text-sm text-white/60 hover:text-white transition-colors underline underline-offset-4"
               >
-                <span>{ctaSecundarioLabel}</span>
+                {ctaSecundarioLabel}
               </button>
             </div>
+
+            <div
+              className="relative aspect-[4/3] border border-white/12 flex items-center justify-center overflow-hidden"
+              style={{ background: style.imgBg }}
+            >
+              <div
+                className="absolute inset-0"
+                style={{
+                  backgroundImage:
+                    "repeating-linear-gradient(115deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 2px, transparent 2px, transparent 26px)",
+                }}
+              />
+              <span className="relative font-mono text-[11px] tracking-[0.06em] text-white/70 bg-black/40 px-3.5 py-1.5">
+                {slide.mediaLabel}
+              </span>
+            </div>
           </motion.div>
+        </AnimatePresence>
+
+        {/* Dots + prev/next */}
+        <div className="flex items-center justify-between mt-11 pb-10 flex-wrap gap-4">
+          <div className="flex gap-2">
+            {slides.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setIdx(i)}
+                aria-label={`Ir a la etapa ${i + 1}`}
+                className="h-1 transition-all duration-300"
+                style={{ width: i === idx ? 28 : 8, backgroundColor: i === idx ? "#fff" : "rgba(255,255,255,0.25)" }}
+              />
+            ))}
+          </div>
+          <div className="flex items-center gap-3.5">
+            <span className="font-mono text-[11px] text-white/45">
+              {String(idx + 1).padStart(2, "0")} / {String(count).padStart(2, "0")}
+            </span>
+            <div className="flex gap-2">
+              <button onClick={goPrev} aria-label="Etapa anterior" className="w-[34px] h-[34px] border border-white/20 text-white hover:bg-white/10 transition-colors">←</button>
+              <button onClick={goNext} aria-label="Etapa siguiente" className="w-[34px] h-[34px] border border-white/20 text-white hover:bg-white/10 transition-colors">→</button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Bottom telemetry strip */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.8 }}
-        className="relative z-10 border-t border-white/10 bg-black/40 backdrop-blur-md"
-      >
-        <div className="max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-14 h-20 grid grid-cols-2 sm:grid-cols-4 divide-x divide-white/10 items-center">
-          <TelemetryStat
-            label="Caudal"
-            value={displayCfm?.toLocaleString("es-CO") || "0"}
-            unit="CFM"
-            isLoading={displayCfm === null}
-          />
-          <TelemetryStat
-            label="Potencia"
-            value={displayPower?.toFixed(1) || "0"}
-            unit="HP"
-            isLoading={displayPower === null}
-          />
-          <TelemetryStat
-            label="Equipos"
-            value={targetEqCount.toString()}
-            unit="sugeridos"
-          />
-          <TelemetryStat
-            label="Temp. zona colada"
-            value={displayTemp?.toFixed(0) || "0"}
-            unit="°C máx."
-            isLoading={displayTemp === null}
-          />
+      {/* Barra de telemetría */}
+      <div className="relative z-10 border-t border-white/12" style={{ backgroundColor: "rgba(5,12,15,0.55)" }}>
+        <div className="max-w-[1280px] mx-auto grid grid-cols-2 sm:grid-cols-4 divide-x divide-white/10">
+          <TelemetryStat label="Caudal" value={displayCfm?.toLocaleString("es-CO") || "0"} unit="CFM" isLoading={displayCfm === null} />
+          <TelemetryStat label="Potencia" value={displayPower?.toFixed(1) || "0"} unit="HP" isLoading={displayPower === null} />
+          <TelemetryStat label="Equipos" value={targetEqCount.toString()} unit="sugeridos" />
+          <TelemetryStat label="Temp. zona colada" value={displayTemp?.toFixed(0) || "0"} unit="°C máx." isLoading={displayTemp === null} />
         </div>
-      </motion.div>
+      </div>
     </section>
-  );
-}
-
-/* === OVERLAY TÉCNICO SOBRE LA FOTO === */
-function TechnicalOverlay() {
-  return (
-    <div className="absolute inset-0 pointer-events-none">
-      {/* === Marca de agua del plano: código de proyecto === */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6, delay: 0.4 }}
-        className="absolute top-28 right-6 sm:right-10 lg:right-14 font-mono text-[10px] tracking-widest text-white/50 uppercase text-right hidden md:block"
-      >
-        <p>DWG-2026-AX-048</p>
-        <p>ESC 1:200 · REV 03</p>
-      </motion.div>
-
-      {/* === Cota vertical izquierda === */}
-      <motion.div
-        initial={{ opacity: 0, scaleY: 0 }}
-        animate={{ opacity: 1, scaleY: 1 }}
-        transition={{ duration: 0.9, delay: 0.6, ease: "easeOut" }}
-        style={{ transformOrigin: "top" }}
-        className="absolute top-[18%] bottom-[20%] left-6 sm:left-10 lg:left-14 w-px bg-white/30 hidden md:block"
-      >
-        <div className="absolute -top-1 -left-1.5 w-3 h-px bg-white/50" />
-        <div className="absolute -bottom-1 -left-1.5 w-3 h-px bg-white/50" />
-        <div className="absolute top-1/2 left-2 -translate-y-1/2 [writing-mode:vertical-lr] rotate-180">
-          <p className="font-mono text-[10px] tracking-widest text-white/60 uppercase">
-            {DEMO_DIMENSIONS.height}.0 m
-          </p>
-        </div>
-      </motion.div>
-
-      {/* === Cota horizontal inferior === */}
-      <motion.div
-        initial={{ opacity: 0, scaleX: 0 }}
-        animate={{ opacity: 1, scaleX: 1 }}
-        transition={{ duration: 0.9, delay: 0.7, ease: "easeOut" }}
-        style={{ transformOrigin: "left" }}
-        className="absolute left-1/4 right-1/4 bottom-[20%] h-px bg-white/30 hidden md:block"
-      >
-        <div className="absolute -left-1 -top-1.5 w-px h-3 bg-white/50" />
-        <div className="absolute -right-1 -top-1.5 w-px h-3 bg-white/50" />
-        <div className="absolute -top-7 left-1/2 -translate-x-1/2">
-          <p className="font-mono text-[10px] tracking-widest text-white/60 uppercase whitespace-nowrap">
-            {DEMO_DIMENSIONS.length}.0 m
-          </p>
-        </div>
-      </motion.div>
-
-      {/* === Flechas de flujo de aire animadas === */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5, delay: 1.0 }}
-        className="absolute top-1/2 right-[8%] -translate-y-1/2 hidden lg:block"
-      >
-        <svg
-          width="180"
-          height="120"
-          viewBox="0 0 180 120"
-          fill="none"
-          stroke="rgba(255,255,255,0.55)"
-          strokeWidth="1"
-        >
-          <defs>
-            <marker
-              id="flow-arrow"
-              viewBox="0 0 10 10"
-              refX="8"
-              refY="5"
-              markerWidth="5"
-              markerHeight="5"
-              orient="auto"
-            >
-              <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(255,255,255,0.7)" />
-            </marker>
-          </defs>
-          <motion.path
-            d="M 10 60 Q 60 20 110 60 T 170 60"
-            strokeDasharray="6 4"
-            initial={{ pathLength: 0 }}
-            animate={{ pathLength: 1 }}
-            transition={{ duration: 1.4, delay: 1.2, ease: "easeInOut" }}
-            markerEnd="url(#flow-arrow)"
-          />
-          <motion.path
-            d="M 10 60 Q 60 100 110 60 T 170 60"
-            strokeDasharray="6 4"
-            initial={{ pathLength: 0 }}
-            animate={{ pathLength: 1 }}
-            transition={{ duration: 1.4, delay: 1.4, ease: "easeInOut" }}
-            markerEnd="url(#flow-arrow)"
-          />
-          <text
-            x="90"
-            y="14"
-            textAnchor="middle"
-            fontFamily="monospace"
-            fontSize="9"
-            fill="rgba(255,255,255,0.7)"
-            letterSpacing="2"
-          >
-            FLUJO DE AIRE
-          </text>
-        </svg>
-      </motion.div>
-
-      {/* === Marcador de zona de colada === */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6, delay: 1.6 }}
-        className="absolute bottom-[28%] right-6 sm:right-10 lg:right-14 hidden md:block"
-      >
-        <div className="flex items-center gap-3">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#FF7B72] animate-pulse" />
-          <span className="font-mono text-[10px] tracking-widest text-white/70 uppercase">
-            Zona de colada · +45°C
-          </span>
-        </div>
-      </motion.div>
-    </div>
   );
 }
 
@@ -421,21 +209,17 @@ function TelemetryStat({
   isLoading?: boolean;
 }) {
   return (
-    <div className="px-2 sm:px-4 first:pl-0 last:pr-0">
-      <p className="font-mono text-[10px] sm:text-[9px] tracking-widest text-white/45 uppercase mb-1.5">
-        {label}
-      </p>
+    <div className="px-6 sm:px-10 lg:px-14 py-6">
+      <p className="font-mono text-[10px] tracking-widest text-white/45 uppercase mb-2">{label}</p>
       <div className="flex items-baseline gap-1.5 h-8 sm:h-10">
         {isLoading ? (
           <div className="h-full w-20 sm:w-24 bg-white/10 animate-pulse rounded-md" />
         ) : (
           <>
-            <span className="font-display text-white font-light tracking-[-0.03em] leading-none text-2xl sm:text-3xl lg:text-4xl tabular-nums">
+            <span className="font-display text-white font-light tracking-[-0.03em] leading-none text-2xl sm:text-3xl tabular-nums">
               {value}
             </span>
-            <span className="font-mono text-[10px] sm:text-[9px] tracking-widest text-white/55 uppercase">
-              {unit}
-            </span>
+            <span className="font-mono text-[11px] text-white/50 uppercase">{unit}</span>
           </>
         )}
       </div>

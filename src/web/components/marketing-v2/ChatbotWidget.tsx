@@ -8,18 +8,48 @@ interface ChatbotStep {
   sender: "bot" | "user";
   text: string;
   options?: { label: string; action: string }[];
+  // Si se asigna, este step se muestra automáticamente al abrir el chat
+  // mientras el usuario esté en ese paso del Wizard (ver WizardStepper).
+  forWizardStep?: number;
 }
 
 interface ChatbotWidgetProps {
   primaryColor?: string;
   tenantCode?: string;
   branding?: { chatbot_steps?: ChatbotStep[] };
+  // Paso actual del Wizard (1-5), si el chatbot se está mostrando dentro de
+  // él. Permite que el mensaje de entrada sea contextual al paso — ver
+  // pickEntryStepId().
+  currentWizardStep?: number;
 }
 
-export default function ChatbotWidget({ primaryColor = "#0284c7", branding }: ChatbotWidgetProps) {
+function pickEntryStepId(steps: ChatbotStep[], currentWizardStep?: number): string | undefined {
+  if (currentWizardStep != null) {
+    const contextual = steps.find((s) => s.forWizardStep === currentWizardStep);
+    if (contextual) return contextual.id;
+  }
+  return steps[0]?.id;
+}
+
+export default function ChatbotWidget({ primaryColor = "#0284c7", branding, currentWizardStep }: ChatbotWidgetProps) {
   const steps = branding?.chatbot_steps || [];
   const [open, setOpen] = React.useState(false);
-  const [history, setHistory] = React.useState<string[]>(steps[0] ? [steps[0].id] : []);
+  const [history, setHistory] = React.useState<string[]>(() => {
+    const entryId = pickEntryStepId(steps, currentWizardStep);
+    return entryId ? [entryId] : [];
+  });
+
+  // Si el usuario avanza de paso en el Wizard y todavía no interactuó con
+  // el chat (sigue en el mensaje de entrada), refresca la ayuda contextual
+  // al nuevo paso. Si ya está navegando el árbol de opciones, no lo
+  // interrumpe a mitad de conversación.
+  React.useEffect(() => {
+    if (history.length <= 1) {
+      const entryId = pickEntryStepId(steps, currentWizardStep);
+      if (entryId) setHistory([entryId]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentWizardStep]);
 
   if (steps.length === 0) return null;
 

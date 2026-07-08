@@ -103,18 +103,18 @@
   --color-warning: hsl(var(--warning));
   --color-warning-foreground: hsl(var(--warning-foreground));
 
-  --color-ink: #002A32;
-  --color-ink-soft: #33565E;
-  --color-ink-muted: #6B8489;
-  --color-paper: #F5F7F8;
-  --color-paper-warm: #EEF1F3;
+  --color-ink: #0D2228;
+  --color-ink-soft: #46626A;
+  --color-ink-muted: #8C9DA1;
+  --color-paper: #EEF1F2;
+  --color-paper-warm: #F4F6F7;
   --color-paper-cool: #FFFFFF;
-  --color-line: #D6DBDE;
-  --color-line-strong: #B8C2C6;
+  --color-line: #E4E9EA;
+  --color-line-strong: #D3DADC;
 
   --font-sans: var(--font-sans), Inter, sans-serif;
   --font-display: var(--font-display), "Fraunces", "Outfit", serif;
-  --font-mono: var(--font-mono), "JetBrains Mono", monospace;
+  --font-mono: var(--font-mono), "IBM Plex Mono", monospace;
 
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);

@@ -6,17 +6,14 @@ import { toast } from "sonner";
 import {
   Sparkles,
   Search,
-  CheckCircle2,
   Clock,
   Printer,
   FileText,
   Download,
   CreditCard,
   AlertTriangle,
-  Wind,
   ShieldCheck,
   UserCheck,
-  FileCode,
   Building,
   HelpCircle,
   ChevronRight,
@@ -40,9 +37,8 @@ const supabase = getPortalBrowserClient();
 import { Button } from "@/platform/ui/button";
 import { Input } from "@/platform/ui/input";
 import { Badge } from "@/platform/ui/badge";
-import { Spinner } from "@/platform/ui/spinner";
 import { Skeleton } from "@/platform/ui/skeleton";
-import { getTenantConfig, MOCK_TENANTS } from "@/platform/tenant/tenant";
+import { getTenantConfig } from "@/platform/tenant/tenant";
 import { getTenantBranding } from "@/web/actions/branding";
 import { ThemeCustomizer } from "@/platform/components/theme-customizer";
 import {
@@ -52,10 +48,14 @@ import {
   SheetClose,
 } from "@/platform/ui/sheet";
 import { OrderTrackingSection } from "@/portal/components/OrderTrackingSection";
-import type {
-  ClientJob,
-  ClientInvoice,
-  ClientPayment,
+import {
+  createClientTicket,
+  sendClientMessage,
+  type ClientJob,
+  type ClientInvoice,
+  type ClientPayment,
+  type ClientSupportTicket,
+  type ClientSupportMessage,
 } from "@/portal/actions/portal";
 
 interface PortalClientInfo {
@@ -101,6 +101,9 @@ export default function CustomerPortal({
   jobs: initialJobs = [],
   invoices: initialInvoices = [],
   payments: initialPayments = [],
+  tickets: initialTickets = [],
+  messages: initialMessages = [],
+  previewClientId = null,
   isPlatformAdmin = false,
   allClients = [],
 }: {
@@ -108,6 +111,9 @@ export default function CustomerPortal({
   jobs?: ClientJob[];
   invoices?: ClientInvoice[];
   payments?: ClientPayment[];
+  tickets?: ClientSupportTicket[];
+  messages?: ClientSupportMessage[];
+  previewClientId?: string | null;
   isPlatformAdmin?: boolean;
   allClients?: Array<{ id: string; legalName: string; tenantCode: string }>;
 }) {
@@ -153,7 +159,6 @@ export default function CustomerPortal({
   const [isOffline, setIsOffline] = React.useState(false);
   const [hasError, setHasError] = React.useState(false);
   const [expandedOt, setExpandedOt] = React.useState<string | null>("JOB-2026-001");
-  const [downloadProgress, setDownloadProgress] = React.useState<Record<string, number>>({});
   const router = useRouter();
 
   // Client info derived dynamically
@@ -177,7 +182,7 @@ export default function CustomerPortal({
   );
 
   // Invoices state — datos reales del client
-  const [invoices, setInvoices] = React.useState(
+  const [invoices] = React.useState(
     initialInvoices.map((i) => ({
       id: i.id,
       code: i.code,
@@ -190,7 +195,7 @@ export default function CustomerPortal({
   );
 
   // Payment receipts — datos reales del client
-  const [receipts, setReceipts] = React.useState(
+  const [receipts] = React.useState(
     initialPayments.map((p) => ({
       id: p.id,
       code: p.invoiceCode,
@@ -201,27 +206,19 @@ export default function CustomerPortal({
     }))
   );
 
-  // Support tickets
-  const [tickets, setTickets] = React.useState([
-    {
-      code: "TCK-2026-091",
-      otCode: "JOB-2026-001",
-      date: "2026-06-14",
-      subject: "Duda sobre diámetro de brida de acople",
-      severity: "BAJO",
-      status: "RESUELTO",
-      desc: "Queremos confirmar si el diámetro de brida externa de 750mm es compatible con ductería helicoidal estándar de 30 pulgadas."
-    },
-    {
-      code: "TCK-2026-095",
-      otCode: "JOB-2026-001",
-      date: "2026-06-20",
-      subject: "Solicitud de presenciar pruebas de balanceo dinámico",
-      severity: "MEDIO",
-      status: "EN TRÁMITE",
-      desc: "Nuestro interventor de obra desea asistir de manera remota vía Teams a la calibración dinámica del motor."
-    }
-  ]);
+  // Tickets de soporte — datos reales, persistidos en client_support_tickets.
+  const [tickets, setTickets] = React.useState(
+    initialTickets.map((t) => ({
+      code: t.code,
+      otCode: t.jobId || "",
+      date: t.createdAt ? t.createdAt.substring(0, 10) : "",
+      subject: t.subject,
+      severity: t.severity,
+      status: t.status,
+      desc: t.description,
+    }))
+  );
+  const [isCreatingTicket, setIsCreatingTicket] = React.useState(false);
 
   // New ticket form
   const [newTicketOt, setNewTicketOt] = React.useState("JOB-2026-001");
@@ -229,33 +226,29 @@ export default function CustomerPortal({
   const [newTicketSubject, setNewTicketSubject] = React.useState("");
   const [newTicketDesc, setNewTicketDesc] = React.useState("");
 
-  // Chat message thread
-  const [chatMessages, setChatMessages] = React.useState([
-    {
-      id: 1,
-      sender: "agent",
-      name: "Ing. Carlos Mendoza (Soporte Técnico)",
-      time: "10:30",
-      text: "Estimada Sophia, hemos completado las simulaciones CFD del extractor VT-7500. El reporte de excentricidades está listo en descargas. ¿Tienes alguna duda de montaje?"
-    }
-  ]);
+  // Bitácora de soporte — mensajes reales, persistidos en
+  // client_support_messages. No hay respuesta automática: quien usa el
+  // Portal hoy es siempre un admin en modo revisión (ver
+  // src/lib/portal-auth.ts), no existe todavía login real de cliente
+  // externo, así que no hay "otra parte" que conteste de verdad.
+  const [chatMessages, setChatMessages] = React.useState(
+    initialMessages.map((m) => ({
+      id: m.id,
+      sender: m.senderType === "STAFF" ? "agent" : "client",
+      name: m.senderLabel || (m.senderType === "STAFF" ? "Equipo de soporte" : clientInfo.legalName),
+      time: m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "",
+      text: m.body,
+    }))
+  );
   const [newMessageText, setNewMessageText] = React.useState("");
   const [isChatOpen, setIsChatOpen] = React.useState(false);
+  const [isSendingMessage, setIsSendingMessage] = React.useState(false);
 
-  // Payment simulator variables
-  const [paymentInProgress, setPaymentInProgress] = React.useState(false);
-  const [paymentStep, setPaymentStep] = React.useState(0);
-  const [paymentMethod, setPaymentMethod] = React.useState<"pse" | "card">("pse");
+  // Payment: sin gateway real conectado todavía (no hay credenciales de
+  // Wompi/PSE configuradas). No se simula un pago exitoso — se muestra un
+  // estado honesto en vez de marcar la factura como pagada sin que haya
+  // ocurrido una transacción real.
   const [selectedInvoice, setSelectedInvoice] = React.useState<typeof invoices[0] | null>(null);
-  const [paymentSuccess, setPaymentSuccess] = React.useState(false);
-
-  // PSE form variables
-  const [pseBank, setPseBank] = React.useState("Bancolombia");
-  const [pseEmail, setPseEmail] = React.useState(supportEmail);
-
-  // Card form variables
-  const [cardNumber, setCardNumber] = React.useState("•••• •••• •••• 4242");
-  const [cardName, setCardName] = React.useState("SOPHIA WILLIAMS");
 
   // Search filter
   const [searchQuery, setSearchQuery] = React.useState("");
@@ -282,159 +275,69 @@ export default function CustomerPortal({
     }
   }, [config]);
 
-  const isValidTenant = tenantParam ? Object.keys(MOCK_TENANTS).includes(tenantParam) : true;
-  const isPortalFunctional = isValidTenant;
+  // NOTA: la validación de tenant/cliente real ya ocurrió en el servidor
+  // (src/app/portal/page.tsx llama a getCurrentClient() antes de renderizar
+  // este componente; si no hay cliente válido, ni siquiera llega hasta acá).
+  // Antes había un segundo chequeo aquí contra MOCK_TENANTS (que solo tenía
+  // la clave "default") que bloqueaba el portal para CUALQUIER tenant real
+  // — se eliminó por ser redundante y estar roto.
 
-  if (!isPortalFunctional) {
-    return (
-      <main className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
-        <div className="max-w-md w-full bg-card border border-border rounded-xl p-8 text-center space-y-6 shadow-2xl">
-          <div className="mx-auto w-20 h-20 bg-muted/50 rounded-full flex items-center justify-center border border-border">
-             {brandingState?.logo_url || config.logoUrl ? (
-               <img src={brandingState?.logo_url || config.logoUrl} alt={companyName} className="w-12 h-12 object-contain" />
-             ) : (
-               <Building className="w-10 h-10 text-muted-foreground" />
-             )}
-          </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">{companyName}</h1>
-          <p className="text-muted-foreground text-sm">
-            Acceso exclusivo para clientes activos.
-          </p>
-          <div className="text-xs text-muted-foreground font-mono bg-muted/50 p-2 rounded">
-            Contacto: {supportEmail}
-          </div>
-          <Button variant="outline" className="w-full bg-muted hover:bg-muted/80 border-border text-foreground transition-colors" onClick={() => window.location.href = "/"}>
-            Volver al sitio
-          </Button>
-        </div>
-      </main>
-    );
-  }
 
-  // Simulate file download with progress bar
-  const handleDownload = (filename: string) => {
-    if (downloadProgress[filename]) return;
-    setDownloadProgress(prev => ({ ...prev, [filename]: 1 }));
-    let progress = 1;
-    const interval = setInterval(() => {
-      progress += Math.floor(Math.random() * 25) + 10;
-      if (progress >= 100) {
-        progress = 100;
-        clearInterval(interval);
-        setTimeout(() => {
-          setDownloadProgress(prev => {
-            const next = { ...prev };
-            delete next[filename];
-            return next;
-          });
-          toast.success(`Descarga completada con éxito: ${filename}`);
-        }, 800);
-      }
-      setDownloadProgress(prev => ({ ...prev, [filename]: Math.min(progress, 100) }));
-    }, 1500);
-  };
-
-  // Simulate interactive PSE/Card payment gateway process
-  const triggerPaymentFlow = () => {
-    if (!selectedInvoice) return;
-    setPaymentInProgress(true);
-    setPaymentSuccess(false);
-    setPaymentStep(0);
-
-    const steps = [
-      "Conectando de forma segura SSL a PSE/Wompi...",
-      "Validando fondos y autorización 3D Secure...",
-      "Consolidando balance y actualizando base de datos en ERP...",
-      "Confirmando transferencia y generando folio de caja digital..."
-    ];
-
-    let current = 0;
-    const interval = setInterval(() => {
-      current++;
-      if (current >= steps.length) {
-        clearInterval(interval);
-        // Process actual state update
-        setInvoices(prev => prev.map(inv => 
-          inv.code === selectedInvoice.code ? { ...inv, status: "PAGADA", paid: inv.total } : inv
-        ));
-        // Register payment receipt
-        setReceipts(prev => [
-          ...prev,
-          {
-            id: `REC-2026-${Math.floor(Math.random() * 900) + 100}`,
-            code: selectedInvoice.code,
-            date: new Date().toISOString().split("T")[0],
-            amount: selectedInvoice.total - selectedInvoice.paid,
-            method: paymentMethod === "pse" ? `PSE (${pseBank})` : "Credit Card",
-            status: "APROBADO"
-          }
-        ]);
-        setPaymentSuccess(true);
-        setPaymentInProgress(false);
-      } else {
-        setPaymentStep(current);
-      }
-    }, 1200);
-  };
-
-  // Chat message send & agent response simulation
-  const handleSendMessage = () => {
-    if (!newMessageText.trim()) return;
-    const userMsg = {
-      id: Date.now(),
-      sender: "client",
-      name: clientName,
-      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      text: newMessageText
-    };
-    setChatMessages(prev => [...prev, userMsg]);
-    const typedText = newMessageText;
+  // Envía un mensaje real a la bitácora de soporte del cliente. No hay
+  // respuesta automática — sería inventar una conversación que no ocurrió.
+  const handleSendMessage = async () => {
+    if (!newMessageText.trim() || isSendingMessage) return;
+    const body = newMessageText;
     setNewMessageText("");
-
-    // Trigger auto response
-    setTimeout(() => {
-      let replyText = `Entendido. Estoy verificando los datos técnicos en el taller y le responderé lo antes posible.`;
-      const lower = typedText.toLowerCase();
-
-      if (lower.includes("entrega") || lower.includes("cuando") || lower.includes("fecha")) {
-        replyText = "Ing. Carlos Mendoza (Soporte): Revisando la bitácora del extractor VT-7500 (JOB-2026-001), terminamos el balanceo dinámico ayer. Hoy pasa a pruebas en túnel de viento y el despacho está en fecha para el 25 de junio.";
-      } else if (lower.includes("pago") || lower.includes("factura") || lower.includes("saldo")) {
-        replyText = "Ing. Carlos Mendoza (Soporte): Registré la simulación de pago del saldo final. El sistema contable está procesando la validación del comprobante. Verás el saldo actualizado en breve.";
-      } else if (lower.includes("planos") || lower.includes("dwg") || lower.includes("cad") || lower.includes("step")) {
-        replyText = "Ing. Carlos Mendoza (Soporte): Todos los planos dimensionales en DWG y los archivos paramétricos en STEP se encuentran listos para descargar en la pestaña de Repositorio de Ingeniería.";
-      } else if (lower.includes("vibracion") || lower.includes("pruebas") || lower.includes("ruido")) {
-        replyText = "Ing. Carlos Mendoza (Soporte): Las pruebas del motor VT-7500 arrojaron un nivel de vibración de 1.8 mm/s, muy por debajo de los 2.5 mm/s que exige la norma. Excelente balanceo dinámico.";
-      }
-
+    setIsSendingMessage(true);
+    try {
+      const saved = await sendClientMessage(previewClientId, body);
       setChatMessages(prev => [...prev, {
-        id: Date.now() + 1,
+        id: saved.id,
         sender: "agent",
-        name: "Ing. Carlos Mendoza (Soporte Técnico)",
-        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        text: replyText
+        name: saved.senderLabel || "Equipo de soporte",
+        time: new Date(saved.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        text: saved.body,
       }]);
-    }, 1500);
+    } catch (err) {
+      console.error("Error enviando mensaje:", err);
+      toast.error("No se pudo guardar el mensaje.");
+      setNewMessageText(body);
+    } finally {
+      setIsSendingMessage(false);
+    }
   };
 
-  // Submit a warranty or service ticket
-  const handleSubmitTicket = (e: React.FormEvent) => {
+  // Crea un ticket real, persistido en client_support_tickets.
+  const handleSubmitTicket = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTicketSubject.trim() || !newTicketDesc.trim()) return;
+    if (!newTicketSubject.trim() || !newTicketDesc.trim() || isCreatingTicket) return;
 
-    const newTicket = {
-      code: `TCK-2026-${Math.floor(Math.random() * 900) + 100}`,
-      otCode: newTicketOt,
-      date: new Date().toISOString().split("T")[0],
-      subject: newTicketSubject,
-      severity: newTicketSeverity,
-      status: "EN TRÁMITE",
-      desc: newTicketDesc
-    };
-
-    setTickets(prev => [newTicket, ...prev]);
-    setNewTicketSubject("");
-    setNewTicketDesc("");
-    toast.success(`Ticket de soporte técnico ${newTicket.code} registrado con éxito.`);
+    setIsCreatingTicket(true);
+    try {
+      const created = await createClientTicket(previewClientId, {
+        subject: newTicketSubject,
+        description: newTicketDesc,
+        severity: newTicketSeverity,
+      });
+      setTickets(prev => [{
+        code: created.code,
+        otCode: created.jobId || newTicketOt,
+        date: created.createdAt.substring(0, 10),
+        subject: created.subject,
+        severity: created.severity,
+        status: created.status,
+        desc: created.description,
+      }, ...prev]);
+      setNewTicketSubject("");
+      setNewTicketDesc("");
+      toast.success(`Ticket de soporte técnico ${created.code} registrado con éxito.`);
+    } catch (err) {
+      console.error("Error creando ticket:", err);
+      toast.error("No se pudo registrar el ticket.");
+    } finally {
+      setIsCreatingTicket(false);
+    }
   };
 
   // Reset demo error state
@@ -685,7 +588,7 @@ export default function CustomerPortal({
               className="bg-primary hover:bg-primary/95 text-white text-xs font-mono flex items-center gap-2 px-5 py-5 rounded-full shadow-lg hover:shadow-primary/20 transition-all hover:translate-y-[-1px] active:translate-y-0 cursor-pointer"
             >
               <MessageSquare className="w-4 h-4" />
-              {isChatOpen ? "Cerrar Soporte" : "Soporte Técnico en Vivo"}
+              {isChatOpen ? "Cerrar Soporte" : "Bitácora de Soporte"}
             </Button>
           </div>
         </div>
@@ -832,152 +735,43 @@ export default function CustomerPortal({
                                   {balance > 0 ? (
                                     <Sheet>
                                       <SheetTrigger asChild>
-                                        <Button 
-                                          onClick={() => {
-                                            setSelectedInvoice(inv);
-                                            setPaymentSuccess(false);
-                                          }}
+                                        <Button
+                                          onClick={() => setSelectedInvoice(inv)}
                                           className="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-mono h-8 px-3 flex items-center gap-1 cursor-pointer"
                                         >
                                           <CreditCard className="w-3.5 h-3.5" /> Pagar en Línea
                                         </Button>
                                       </SheetTrigger>
-                                      
-                                      {/* PAYMENT GATEWAY SIMULATION DRAWER */}
+
+                                      {/* Sin gateway de pago conectado todavía (no hay credenciales de
+                                          Wompi/PSE configuradas). Estado honesto, no se simula un pago. */}
                                       <SheetContent className="bg-card border-l border-border max-w-[85vw] sm:max-w-[480px]">
                                         <div className="space-y-6 pt-6 font-sans">
                                           <div className="space-y-1">
-                                            <span className="text-[10px] font-mono text-primary font-bold uppercase tracking-wider">// SECURE_B2B_GATEWAY</span>
-                                            <h3 className="text-lg font-bold text-foreground">Pasarela de Pago Wompi PSE</h3>
+                                            <span className="text-[10px] font-mono text-primary font-bold uppercase tracking-wider">// PAGOS_EN_LINEA</span>
+                                            <h3 className="text-lg font-bold text-foreground">Pago en línea no disponible todavía</h3>
                                             <p className="text-xs text-muted-foreground font-sans">
-                                              Liquidación segura de folios de ingeniería {companyName}.
+                                              {companyName} está habilitando el pago en línea. Por ahora, coordina el pago de esta factura directamente con tu ejecutivo.
                                             </p>
                                           </div>
 
                                           {selectedInvoice && (
                                             <div className="rounded-xl border border-border bg-background/55 p-4 space-y-2 font-mono text-xs">
                                               <div className="flex justify-between"><span className="text-muted-foreground">Factura:</span><span className="text-primary font-bold">{selectedInvoice.code}</span></div>
-                                              <div className="flex justify-between"><span className="text-muted-foreground">Valor a Pagar:</span><span className="text-foreground font-bold">{formatCurrency(selectedInvoice.total - selectedInvoice.paid)}</span></div>
+                                              <div className="flex justify-between"><span className="text-muted-foreground">Saldo pendiente:</span><span className="text-foreground font-bold">{formatCurrency(selectedInvoice.total - selectedInvoice.paid)}</span></div>
                                               <div className="flex justify-between border-t border-border pt-2 mt-2"><span className="text-muted-foreground">Cliente:</span><span className="text-foreground font-sans font-bold">{clientName}</span></div>
                                             </div>
                                           )}
 
-                                          {/* Payment forms states */}
-                                          {!paymentInProgress && !paymentSuccess && (
-                                            <div className="space-y-5">
-                                              {/* Method Selector */}
-                                              <div className="flex rounded-lg border border-border p-1 bg-background/50">
-                                                <button
-                                                  onClick={() => setPaymentMethod("pse")}
-                                                  className={`flex-1 text-center py-2 text-xs font-mono rounded cursor-pointer transition-all ${paymentMethod === "pse" ? "bg-primary text-white font-bold" : "text-muted-foreground hover:text-foreground"}`}
-                                                >
-                                                  Transferencia PSE
-                                                </button>
-                                                <button
-                                                  onClick={() => setPaymentMethod("card")}
-                                                  className={`flex-1 text-center py-2 text-xs font-mono rounded cursor-pointer transition-all ${paymentMethod === "card" ? "bg-primary text-white font-bold" : "text-muted-foreground hover:text-foreground"}`}
-                                                >
-                                                  Tarjeta de Crédito
-                                                </button>
-                                              </div>
+                                          <div className="rounded-xl border border-border bg-background/40 p-4 text-xs text-muted-foreground font-mono">
+                                            Contacto: {supportEmail} · {telefono}
+                                          </div>
 
-                                              {paymentMethod === "pse" ? (
-                                                <div className="space-y-4">
-                                                  <div className="space-y-1.5">
-                                                    <label className="text-xs font-bold text-muted-foreground">Seleccione su Entidad Bancaria:</label>
-                                                    <select 
-                                                      value={pseBank}
-                                                      onChange={(e) => setPseBank(e.target.value)}
-                                                      className="w-full bg-background border border-border text-foreground text-xs rounded-lg p-2.5 focus:ring-1 focus:ring-primary focus:outline-none"
-                                                    >
-                                                      <option value="Bancolombia">Bancolombia S.A.</option>
-                                                      <option value="Banco de Bogota">Banco de Bogotá</option>
-                                                      <option value="Davivienda">Davivienda S.A.</option>
-                                                      <option value="BBVA">BBVA Colombia</option>
-                                                      <option value="Banco de Occidente">Banco de Occidente</option>
-                                                    </select>
-                                                  </div>
-                                                  <div className="space-y-1.5">
-                                                    <label className="text-xs font-bold text-muted-foreground">Correo Registrado en PSE:</label>
-                                                    <Input 
-                                                      value={pseEmail}
-                                                      onChange={(e) => setPseEmail(e.target.value)}
-                                                      className="text-xs font-mono border-border bg-background"
-                                                    />
-                                                  </div>
-                                                </div>
-                                              ) : (
-                                                <div className="space-y-4">
-                                                  <div className="space-y-1.5">
-                                                    <label className="text-xs font-bold text-muted-foreground">Número de Tarjeta:</label>
-                                                    <Input 
-                                                      value={cardNumber}
-                                                      onChange={(e) => setCardNumber(e.target.value)}
-                                                      className="text-xs font-mono border-border bg-background"
-                                                    />
-                                                  </div>
-                                                  <div className="space-y-1.5">
-                                                    <label className="text-xs font-bold text-muted-foreground">Nombre del Tarjetahabiente:</label>
-                                                    <Input 
-                                                      value={cardName}
-                                                      onChange={(e) => setCardName(e.target.value)}
-                                                      className="text-xs font-mono border-border bg-background"
-                                                    />
-                                                  </div>
-                                                </div>
-                                              )}
-
-                                              <Button 
-                                                onClick={triggerPaymentFlow}
-                                                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs py-4 flex items-center justify-center gap-2 rounded-xl shadow-lg hover:shadow-emerald-600/10 cursor-pointer"
-                                              >
-                                                <ShieldCheck className="w-4 h-4" /> Autorizar Pago Bancario
-                                              </Button>
-                                            </div>
-                                          )}
-
-                                          {/* Payment in progress loader */}
-                                          {paymentInProgress && (
-                                            <div className="py-12 text-center space-y-6 animate-pulse">
-                                              <Spinner className="w-10 h-10 mx-auto text-primary" />
-                                              <div className="space-y-2">
-                                                <span className="text-[10px] font-mono text-muted-foreground uppercase block tracking-widest">// CONNECTING_GATEWAY_NET</span>
-                                                <p className="text-xs text-foreground font-mono font-bold">
-                                                  {paymentStep === 0 && "Estableciendo canal seguro SSL a PSE/Wompi..."}
-                                                  {paymentStep === 1 && "Validando fondos y autorización 3D Secure..."}
-                                                  {paymentStep === 2 && "Consolidando balance y actualizando base de datos en ERP..."}
-                                                  {paymentStep === 3 && "Confirmando transferencia y generando folio de caja digital..."}
-                                                </p>
-                                                <div className="h-1 w-48 bg-muted rounded-full mx-auto overflow-hidden">
-                                                  <div className="h-full bg-primary animate-pulse" style={{ width: `${(paymentStep + 1) * 25}%` }} />
-                                                </div>
-                                              </div>
-                                            </div>
-                                          )}
-
-                                          {/* Payment Success state */}
-                                          {paymentSuccess && (
-                                            <div className="py-12 text-center space-y-6 animate-in zoom-in-95 duration-350">
-                                              <div className="w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.15)]">
-                                                <CheckCircle2 className="w-8 h-8" />
-                                              </div>
-                                              <div className="space-y-2">
-                                                <span className="text-[10px] font-mono text-emerald-500 font-bold uppercase block tracking-widest">// TRANSACCIÓN_ACREDITADA</span>
-                                                <h4 className="text-lg font-bold text-foreground">Pago Recibido con Éxito</h4>
-                                                <p className="text-xs text-muted-foreground font-sans leading-relaxed">
-                                                  La transferencia fue conciliada en el libro de caja y el saldo restante del folio ha cambiado a $0.
-                                                </p>
-                                              </div>
-                                              <div className="border-t border-border pt-4 mt-6">
-                                                <SheetClose asChild>
-                                                  <Button className="bg-primary hover:bg-primary/95 text-white text-xs font-mono w-full cursor-pointer">
-                                                    Volver a Facturas
-                                                  </Button>
-                                                </SheetClose>
-                                              </div>
-                                            </div>
-                                          )}
-
+                                          <SheetClose asChild>
+                                            <Button className="w-full bg-muted hover:bg-muted/80 border border-border text-foreground text-xs font-mono cursor-pointer">
+                                              Cerrar
+                                            </Button>
+                                          </SheetClose>
                                         </div>
                                       </SheetContent>
                                     </Sheet>
@@ -1033,6 +827,9 @@ export default function CustomerPortal({
 
               {/* ---------------------------------------------------- */}
               {/* SECTION: TECHNICAL DOCUMENTS */}
+              {/* Sin datos falsos: hasta que existan documentos reales
+                  subidos (tabla documents + Storage), se muestra un estado
+                  honesto en vez de archivos inventados descargables. */}
               {/* ---------------------------------------------------- */}
               {activeSection === "docs" && (
                 <div className="space-y-8 animate-in fade-in duration-300">
@@ -1041,49 +838,17 @@ export default function CustomerPortal({
                       <span className="text-[10px] font-mono tracking-widest text-primary uppercase font-bold">// CAD_ENGINEERING_VAULT</span>
                       <h3 className="text-lg font-bold text-foreground mt-0.5">Planos Técnicos y Hojas de Datos</h3>
                       <p className="text-xs text-muted-foreground mt-1 font-sans">
-                        Descargue manuales de mantenimiento, archivos paramétricos en 3D STEP y reportes de excentricidad.
+                        Aquí aparecerán los manuales, planos y certificados que tu ejecutivo suba para tu proyecto.
                       </p>
                     </div>
                   </div>
 
-                  {/* Documents Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {[
-                      { title: "Manual de Operación y Mantenimiento Axiales", type: "PDF Manual", desc: "Lineamientos de engrase de balineras y alineación de bandas motoras.", size: "4.2 MB", filename: "Manual-Axial-VT.pdf", icon: FileText },
-                      { title: "Plano Vectorial CAD Extractor Ax-7500", type: "DWG Blueprint", desc: "Plano dimensional completo de anclajes de obra y diámetros.", size: "12.8 MB", filename: "AX-7500-REF.dwg", icon: FileCode },
-                      { title: "Reporte de Balanceo Dinámico ISO G2.5", type: "Certificado QA", desc: "Reporte de vibración y calibración de excentricidad firmado por taller.", size: "1.5 MB", filename: "Certificado-Balanceo-JOB-001.pdf", icon: ShieldCheck },
-                      { title: "Curvas de Rendimiento Aerodinámico VT", type: "Catálogo PDF", desc: "Gráfico técnico de Caudal (CFM) contra presión estática (inWG).", size: "6.8 MB", filename: "Curvas-Rendimiento-VT.pdf", icon: Wind }
-                    ].map((doc, idx) => {
-                      const Icon = doc.icon;
-                      const progress = downloadProgress[doc.filename];
-                      const isDownloading = progress !== undefined;
-
-                      return (
-                        <div key={idx} className="border border-border/80 bg-background/25 hover:border-primary/30 p-4 rounded-xl flex items-center justify-between gap-4 transition-all duration-300">
-                          <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-background border border-border flex items-center justify-center text-primary shrink-0 shadow-sm">
-                              <Icon className="w-5 h-5" />
-                            </div>
-                            <div className="space-y-0.5">
-                              <h4 className="text-xs font-bold text-foreground">{doc.title}</h4>
-                              <p className="text-[9px] text-muted-foreground font-mono uppercase">{doc.type} • {doc.size}</p>
-                              <p className="text-[11px] text-muted-foreground font-sans leading-normal pt-1">{doc.desc}</p>
-                            </div>
-                          </div>
-                          <Button 
-                            onClick={() => handleDownload(doc.filename)}
-                            className="bg-background border border-border hover:border-primary/50 text-foreground hover:text-primary p-2.5 h-9 rounded-lg cursor-pointer"
-                            disabled={isDownloading}
-                          >
-                            {isDownloading ? (
-                              <span className="text-[9px] font-mono">{progress}%</span>
-                            ) : (
-                              <Download className="w-3.5 h-3.5" />
-                            )}
-                          </Button>
-                        </div>
-                      );
-                    })}
+                  <div className="border border-dashed border-border rounded-xl p-10 text-center space-y-2">
+                    <FileText className="w-8 h-8 mx-auto text-muted-foreground" />
+                    <p className="text-sm text-foreground font-bold">Todavía no hay documentos disponibles</p>
+                    <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                      Cuando tu ejecutivo suba planos, manuales o certificados de tu OT, aparecerán aquí para descarga.
+                    </p>
                   </div>
                 </div>
               )}
@@ -1155,11 +920,12 @@ export default function CustomerPortal({
                             className="w-full bg-background border border-border text-foreground text-xs rounded-lg p-2.5 focus:ring-1 focus:ring-primary focus:outline-none font-sans"
                           />
                         </div>
-                        <Button 
+                        <Button
                           type="submit"
-                          className="w-full bg-primary hover:bg-primary/95 text-white font-mono text-xs py-3.5 flex items-center justify-center gap-1.5 rounded-lg cursor-pointer"
+                          disabled={isCreatingTicket}
+                          className="w-full bg-primary hover:bg-primary/95 text-white font-mono text-xs py-3.5 flex items-center justify-center gap-1.5 rounded-lg cursor-pointer disabled:opacity-50"
                         >
-                          Registrar Ticket Técnico
+                          {isCreatingTicket ? "Registrando..." : "Registrar Ticket Técnico"}
                         </Button>
                       </form>
                     </div>
@@ -1214,14 +980,13 @@ export default function CustomerPortal({
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center shadow-inner relative">
                     <User className="w-4.5 h-4.5" />
-                    <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-emerald-500 border border-card" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-foreground">Ing. Carlos Mendoza</h4>
-                    <span className="text-[9px] font-mono text-muted-foreground block leading-none">Director de Ingeniería</span>
+                    <h4 className="text-xs font-bold text-foreground">Bitácora de Soporte</h4>
+                    <span className="text-[9px] font-mono text-muted-foreground block leading-none">Tu ejecutivo responde aquí — no es un chat en tiempo real</span>
                   </div>
                 </div>
-                <button 
+                <button
                   onClick={() => setIsChatOpen(false)}
                   className="text-muted-foreground hover:text-foreground p-1 cursor-pointer"
                 >
@@ -1231,6 +996,9 @@ export default function CustomerPortal({
 
               {/* Chat Message Box */}
               <div className="flex-1 overflow-y-auto py-4 space-y-4 pr-1 text-xs">
+                {chatMessages.length === 0 && (
+                  <p className="text-muted-foreground text-center py-8">Todavía no hay mensajes en este caso.</p>
+                )}
                 {chatMessages.map((msg) => {
                   const isAgent = msg.sender === "agent";
                   return (
@@ -1256,17 +1024,19 @@ export default function CustomerPortal({
               {/* Chat Form */}
               <div className="border-t border-border/80 pt-3 flex items-center gap-2">
                 <Input
-                  placeholder="Consulte avance técnico, entregas..."
+                  placeholder="Escribe una nota sobre este caso..."
                   value={newMessageText}
+                  disabled={isSendingMessage}
                   onChange={(e) => setNewMessageText(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") handleSendMessage();
                   }}
                   className="text-xs border-border bg-background h-10"
                 />
-                <Button 
+                <Button
                   onClick={handleSendMessage}
-                  className="bg-primary hover:bg-primary/95 text-white p-2.5 h-10 w-10 shrink-0 flex items-center justify-center rounded-lg shadow-md cursor-pointer"
+                  disabled={isSendingMessage}
+                  className="bg-primary hover:bg-primary/95 text-white p-2.5 h-10 w-10 shrink-0 flex items-center justify-center rounded-lg shadow-md cursor-pointer disabled:opacity-50"
                 >
                   <Send className="w-4 h-4" />
                 </Button>

@@ -79,14 +79,14 @@ export interface BrandingConfig {
   landing_imagen_url: string;
   prefijo_referencias: string;
 
-  // === HERO EDITABLE (Fase 2 — copy, color y layout) ===
+  // === HERO EDITABLE (copy) ===
   hero_eyebrow: string;        // Línea superior: "Ingeniería de ventilación industrial"
-  hero_layout: "stack" | "inline"; // stack: 2 líneas, inline: 1 línea
-  hero_cta_primario_label: string; // Label del botón 1
+  hero_cta_primario_label: string; // Label del botón 1 (compartido por las 4 slides)
   hero_cta_secundario_label: string; // Label del botón 2
-  // Esquema de color del Hero: preset curado en vez de hex libre, para
-  // garantizar contraste sobre el fondo oscuro del Hero (ver HERO_COLOR_SCHEMES).
-  hero_color_scheme: "clasico" | "calido" | "marca";
+  // El Hero es un carrusel de 4 slides — una por etapa del proceso. Colores
+  // de texto y acento por slide son fijos (parte del sistema de diseño),
+  // solo el copy es editable.
+  hero_slides: HeroSlideContent[];
 
   chatbot_steps: ChatbotStep[];
 
@@ -153,11 +153,26 @@ export interface ChatbotStep {
   sender: "bot" | "user";
   text: string;
   options?: { label: string; action: string }[];
+  // Si se asigna, este mensaje se muestra automáticamente como punto de
+  // entrada cuando el usuario abre el chat estando en ese paso del Wizard
+  // (1=Servicio, 2=Análisis, 3=Contacto, 4=Cálculos, 5=Resultado). Opcional
+  // — sin asignar, el step solo se alcanza navegando el árbol de opciones.
+  forWizardStep?: number;
 }
 
 export interface SectorContent {
   name: string;
   shortDescription: string;
+}
+
+export interface HeroSlideContent {
+  eyebrow: string;
+  titleMain: string;
+  titleItalic: string;
+  desc: string;
+  tag: string;
+  duration: string;
+  mediaLabel: string;
 }
 
 export interface CaseResultRow {
@@ -283,19 +298,56 @@ export function getBrandingDefaults(_tenantCode?: string | null): BrandingConfig
 
     // === HERO EDITABLE (defaults) ===
     hero_eyebrow: "Ingeniería de ventilación industrial",
-    hero_color_scheme: "clasico",
-    hero_layout: "stack",
     hero_cta_primario_label: "Iniciar Cotización Industrial",
     hero_cta_secundario_label: "Conocer el proceso",
+    hero_slides: [
+      {
+        eyebrow: "DIAGNÓSTICO TÉCNICO",
+        titleMain: "El control del aire",
+        titleItalic: "empieza por medirlo.",
+        desc: "Visita en planta con instrumentación calibrada. Mapeo de caudales, presión y temperatura antes de proponer una sola pieza de equipo.",
+        tag: "INSTRUMENTACIÓN CALIBRADA",
+        duration: "5–8 días de diagnóstico",
+        mediaLabel: "video: medición en planta",
+      },
+      {
+        eyebrow: "SIMULACIÓN Y DISEÑO",
+        titleMain: "El aire se diseña",
+        titleItalic: "antes de fabricarse.",
+        desc: "Modelado CFD 3D del comportamiento del aire. Selección de equipos y memoria de cálculo firmada por ingeniero responsable.",
+        tag: "SIMULACIÓN CFD 3D",
+        duration: "10–14 días de diseño",
+        mediaLabel: "video: simulación CFD del flujo de aire",
+      },
+      {
+        eyebrow: "EJECUCIÓN DE INGENIERÍA",
+        titleMain: "El control del aire",
+        titleItalic: "que sostiene su planta.",
+        desc: "Fabricación en planta propia con acero certificado. Balanceo ISO 1940 G2.5 e instalación con cero paradas no planificadas.",
+        tag: "ZONA DE COLADA · +45°C",
+        duration: "20–35 días de ejecución",
+        mediaLabel: "foto: fabricación y montaje certificado",
+      },
+      {
+        eyebrow: "RESULTADOS GARANTIZADOS",
+        titleMain: "El aire, verificado.",
+        titleItalic: "no prometido.",
+        desc: "Medición post-instalación y reporte de cumplimiento frente al diseño. Línea directa con ingeniería, sin intermediarios.",
+        tag: "RESULTADOS AUDITADOS",
+        duration: "Continuo · mantenimiento programado",
+        mediaLabel: "foto: medición y certificación post-instalación",
+      },
+    ],
 
     chatbot_steps: [
       {
-        id: "msg-init",
+        id: "main_menu",
         sender: "bot",
         text: "Bienvenido al portal de Asistencia e Ingeniería B2B. Para optimizar su tiempo, indíquenos cómo prefiere que le ayudemos a dimensionar su proyecto:",
         options: [
           { label: "Necesito guía paso a paso 🧭", action: "guia_basica" },
           { label: "Tengo mis parámetros técnicos ⚙️", action: "acceso_experto" },
+          { label: "Ver fichas técnicas 📄", action: "fichas" },
           { label: "Contactar a un ingeniero 👷", action: "sedes" }
         ]
       },
@@ -333,6 +385,56 @@ export function getBrandingDefaults(_tenantCode?: string | null): BrandingConfig
         options: [
           { label: "Enviar Formulario de Contacto ✉️", action: "go_contact" },
           { label: "Volver al Menú Principal ↩️", action: "main_menu" }
+        ]
+      },
+      {
+        id: "ayuda_paso1_servicio",
+        sender: "bot",
+        text: "Estás en el Paso 1 (Servicio). Aquí eliges qué tipo de solución necesitas (ventilación general, extracción localizada, climatización de precisión, etc.) y la prioridad del proyecto.\n\n¿No sabes cuál aplica a tu caso? Descríbenos brevemente tu espacio y actividad, y un ingeniero te confirma la categoría correcta.",
+        forWizardStep: 1,
+        options: [
+          { label: "No sé cuál elegir, hablar con un ingeniero 👷", action: "sedes" },
+          { label: "Ver menú completo ↩️", action: "main_menu" }
+        ]
+      },
+      {
+        id: "ayuda_paso2_analisis",
+        sender: "bot",
+        text: "Estás en el Paso 2 (Análisis). Aquí pedimos las dimensiones de tu espacio (Largo, Ancho, Alto) y el ACH requerido.\n\nACH = Renovaciones de Aire por Hora: cuántas veces se reemplaza completamente el aire del espacio en una hora. Depende de la actividad — por ejemplo, una bodega necesita menos ACH que un área de soldadura. Si no conoces tu ACH, indícanos la actividad que se realiza en el espacio y te sugerimos el rango correcto.",
+        forWizardStep: 2,
+        options: [
+          { label: "No sé qué ACH necesito 🤔", action: "sedes" },
+          { label: "Ver menú completo ↩️", action: "main_menu" }
+        ]
+      },
+      {
+        id: "ayuda_paso3_contacto",
+        sender: "bot",
+        text: "Estás en el Paso 3 (Contacto). Solicitamos tus datos de empresa para poder enviarte la cotización formal y que un ingeniero de nuestro equipo pueda darle seguimiento a tu caso.\n\nTus datos no se comparten con terceros y solo se usan para este proceso de cotización.",
+        forWizardStep: 3,
+        options: [
+          { label: "¿Por qué necesitan mi NIT/empresa? ℹ️", action: "sedes" },
+          { label: "Ver menú completo ↩️", action: "main_menu" }
+        ]
+      },
+      {
+        id: "ayuda_paso4_calculos",
+        sender: "bot",
+        text: "Estás en el Paso 4 (Cálculos). Aquí verás el CFM requerido — Pies Cúbicos por Minuto, la medida de cuánto aire debe mover el equipo — y una estimación preliminar de inversión según el equipo recomendado.\n\nEsta es una estimación automática basada en tus datos; el ingeniero la valida y ajusta antes de la cotización final.",
+        forWizardStep: 4,
+        options: [
+          { label: "Quiero que un ingeniero revise mi caso 👷", action: "sedes" },
+          { label: "Ver menú completo ↩️", action: "main_menu" }
+        ]
+      },
+      {
+        id: "ayuda_paso5_resultado",
+        sender: "bot",
+        text: "¡Listo! Este es tu resultado preliminar. El siguiente paso es que un ingeniero revise los detalles de tu proyecto y te contacte con la cotización formal y el equipo específico recomendado.",
+        forWizardStep: 5,
+        options: [
+          { label: "Hablar con un ingeniero ahora 👷", action: "sedes" },
+          { label: "Ver menú completo ↩️", action: "main_menu" }
         ]
       }
     ],

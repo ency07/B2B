@@ -907,7 +907,7 @@ Solicito una cotización formal y confirmación de disponibilidad técnica. Grac
           </div>
         </div>
       )}
-      <ChatbotWidget primaryColor={primaryColor} tenantCode={tenantParam} branding={branding} />
+      <ChatbotWidget primaryColor={primaryColor} tenantCode={tenantParam} branding={branding} currentWizardStep={step} />
     </div>
   );
 }

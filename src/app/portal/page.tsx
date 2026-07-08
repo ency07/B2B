@@ -7,6 +7,8 @@ import {
   getClientJobs,
   getClientInvoices,
   getClientPayments,
+  getClientTickets,
+  getClientMessages,
 } from "@/portal/actions/portal";
 import { buildLoginUrl } from "@/utils/auth-redirect";
 import CustomerPortalClient from "./client-page";
@@ -84,10 +86,12 @@ export default async function PortalPage({ searchParams }: Props) {
   }
 
   // Cargar datos del client (per-client filtering por client_id).
-  const [jobs, invoices, payments] = await Promise.all([
+  const [jobs, invoices, payments, tickets, messages] = await Promise.all([
     getClientJobs(previewClientId),
     getClientInvoices(previewClientId),
     getClientPayments(previewClientId),
+    getClientTickets(previewClientId),
+    getClientMessages(previewClientId),
   ]);
 
   // Si es platform admin, traer la lista de todas las empresas clientes para el switcher
@@ -119,6 +123,9 @@ export default async function PortalPage({ searchParams }: Props) {
         jobs={jobs}
         invoices={invoices}
         payments={payments}
+        tickets={tickets}
+        messages={messages}
+        previewClientId={previewClientId}
         isPlatformAdmin={!!currentClient.isPlatformAdmin}
         allClients={allClients}
       />

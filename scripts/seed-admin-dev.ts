@@ -1,13 +1,15 @@
 /**
  * Crea el usuario de desarrollo con rol ADMIN_DEV.
  *
- * Email: gedeon07@gmail.com
- * Password: AdminDev2026!
  * Rol: ADMIN_DEV (acceso total al ERP, similar a SUPER_ADMIN)
  *
  * El cleanup de usuarios de prueba (scripts/clean-test-users.ts) NO
  * borra este usuario porque su email no termina en @test.aeromax.co.
  * Si queres borrarlo, ejecuta este script con --cleanup.
+ *
+ * Requiere en .env: ADMIN_DEV_EMAIL, ADMIN_DEV_PASSWORD (ADMIN_DEV_FIRST_NAME
+ * y ADMIN_DEV_LAST_NAME son opcionales). No hay defaults hardcodeados — antes
+ * este script tenía un email y password reales en texto plano en el código.
  *
  * Uso:
  *   npx ts-node scripts/seed-admin-dev.ts
@@ -15,9 +17,15 @@
  */
 
 import { createClient } from "@supabase/supabase-js";
+import * as crypto from "crypto";
 import * as dotenv from "dotenv";
 
 dotenv.config();
+
+if (process.env.NODE_ENV === "production") {
+  console.error("Este script no debe ejecutarse en producción (crea una cuenta con acceso total al ERP).");
+  process.exit(1);
+}
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -26,11 +34,21 @@ const admin = createClient(supabaseUrl, serviceKey, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 
-const EMAIL = "gedeon07@gmail.com";
-const PASSWORD = "AdminDev2026!";
+const EMAIL = process.env.ADMIN_DEV_EMAIL || "";
+let PASSWORD = process.env.ADMIN_DEV_PASSWORD || "";
 const ROLE_CODE = "ADMIN_DEV";
-const FIRST_NAME = "Gedeon";
-const LAST_NAME = "Admin Dev";
+const FIRST_NAME = process.env.ADMIN_DEV_FIRST_NAME || "Admin";
+const LAST_NAME = process.env.ADMIN_DEV_LAST_NAME || "Dev";
+let generatedPassword = false;
+
+if (!EMAIL) {
+  console.error("Falta ADMIN_DEV_EMAIL en el entorno. Configúralo en .env antes de correr este script.");
+  process.exit(1);
+}
+if (!PASSWORD) {
+  PASSWORD = crypto.randomBytes(18).toString("base64url");
+  generatedPassword = true;
+}
 
 async function ensureRole(): Promise<string | null> {
   const { data: existing } = await admin
@@ -59,6 +77,8 @@ async function ensureRole(): Promise<string | null> {
   return data.id;
 }
 
+let userAlreadyExisted = false;
+
 async function ensureUser(): Promise<string | null> {
   // Buscar si ya existe la fila en public.users.
   const { data: existing } = await admin
@@ -66,7 +86,10 @@ async function ensureUser(): Promise<string | null> {
     .select("id, auth_user_id")
     .eq("email", EMAIL)
     .maybeSingle();
-  if (existing) return existing.id;
+  if (existing) {
+    userAlreadyExisted = true;
+    return existing.id;
+  }
 
   // Buscar o crear en Supabase Auth.
   const { data: list } = await admin.auth.admin.listUsers({ perPage: 200 });
@@ -163,10 +186,15 @@ async function main() {
   const ok = await assignRole(userId, roleId);
   if (ok) {
     console.log("");
-    console.log("Credenciales:");
-    console.log(`  Email:    ${EMAIL}`);
-    console.log(`  Password: ${PASSWORD}`);
-    console.log(`  Rol:      ${ROLE_CODE} (acceso total al ERP)`);
+    if (userAlreadyExisted) {
+      console.log(`El usuario ${EMAIL} ya existía — no se tocó su password actual.`);
+      console.log(`Rol confirmado: ${ROLE_CODE} (acceso total al ERP)`);
+    } else {
+      console.log("Usuario creado. Credenciales (solo se muestran esta vez):");
+      console.log(`  Email:    ${EMAIL}`);
+      console.log(`  Password: ${PASSWORD}${generatedPassword ? "  (generada automáticamente — guárdala ahora)" : ""}`);
+      console.log(`  Rol:      ${ROLE_CODE} (acceso total al ERP)`);
+    }
     console.log("");
     console.log("Para borrar: npx ts-node scripts/seed-admin-dev.ts --cleanup");
   }

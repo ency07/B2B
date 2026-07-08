@@ -46,7 +46,7 @@ import { Spinner } from "@/platform/ui/spinner";
 import { Textarea } from "@/platform/ui/textarea";
 
 import { getTenantBranding, saveTenantBranding } from "@/web/actions/branding";
-import { BrandingConfig, getBrandingDefaults, HERO_COLOR_SCHEMES } from "@/platform/branding/branding-defaults";
+import { BrandingConfig, getBrandingDefaults } from "@/platform/branding/branding-defaults";
 import { getIndustrialCatalog, CatalogCategory, saveProduct, deleteProduct, saveCategory, deleteCategory } from "@/web/actions/catalog";
 
 type TabId = "hero" | "trust" | "problems" | "process" | "disciplines" | "services" | "sectores" | "cases" | "catalog" | "media" | "blog" | "seo" | "footer" | "chatbot";
@@ -138,10 +138,6 @@ export default function CmsPage() {
   const [isBrandingSubmitting, setIsBrandingSubmitting] = React.useState(false);
 
   // Additional mock settings for detailed Hero settings
-  const [heroLoop, setHeroLoop] = React.useState(true);
-  const [heroMute, setHeroMute] = React.useState(true);
-  const [heroAutoplay, setHeroAutoplay] = React.useState(true);
-  const [heroVideoSpeed, setHeroVideoSpeed] = React.useState("1.0");
 
   // ===== SECTORES / CASOS DE ÉXITO =====
   // Estos viven dentro de brandingState (sectores, caso_destacado) y se
@@ -387,60 +383,13 @@ export default function CmsPage() {
                   <h3 className="text-sm font-semibold text-foreground mt-0.5">Configuración de Pantalla Hero</h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5 md:col-span-2">
-                    <label className="text-xs text-muted-foreground font-medium">Título Comercial del Hero</label>
-                    <Input value={brandingState.landing_titulo} onChange={(e) => handleBrandingChange("landing_titulo", e.target.value)} className="bg-background border-border text-xs text-foreground" />
-                  </div>
-                  <div className="space-y-1.5 md:col-span-2">
-                    <label className="text-xs text-muted-foreground font-medium">Subtítulo / Propuesta de Valor</label>
-                    <Textarea rows={3} value={brandingState.landing_subtitulo} onChange={(e) => handleBrandingChange("landing_subtitulo", e.target.value)} className="bg-background border-border text-xs text-foreground" />
-                  </div>
-                  <div className="space-y-1.5 md:col-span-2">
-                    <label className="text-xs text-muted-foreground font-medium">Tipo de Fondo Principal</label>
-                    <div className="flex gap-4">
-                      <label className="flex items-center gap-2 text-xs text-foreground cursor-pointer">
-                        <input type="radio" name="hero_tipo_fondo" value="video" checked={brandingState.hero_tipo_fondo === 'video'} onChange={() => handleBrandingChange('hero_tipo_fondo', 'video')} /> Video
-                      </label>
-                      <label className="flex items-center gap-2 text-xs text-foreground cursor-pointer">
-                        <input type="radio" name="hero_tipo_fondo" value="imagen" checked={brandingState.hero_tipo_fondo === 'imagen'} onChange={() => handleBrandingChange('hero_tipo_fondo', 'imagen')} /> Imagen
-                      </label>
-                    </div>
-                  </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs text-muted-foreground font-medium">Video URL de Fondo (MP4 / Webm)</label>
-                    <Input value={brandingState.landing_video_url || ''} onChange={(e) => handleBrandingChange("landing_video_url", e.target.value)} className="bg-background border-border text-xs text-foreground font-mono" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs text-muted-foreground font-medium">Imagen URL de Fondo</label>
+                    <label className="text-xs text-muted-foreground font-medium">Imagen para compartir en redes (Open Graph)</label>
                     <Input value={brandingState.landing_imagen_url || ''} onChange={(e) => handleBrandingChange("landing_imagen_url", e.target.value)} className="bg-background border-border text-xs text-foreground font-mono" />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs text-muted-foreground font-medium">URL Dossier Corporativo B2B (Ficha / Brochure)</label>
                     <Input value={brandingState.dossier_url} onChange={(e) => handleBrandingChange("dossier_url", e.target.value)} className="bg-background border-border text-xs text-foreground font-mono" />
-                  </div>
-
-                  {/* Multimedia behavior */}
-                  <div className="md:col-span-2 border-t border-border pt-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <div className="p-3 bg-muted/10 rounded-lg border border-border flex items-center justify-between">
-                      <span className="text-[11px] text-muted-foreground font-medium">Loop Video</span>
-                      <input type="checkbox" checked={heroLoop} onChange={(e) => setHeroLoop(e.target.checked)} className="accent-primary" />
-                    </div>
-                    <div className="p-3 bg-muted/10 rounded-lg border border-border flex items-center justify-between">
-                      <span className="text-[11px] text-muted-foreground font-medium">Silenciar Video</span>
-                      <input type="checkbox" checked={heroMute} onChange={(e) => setHeroMute(e.target.checked)} className="accent-primary" />
-                    </div>
-                    <div className="p-3 bg-muted/10 rounded-lg border border-border flex items-center justify-between">
-                      <span className="text-[11px] text-muted-foreground font-medium">Autoplay</span>
-                      <input type="checkbox" checked={heroAutoplay} onChange={(e) => setHeroAutoplay(e.target.checked)} className="accent-primary" />
-                    </div>
-                    <div className="p-3 bg-muted/10 rounded-lg border border-border flex items-center justify-between gap-2">
-                      <span className="text-[11px] text-muted-foreground font-medium">Velocidad</span>
-                      <select value={heroVideoSpeed} onChange={(e) => setHeroVideoSpeed(e.target.value)} className="bg-background border-border text-[10px] text-foreground rounded px-1">
-                        <option value="0.75">0.75x</option>
-                        <option value="1.0">1.0x</option>
-                        <option value="1.25">1.25x</option>
-                      </select>
-                    </div>
                   </div>
 
                   {/* Buttons */}
@@ -454,28 +403,51 @@ export default function CmsPage() {
                       <Input value={brandingState.hero_cta_secundario_label} onChange={(e) => handleBrandingChange("hero_cta_secundario_label", e.target.value)} className="bg-background border-border text-xs text-foreground" />
                     </div>
                   </div>
+                </div>
 
-                  {/* Esquema de color — curado, no hex libre (garantiza contraste sobre el fondo del Hero) */}
-                  <div className="md:col-span-2 border-t border-border pt-4 space-y-1.5">
-                    <label className="text-xs text-muted-foreground font-medium">Esquema de Color del Hero</label>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      {(Object.entries(HERO_COLOR_SCHEMES) as [keyof typeof HERO_COLOR_SCHEMES, typeof HERO_COLOR_SCHEMES[keyof typeof HERO_COLOR_SCHEMES]][]).map(([id, preset]) => (
-                        <button
-                          key={id}
-                          type="button"
-                          onClick={() => handleBrandingChange("hero_color_scheme", id)}
-                          className={`p-3 rounded-lg border text-left transition-colors ${brandingState.hero_color_scheme === id ? "border-primary bg-accent/30" : "border-border hover:bg-accent/10"}`}
-                        >
-                          <div className="flex items-center gap-1.5 mb-2">
-                            <span className="w-3 h-3 rounded-full border border-border" style={{ backgroundColor: preset.titulo }} />
-                            <span className="w-3 h-3 rounded-full border border-border" style={{ backgroundColor: id === "marca" ? (brandingState.color_primario || "#4C8DFF") : preset.eyebrow }} />
-                          </div>
-                          <span className="text-[11px] text-foreground">{preset.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                    <p className="text-[10px] text-muted-foreground">Los colores del Hero se eligen de esta paleta curada para garantizar legibilidad sobre la foto o el video de portada.</p>
+                {/* Carrusel del Hero (4 slides — una por etapa del proceso) */}
+                <div className="border-t border-border pt-4 space-y-4">
+                  <div>
+                    <label className="text-xs text-muted-foreground font-medium">Carrusel del Hero (4 etapas)</label>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Los colores y el fondo de cada slide son parte del diseño y no se editan aquí — solo el copy.</p>
                   </div>
+                  {brandingState.hero_slides.map((slide, idx) => (
+                    <div key={idx} className="p-4 rounded-xl border border-border bg-card/40 space-y-3">
+                      <div className="text-[10px] font-mono text-muted-foreground uppercase">Etapa {idx + 1}</div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[10px] text-muted-foreground">Eyebrow (línea superior)</label>
+                          <Input value={slide.eyebrow} onChange={(e) => { const next = [...brandingState.hero_slides]; next[idx] = { ...next[idx], eyebrow: e.target.value }; handleBrandingChange("hero_slides", next); }} className="bg-background border-border text-xs text-foreground font-mono" />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] text-muted-foreground">Duración</label>
+                          <Input value={slide.duration} onChange={(e) => { const next = [...brandingState.hero_slides]; next[idx] = { ...next[idx], duration: e.target.value }; handleBrandingChange("hero_slides", next); }} className="bg-background border-border text-xs text-foreground" />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] text-muted-foreground">Título principal</label>
+                          <Input value={slide.titleMain} onChange={(e) => { const next = [...brandingState.hero_slides]; next[idx] = { ...next[idx], titleMain: e.target.value }; handleBrandingChange("hero_slides", next); }} className="bg-background border-border text-xs text-foreground" />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] text-muted-foreground">Título en cursiva</label>
+                          <Input value={slide.titleItalic} onChange={(e) => { const next = [...brandingState.hero_slides]; next[idx] = { ...next[idx], titleItalic: e.target.value }; handleBrandingChange("hero_slides", next); }} className="bg-background border-border text-xs text-foreground" />
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] text-muted-foreground">Descripción</label>
+                        <Textarea rows={2} value={slide.desc} onChange={(e) => { const next = [...brandingState.hero_slides]; next[idx] = { ...next[idx], desc: e.target.value }; handleBrandingChange("hero_slides", next); }} className="bg-background border-border text-xs text-foreground" />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[10px] text-muted-foreground">Tag técnico (badge)</label>
+                          <Input value={slide.tag} onChange={(e) => { const next = [...brandingState.hero_slides]; next[idx] = { ...next[idx], tag: e.target.value }; handleBrandingChange("hero_slides", next); }} className="bg-background border-border text-xs text-foreground font-mono" />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] text-muted-foreground">Descripción del panel visual</label>
+                          <Input value={slide.mediaLabel} onChange={(e) => { const next = [...brandingState.hero_slides]; next[idx] = { ...next[idx], mediaLabel: e.target.value }; handleBrandingChange("hero_slides", next); }} className="bg-background border-border text-xs text-foreground" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </>
             )}
@@ -1270,7 +1242,29 @@ export default function CmsPage() {
                     <span className="text-[10px] font-mono font-bold text-primary uppercase">Mensaje ID: {step.id}</span>
                     <Badge variant="outline" className="text-[8px] font-mono">{step.sender.toUpperCase()}</Badge>
                   </div>
-                  
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] text-muted-foreground font-mono uppercase font-bold">Aparece automáticamente al abrir el chat en el paso del Wizard</label>
+                    <select
+                      value={step.forWizardStep ?? ""}
+                      onChange={(e) => {
+                        const newSteps = [...brandingState.chatbot_steps];
+                        const value = e.target.value;
+                        newSteps[sIdx].forWizardStep = value === "" ? undefined : Number(value);
+                        handleBrandingChange("chatbot_steps" as any, newSteps as any);
+                      }}
+                      className="w-full bg-background border border-border text-foreground text-xs rounded-lg p-2 focus:ring-1 focus:ring-primary focus:outline-none"
+                    >
+                      <option value="">Sin asignar (solo se llega navegando el menú)</option>
+                      <option value="1">Paso 1 — Servicio</option>
+                      <option value="2">Paso 2 — Análisis</option>
+                      <option value="3">Paso 3 — Contacto</option>
+                      <option value="4">Paso 4 — Cálculos</option>
+                      <option value="5">Paso 5 — Resultado</option>
+                    </select>
+                    <p className="text-[9px] text-muted-foreground">Opcional. Deja "Sin asignar" si este mensaje es parte del menú general, no ayuda contextual de un paso.</p>
+                  </div>
+
                   <div className="space-y-1.5">
                     <label className="text-[10px] text-muted-foreground font-mono uppercase font-bold">Texto de Respuesta del Bot</label>
                     <Textarea 
