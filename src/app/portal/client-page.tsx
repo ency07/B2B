@@ -426,10 +426,10 @@ export default function CustomerPortal({
             <AlertTriangle className="w-8 h-8" />
           </div>
           <div className="space-y-2">
-            <span className="text-xs font-mono text-destructive uppercase tracking-widest font-bold">// ERROR_CONNECTION_TIMEOUT</span>
-            <h2 className="text-xl font-bold tracking-tight text-foreground">Fallo de Enlace al Servidor</h2>
+            <span className="text-xs font-mono text-destructive uppercase tracking-widest font-bold">// ERROR_CONEXION</span>
+            <h2 className="text-xl font-bold tracking-tight text-foreground">Fallo de conexión</h2>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              No se pudo consolidar la conexión segura a la base de datos de producción de {companyName}. La solicitud ha expirado.
+              No pudimos cargar tu información en este momento. Por favor intenta de nuevo o contacta a tu ejecutivo.
             </p>
           </div>
           <div className="flex items-center justify-center gap-3">
@@ -698,7 +698,7 @@ export default function CustomerPortal({
                 <div className="space-y-8 animate-in fade-in duration-300">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border/60 pb-4">
                     <div>
-                      <span className="text-[10px] font-mono tracking-widest text-primary uppercase font-bold">// BILLING_ACCOUNT_SLA</span>
+                      <span className="text-[10px] font-mono tracking-widest text-primary uppercase font-bold">// FACTURACION</span>
                       <h3 className="text-lg font-bold text-foreground mt-0.5">Cartera de Facturación Industrial</h3>
                       <p className="text-xs text-muted-foreground mt-1 font-sans">
                         Consulte los vencimientos, descargue los folios y realice abonos a través del gateway bancario.
@@ -808,7 +808,7 @@ export default function CustomerPortal({
 
                   {/* Payment history receipts list */}
                   <div className="space-y-4">
-                    <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest block font-bold">// TRANSACTION_ARCHIVE</span>
+                      <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest block font-bold">// HISTORIAL_PAGOS</span>
                     <h4 className="text-sm font-bold text-foreground">Historial de Recibos y Transferencias</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {receipts.map((rec) => (
@@ -848,7 +848,7 @@ export default function CustomerPortal({
                 <div className="space-y-8 animate-in fade-in duration-300">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border/60 pb-4">
                     <div>
-                      <span className="text-[10px] font-mono tracking-widest text-primary uppercase font-bold">// CAD_ENGINEERING_VAULT</span>
+                      <span className="text-[10px] font-mono tracking-widest text-primary uppercase font-bold">// DOCUMENTOS_TECNICOS</span>
                       <h3 className="text-lg font-bold text-foreground mt-0.5">Planos Técnicos y Hojas de Datos</h3>
                       <p className="text-xs text-muted-foreground mt-1 font-sans">
                         Aquí aparecerán los manuales, planos y certificados que tu ejecutivo suba para tu proyecto.
@@ -873,7 +873,7 @@ export default function CustomerPortal({
                 <div className="space-y-8 animate-in fade-in duration-300">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border/60 pb-4">
                     <div>
-                      <span className="text-[10px] font-mono tracking-widest text-primary uppercase font-bold">// SERVICE_WARRANTY_HUD</span>
+                      <span className="text-[10px] font-mono tracking-widest text-primary uppercase font-bold">// GARANTIAS_SOPORTE</span>
                       <h3 className="text-lg font-bold text-foreground mt-0.5">Garantías y Casos de Interventoría</h3>
                       <p className="text-xs text-muted-foreground mt-1 font-sans">
                         Reporte incidentes en taller o ensamble, adjunte evidencias y supervise la respuesta técnica.
@@ -1075,7 +1075,7 @@ export default function CustomerPortal({
             >
               Política de Privacidad
             </a>
-            <span>Conexión Servidor {companyName}: <span className="text-emerald-500 font-bold">// SECURE_VERIFIED</span></span>
+            <span>Conexión segura — {companyName}: <span className="text-emerald-500 font-bold">// VERIFICADO</span></span>
           </div>
         </div>
       </footer>
