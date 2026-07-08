@@ -1,9 +1,12 @@
 /**
- * Helpers de autenticacion en servidor (P8).
+ * Helpers de autenticacion en servidor — EXCLUSIVOS del contexto ERP.
  *
- * Permiten a las Server Actions verificar la identidad del usuario
- * que las invoca y validar que tiene la accion requerida por la matriz
- * RBAC antes de ejecutar mutaciones.
+ * Permiten a las Server Actions del ERP verificar la identidad del usuario
+ * y validar que tiene la accion requerida por la matriz RBAC.
+ *
+ * IMPORTANTE: estas funciones leen SOLO sb-erp-access-token.
+ * El Portal usa getCurrentClient() en @/lib/portal-auth, que lee
+ * sb-portal-access-token. Nunca mezclar contextos (C-04).
  */
 
 import { cookies } from "next/headers";
@@ -26,9 +29,7 @@ export interface AuthContext {
 export async function getAuthContext(): Promise<AuthContext | null> {
   try {
     const cookieStore = await cookies();
-    const accessToken =
-      cookieStore.get("sb-erp-access-token")?.value ||
-      cookieStore.get("sb-portal-access-token")?.value;
+    const accessToken = cookieStore.get("sb-erp-access-token")?.value;
     if (!accessToken) return null;
 
     // Server-side: usamos un cliente anon dedicado (no persistimos sesion).
@@ -79,9 +80,7 @@ export async function validateTenantAccess(
   // Usamos el JWT del usuario (desde cookies) en vez de supabaseAdmin
   // para que RLS restrinja la consulta solo a su propio registro.
   const cookieStore = await cookies();
-  const accessToken =
-    cookieStore.get("sb-erp-access-token")?.value ||
-    cookieStore.get("sb-portal-access-token")?.value;
+  const accessToken = cookieStore.get("sb-erp-access-token")?.value;
   if (!accessToken) {
     throw new Error("No autenticado");
   }
