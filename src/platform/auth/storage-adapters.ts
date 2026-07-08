@@ -28,14 +28,16 @@ export function createStorageAdapter(domain: 'erp' | 'portal'): SupportedStorage
       if (!isBrowser()) return null;
       let val = window.localStorage.getItem(key);
       if (!val) {
-        // Zero-Downtime Migration attempt
+        // Zero-Downtime Migration: solo migrar claves conocidas
         for (let i = 0; i < window.localStorage.length; i++) {
           const k = window.localStorage.key(i);
-          if (k && k.endsWith('-auth-token') && k !== key) {
+          if (k && k.endsWith('-auth-token') && !k.startsWith('sb-')) {
             val = window.localStorage.getItem(k);
             if (val) {
+               try { JSON.parse(val); } catch { continue; } // validar que sea JSON
                window.localStorage.setItem(key, val);
-               console.log(`[Auth Migration] Migrated legacy session to ${key}`);
+               window.localStorage.removeItem(k);
+               console.log(`[Auth Migration] Migrated legacy session ${k} → ${key}`);
                break;
             }
           }
