@@ -104,6 +104,7 @@ export default function CustomerPortal({
   payments: initialPayments = [],
   tickets: initialTickets = [],
   messages: initialMessages = [],
+  documents: initialDocs = [],
   previewClientId = null,
   isPlatformAdmin = false,
   isClientContact = false,
@@ -115,6 +116,7 @@ export default function CustomerPortal({
   payments?: ClientPayment[];
   tickets?: ClientSupportTicket[];
   messages?: ClientSupportMessage[];
+  documents?: Array<{ id: string; name: string; type: string; url: string }>;
   previewClientId?: string | null;
   isPlatformAdmin?: boolean;
   isClientContact?: boolean;
@@ -886,9 +888,6 @@ export default function CustomerPortal({
 
               {/* ---------------------------------------------------- */}
               {/* SECTION: TECHNICAL DOCUMENTS */}
-              {/* Sin datos falsos: hasta que existan documentos reales
-                  subidos (tabla documents + Storage), se muestra un estado
-                  honesto en vez de archivos inventados descargables. */}
               {/* ---------------------------------------------------- */}
               {activeSection === "docs" && (
                 <div className="space-y-8 animate-in fade-in duration-300">
@@ -897,26 +896,51 @@ export default function CustomerPortal({
                       <span className="text-[10px] font-mono tracking-widest text-primary uppercase font-bold">// DOCUMENTOS_TECNICOS</span>
                       <h3 className="text-lg font-bold text-foreground mt-0.5">Planos Técnicos y Hojas de Datos</h3>
                       <p className="text-xs text-muted-foreground mt-1 font-sans">
-                        Aquí aparecerán los manuales, planos y certificados que tu ejecutivo suba para tu proyecto.
+                        Manuales, planos, certificados y documentos técnicos de tus equipos.
                       </p>
                     </div>
                   </div>
 
-                  <div className="border border-dashed border-border rounded-xl p-10 text-center space-y-4">
-                    <FileText className="w-8 h-8 mx-auto text-muted-foreground" />
-                    <div className="space-y-1">
-                      <p className="text-sm text-foreground font-bold">Todavía no hay documentos disponibles</p>
-                      <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                        Cuando tu ejecutivo suba planos, manuales o certificados de tu OT, aparecerán aquí para descarga.
-                      </p>
+                  {initialDocs.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {initialDocs.map((doc: { id: string; name: string; type: string; url: string }) => (
+                        <a
+                          key={doc.id}
+                          href={doc.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="border border-border/80 bg-background/40 p-4 rounded-xl flex items-center gap-3 hover:bg-muted/30 transition-colors group"
+                        >
+                          <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                            <FileText className="w-5 h-5" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold text-foreground truncate group-hover:text-primary transition-colors">
+                              {doc.name}
+                            </p>
+                            <span className="text-[9px] font-mono text-muted-foreground uppercase">{doc.type}</span>
+                          </div>
+                          <Download className="w-4 h-4 text-muted-foreground shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </a>
+                      ))}
                     </div>
-                    <Button
-                      onClick={() => setIsChatOpen(true)}
-                      className="bg-primary hover:bg-primary/95 text-white text-xs font-mono px-4 py-2 rounded-lg cursor-pointer"
-                    >
-                      Solicitar a mi ejecutivo
-                    </Button>
-                  </div>
+                  ) : (
+                    <div className="border border-dashed border-border rounded-xl p-10 text-center space-y-4">
+                      <FileText className="w-8 h-8 mx-auto text-muted-foreground" />
+                      <div className="space-y-1">
+                        <p className="text-sm text-foreground font-bold">Todavía no hay documentos disponibles</p>
+                        <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                          Cuando tu ejecutivo suba planos, manuales o certificados de tu OT, aparecerán aquí para descarga.
+                        </p>
+                      </div>
+                      <Button
+                        onClick={() => setIsChatOpen(true)}
+                        className="bg-primary hover:bg-primary/95 text-white text-xs font-mono px-4 py-2 rounded-lg cursor-pointer"
+                      >
+                        Solicitar a mi ejecutivo
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
 

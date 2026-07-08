@@ -92,6 +92,32 @@ export default async function PortalPage({ searchParams }: Props) {
     getClientMessages(previewClientId),
   ]);
 
+  // Documentos tecnicos asociados a las OTs del cliente
+  let documents: Array<{ id: string; name: string; type: string; url: string }> = [];
+  if (supabaseAdmin && jobs.length > 0) {
+    const jobIds = jobs.map(j => j.id);
+    const { data: docsData } = await supabaseAdmin
+      .from("documents")
+      .select("id, file_name, document_type, storage_path, storage_provider")
+      .in("entity_id", jobIds)
+      .eq("entity_type", "JOB")
+      .eq("status", "PUBLICADO")
+      .is("deleted_at", null)
+      .order("uploaded_at", { ascending: false });
+
+    if (docsData) {
+      const bucketUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+        ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/`
+        : "";
+      documents = docsData.map((d: any) => ({
+        id: d.id,
+        name: d.file_name,
+        type: d.document_type,
+        url: `${bucketUrl}${d.storage_path}`,
+      }));
+    }
+  }
+
   // Si es platform admin, traer la lista de todas las empresas clientes para el switcher
   let allClients: Array<{ id: string; legalName: string; tenantCode: string }> = [];
   if (currentClient.isPlatformAdmin && supabaseAdmin) {
@@ -128,6 +154,7 @@ export default async function PortalPage({ searchParams }: Props) {
         isPlatformAdmin={!!currentClient.isPlatformAdmin}
         isClientContact={!!currentClient.isClientContact}
         allClients={allClients}
+        documents={documents}
       />
     </div>
   );
