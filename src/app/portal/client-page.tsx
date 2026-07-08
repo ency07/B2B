@@ -566,7 +566,6 @@ export default function CustomerPortal({
                 <span className="text-[10px] text-muted-foreground block leading-none">Cuenta Certificada</span>
                 <span className="text-foreground font-bold leading-normal">{clientName}</span>
               </div>
-              <Badge variant="secondary" className="text-[9px] border border-border">{clientNit}</Badge>
             </div>
 
             {/* Test controls HUD (solo visible en desarrollo) */}
@@ -1148,6 +1147,7 @@ export default function CustomerPortal({
           onClose={() => setIsProfileModalOpen(false)}
           clientEmail={clientInfo.email}
           clientName={clientInfo.legalName}
+          clientNit={clientInfo.taxId}
         />
       )}
 

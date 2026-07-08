@@ -19,6 +19,7 @@ interface ClientProfileModalProps {
   onClose: () => void;
   clientEmail: string;
   clientName: string;
+  clientNit: string;
 }
 
 export function ClientProfileModal({
@@ -26,6 +27,7 @@ export function ClientProfileModal({
   onClose,
   clientEmail,
   clientName,
+  clientNit,
 }: ClientProfileModalProps) {
   const [tab, setTab] = React.useState<"info" | "password">("info");
   const [currentPassword, setCurrentPassword] = React.useState("");
@@ -105,13 +107,24 @@ export function ClientProfileModal({
           <div className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-foreground mb-1">
-                Nombre
+                Nombre / Razón Social
               </label>
               <input
                 type="text"
                 value={clientName}
                 disabled
                 className="w-full px-3 py-2 border border-border rounded-md bg-muted text-sm text-muted-foreground"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-foreground mb-1">
+                NIT
+              </label>
+              <input
+                type="text"
+                value={clientNit}
+                disabled
+                className="w-full px-3 py-2 border border-border rounded-md bg-muted text-sm text-muted-foreground font-mono"
               />
             </div>
             <div>
