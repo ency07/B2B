@@ -12,6 +12,24 @@ export function SessionVersionListener() {
       .find((row) => row.startsWith("sb-session-version="))
       ?.split("=")[1];
 
+    const clearLocalStorage = () => {
+      // Clear all tenant-related localStorage
+      Object.keys(localStorage).forEach((key) => {
+        if (
+          key.startsWith("tenant_config_") ||
+          key.startsWith("erp_") ||
+          key.startsWith("portal_") ||
+          key.startsWith("sb-erp-") ||
+          key.startsWith("sb-portal-") ||
+          key === "erp_color_preference" ||
+          key === "sb-erp-local" ||
+          key === "sb-portal-local"
+        ) {
+          localStorage.removeItem(key);
+        }
+      });
+    };
+
     const handleStorageChange = () => {
       const newVersion = document.cookie
         .split("; ")
@@ -19,15 +37,13 @@ export function SessionVersionListener() {
         ?.split("=")[1];
 
       if (currentVersion && newVersion !== currentVersion) {
-        // Session changed in another tab — force full page reload
+        clearLocalStorage();
         window.location.href = "/login";
       }
     };
 
-    // Listen for cookie changes via storage event (cross-tab)
     window.addEventListener("storage", handleStorageChange);
 
-    // Also poll for same-tab cookie changes (when signout happens in same tab)
     const interval = setInterval(handleStorageChange, 1000);
 
     return () => {
