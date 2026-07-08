@@ -57,6 +57,7 @@ import {
   type ClientSupportTicket,
   type ClientSupportMessage,
 } from "@/portal/actions/portal";
+import { ClientProfileModal } from "@/portal/components/ClientProfileModal";
 
 interface PortalClientInfo {
   legalName: string;
@@ -127,6 +128,7 @@ export default function CustomerPortal({
   const [isLoading, setIsLoading] = React.useState(true);
   const [activeSection, setActiveSection] = React.useState<"ots" | "invoices" | "docs" | "tickets">("ots");
   const [brandingState, setBrandingState] = React.useState<any>(null);
+  const [isProfileModalOpen, setIsProfileModalOpen] = React.useState(false);
 
   // Theme controlled by next-themes via platform/providers/theme-provider
 
@@ -547,6 +549,20 @@ export default function CustomerPortal({
                   Simular Error
                 </button>
               </div>
+            )}
+
+            {/* Perfil (solo clientes reales) */}
+            {isClientContact && (
+              <button
+                type="button"
+                onClick={() => setIsProfileModalOpen(true)}
+                aria-label="Mi perfil"
+                title="Mi perfil"
+                className="inline-flex items-center gap-1.5 text-xs font-mono text-muted-foreground hover:text-foreground border border-border/80 bg-background/50 hover:bg-background/80 rounded-lg px-2.5 py-1.5 cursor-pointer transition-all"
+              >
+                <User className="w-3.5 h-3.5" strokeWidth={1.5} />
+                <span className="hidden sm:inline">Mi Perfil</span>
+              </button>
             )}
 
             {/* Logout */}
@@ -1062,6 +1078,16 @@ export default function CustomerPortal({
           </div>
         </div>
       </footer>
+
+      {/* Modal de Perfil (solo clientes reales) */}
+      {isClientContact && (
+        <ClientProfileModal
+          isOpen={isProfileModalOpen}
+          onClose={() => setIsProfileModalOpen(false)}
+          clientEmail={clientInfo.email}
+          clientName={clientInfo.legalName}
+        />
+      )}
 
     </div>
   );
