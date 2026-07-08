@@ -38,7 +38,10 @@ export interface CurrentClient {
   isClientContact?: boolean;
   tenantId?: string | null;
   tenantCode?: string | null;
+  mode?: "admin" | "client";
 }
+
+export type PortalMode = "staff" | "client" | "auto";
 
 /**
  * Cliente Supabase autenticado con la sesión real del usuario del portal
@@ -57,7 +60,10 @@ export async function getPortalAuthenticatedClient() {
   });
 }
 
-export async function getCurrentClient(previewClientId?: string | null): Promise<CurrentClient | null> {
+export async function getCurrentClient(
+  previewClientId?: string | null,
+  mode: PortalMode = "auto"
+): Promise<CurrentClient | null> {
   try {
     const cookieStore = await cookies();
     const accessToken =
@@ -84,7 +90,11 @@ export async function getCurrentClient(previewClientId?: string | null): Promise
 
     if (userErr) return null;
 
-    if (userRow) {
+    // ── Modo explícito: si el usuario elige "client", saltamos Path A ────────────
+    const isStaffMode = mode === "staff";
+    const isClientMode = mode === "client";
+
+    if (userRow && !isClientMode) {
       // Verificar si es platform admin
       const { data: userRoles } = await admin
         .from("user_roles")
@@ -147,12 +157,15 @@ export async function getCurrentClient(previewClientId?: string | null): Promise
         isClientContact: false,
         tenantId: clientRow.tenant_id,
         tenantCode,
+        mode: "admin",
       };
     }
 
     // ── Path B: client contact real (en client_contacts) ────────────────────
-    // IMPORTANTE: se ignora previewClientId — un cliente real no puede
-    // ver datos de otra empresa aunque manipule la URL.
+    // Se usa si:
+    // - No hay userRow (no es staff), O
+    // - Modo explícito "client"
+    if (!userRow || isClientMode) {
     const { data: contactRow } = await admin
       .from("client_contacts")
       .select(`
@@ -192,6 +205,7 @@ export async function getCurrentClient(previewClientId?: string | null): Promise
       tenantId: clientObj.tenant_id,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       tenantCode: (clientObj.tenants as any)?.tenant_code || null,
+      mode: "client",
     };
   } catch {
     return null;
