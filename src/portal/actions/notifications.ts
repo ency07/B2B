@@ -190,7 +190,7 @@ export async function notifyStaffClientUpdate(
 /**
  * Template HTML para email de confirmación de ticket al cliente.
  */
-export function renderTicketEmailTemplate(notification: TicketNotification): string {
+function renderTicketEmailTemplate(notification: TicketNotification): string {
   const severityColor =
     notification.severity === "ALTO"
       ? "#991b1b"
