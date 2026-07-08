@@ -93,7 +93,7 @@ export async function getCurrentClient(previewClientId?: string | null): Promise
         .select("roles (role_code)")
         .eq("user_id", userRow.id);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any — user_roles join con roles: TS no infiere shape exacto de la relación
       const roleCodes = userRoles?.map((ur: any) => ur.roles?.role_code) || [];
       const isPlatformAdmin =
         roleCodes.includes("SUPER_ADMIN") || roleCodes.includes("ADMIN_DEV");
@@ -136,7 +136,7 @@ export async function getCurrentClient(previewClientId?: string | null): Promise
 
       if (!clientRow) return null;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any — tenants es join dinámico; cast a any es simple que tipar manualmente
       const tenantCode = (clientRow.tenants as any)?.code || null;
       return {
         userId: userRow.id,
@@ -192,6 +192,7 @@ export async function getCurrentClient(previewClientId?: string | null): Promise
       isPlatformAdmin: false,
       isClientContact: true,
       tenantId: clientObj.tenant_id,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any — tenants join dinámico
       tenantCode: (clientObj.tenants as any)?.code || null,
     };
   } catch {

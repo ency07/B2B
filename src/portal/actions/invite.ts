@@ -25,7 +25,7 @@ export async function getClientContacts(clientId: string): Promise<ClientContact
 
   if (error) throw new Error(error.message);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any — client_contacts select: TS necesita any para acceso dinámico a propiedades
   return (data || []).map((c: any) => ({
     id: c.id,
     firstName: c.first_name,
@@ -58,7 +58,7 @@ export async function inviteContactToPortal(
   if (contactErr || !contact) return { ok: false, error: "Contacto no encontrado" };
   if (!contact.email) return { ok: false, error: "El contacto no tiene email registrado" };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any — clients.tenants join: cast necesario para acceso seguro
   const tenantCode = (contact.clients as any)?.tenants?.code as string | undefined;
   const appUrl =
     process.env.NEXT_PUBLIC_APP_URL ||

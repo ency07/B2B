@@ -13,6 +13,7 @@
 "use server";
 
 import { getCurrentClient, getPortalAuthenticatedClient } from "@/lib/portal-auth";
+import { notifyStaffClientUpdate } from "./notifications";
 
 export interface ClientJob {
   id: string;
@@ -87,6 +88,7 @@ export async function getClientJobs(
     return [];
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any — Supabase RPC result: columnas exactas (job_code, title, etc.) pero TS requiere any para acceso dinámico
   return (data || []).map((j: any) => ({
     id: j.id,
     code: j.job_code,
@@ -125,6 +127,7 @@ export async function getClientInvoices(
     return [];
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any — Supabase RPC result: same reason as above
   return (data || []).map((i: any) => ({
     id: i.id,
     code: i.invoice_code,
@@ -234,7 +237,7 @@ export async function createClientTicket(
     throw new Error(`No se pudo crear el ticket: ${error.message}`);
   }
 
-  return {
+  const ticket = {
     id: data.id,
     code: data.ticket_code,
     subject: data.subject,
@@ -244,6 +247,16 @@ export async function createClientTicket(
     jobId: data.job_id,
     createdAt: data.created_at,
   };
+
+  // Notificar al staff del tenant (async fire-and-forget)
+  notifyStaffClientUpdate("ticket", {
+    clientName: client.legalName,
+    tenantId: client.tenantId || "",
+    ticketCode: ticket.code,
+    subject: ticket.subject,
+  }).catch((err) => console.error("Error notificando staff:", err));
+
+  return ticket;
 }
 
 /**
@@ -307,11 +320,22 @@ export async function sendClientMessage(
     throw new Error(`No se pudo enviar el mensaje: ${error.message}`);
   }
 
-  return {
+  const message = {
     id: data.id,
     senderType: data.sender_type,
     senderLabel: data.sender_label,
     body: data.body,
     createdAt: data.created_at,
   };
+
+  // Si el mensaje viene de un cliente real, notificar al staff
+  if (data.sender_type === "CLIENT") {
+    notifyStaffClientUpdate("message", {
+      clientName: client.legalName,
+      tenantId: client.tenantId || "",
+      messageBody: body.substring(0, 100),
+    }).catch((err) => console.error("Error notificando staff:", err));
+  }
+
+  return message;
 }
