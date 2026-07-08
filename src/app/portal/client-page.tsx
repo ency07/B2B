@@ -1065,7 +1065,13 @@ export default function CustomerPortal({
             <Building className="w-4 h-4 text-primary" />
             <span>Soporte Técnico Especializado B2B: {telefono} | {razonSocial}</span>
           </div>
-          <div>
+          <div className="flex items-center gap-4">
+            <a
+              href="/privacidad"
+              className="text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+            >
+              Política de Privacidad
+            </a>
             <span>Conexión Servidor {companyName}: <span className="text-emerald-500 font-bold">// SECURE_VERIFIED</span></span>
           </div>
         </div>
