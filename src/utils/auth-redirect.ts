@@ -1,7 +1,35 @@
+// Lista blanca de rutas permitidas para redirect tras login
+const ALLOWED_REDIRECTS = new Set([
+  "/",
+  "/dashboard",
+  "/dashboard/",
+  "/portal",
+  "/portal/",
+  "/wizard",
+  "/wizard/",
+  "/clients",
+  "/clients/",
+  "/requirements",
+  "/requirements/",
+  "/quotes",
+  "/quotes/",
+  "/settings",
+  "/settings/",
+  "/profile",
+  "/profile/",
+]);
+
 export function isSafeRedirect(path: string): boolean {
   if (!path) return false;
   // Solo permitir urls que comiencen con '/' y NO con '//' o '\\'
-  return path.startsWith("/") && !path.startsWith("//") && !path.startsWith("\\\\");
+  if (!path.startsWith("/") || path.startsWith("//") || path.startsWith("\\\\")) {
+    return false;
+  }
+  // Extraer solo el pathname (sin query string)
+  const pathname = path.split("?")[0];
+  // Normalizar: quitar trailing slash excepto root
+  const normalized = pathname === "/" ? "/" : pathname.replace(/\/+$/, "");
+  return ALLOWED_REDIRECTS.has(normalized) || ALLOWED_REDIRECTS.has(normalized + "/");
 }
 
 /**
