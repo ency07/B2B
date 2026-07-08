@@ -57,6 +57,7 @@ import {
   type ClientSupportMessage,
 } from "@/portal/actions/portal";
 import { ClientProfileModal } from "@/portal/components/ClientProfileModal";
+import { capture } from "@/lib/analytics";
 
 interface PortalClientInfo {
   legalName: string;
@@ -258,6 +259,11 @@ export default function CustomerPortal({
   // Search filter
   const [searchQuery, setSearchQuery] = React.useState("");
 
+  // Session start analytics
+  React.useEffect(() => {
+    capture("portal_session_start", { clientTaxId: clientInfo.taxId });
+  }, []);
+
   // Gestion de foco: al abrir/cerrar el chat, mover el foco al elemento correspondiente
   React.useEffect(() => {
     if (isChatOpen) {
@@ -337,6 +343,7 @@ export default function CustomerPortal({
       }, ...prev]);
       setNewTicketSubject("");
       setNewTicketDesc("");
+      capture("portal_ticket_created", { severity: newTicketSeverity, code: created.code });
       toast.success(`Ticket de soporte técnico ${created.code} registrado con éxito.`);
     } catch (err) {
       console.error("Error creando ticket:", err);
@@ -634,7 +641,7 @@ export default function CustomerPortal({
             {/* Support chat toggle button */}
             <Button
               ref={chatToggleRef}
-              onClick={() => setIsChatOpen(!isChatOpen)}
+              onClick={() => { setIsChatOpen(prev => { capture("portal_chat_toggled", { open: !prev }); return !prev; }); }}
               className="bg-primary hover:bg-primary/95 text-white text-xs font-mono flex items-center gap-2 px-5 py-5 rounded-full shadow-lg hover:shadow-primary/20 transition-all hover:translate-y-[-1px] active:translate-y-0 cursor-pointer"
             >
               <MessageSquare className="w-4 h-4" />
@@ -703,7 +710,7 @@ export default function CustomerPortal({
                   key={tab.id}
                   role="tab"
                   aria-selected={activeSection === tab.id}
-                  onClick={() => setActiveSection(tab.id as any)}
+                  onClick={() => { setActiveSection(tab.id as any); capture("portal_tab_viewed", { tab: tab.id }); }}
                   className={`pb-3 px-4 font-bold border-b-2 tracking-wide transition-all cursor-pointer whitespace-nowrap ${
                     activeSection === tab.id 
                       ? "border-primary text-primary" 
@@ -789,7 +796,7 @@ export default function CustomerPortal({
                                     <Sheet>
                                       <SheetTrigger asChild>
                                         <Button
-                                          onClick={() => setSelectedInvoice(inv)}
+                                          onClick={() => { setSelectedInvoice(inv); capture("portal_invoice_viewed", { code: inv.code, balance: inv.total - inv.paid }); }}
                                           className="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-mono h-8 px-3 flex items-center gap-1 cursor-pointer"
                                         >
                                           <CreditCard className="w-3.5 h-3.5" /> Ver detalle de factura

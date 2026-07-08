@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Fraunces, IBM_Plex_Mono } from "next/font/google";
 import { ThemeProvider } from "@/platform/providers/theme-provider";
+import { PostHogProvider } from "@/platform/providers/posthog-provider";
 import { Toaster } from "@/platform/ui/toaster";
 import { SessionVersionListener } from "@/platform/ui/session-version-listener";
 import "./globals.css";
@@ -76,9 +77,11 @@ export default function RootLayout({
               `,
             }}
           />
-          {children}
-          <Toaster />
-          <SessionVersionListener />
+          <PostHogProvider>
+            {children}
+            <Toaster />
+            <SessionVersionListener />
+          </PostHogProvider>
         </ThemeProvider>
       </body>
     </html>
