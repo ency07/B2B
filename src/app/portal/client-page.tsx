@@ -1005,7 +1005,7 @@ export default function CustomerPortal({
               </div>
 
               {/* Chat Message Box */}
-              <div className="flex-1 overflow-y-auto py-4 space-y-4 pr-1 text-xs">
+              <div role="log" aria-live="polite" className="flex-1 overflow-y-auto py-4 space-y-4 pr-1 text-xs">
                 {chatMessages.length === 0 && (
                   <p className="text-muted-foreground text-center py-8">Todavía no hay mensajes en este caso.</p>
                 )}
