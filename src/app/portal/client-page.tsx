@@ -146,8 +146,8 @@ export default function CustomerPortal({
 
   const companyName = brandingState?.nombre_comercial || config.name;
   const razonSocial = brandingState?.razon_social || `${config.name} S.A.S.`;
-  const telefono = brandingState?.telefono_principal || config.contactPhone || "+57 300 000 0000";
-  const supportEmail = brandingState?.email_corporativo || config.contactEmail || "soporte@empresa.com";
+  const telefono = brandingState?.telefono_principal || config.contactPhone || "+57 601 000 0000";
+  const supportEmail = brandingState?.email_corporativo || config.contactEmail || "soporte@ventitech.com";
 
   React.useEffect(() => {
     if (brandingState?.nombre_comercial) {

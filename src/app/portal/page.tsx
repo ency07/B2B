@@ -216,9 +216,9 @@ function PortalNoClientAssigned() {
           ¿Necesitas ayuda? Escríbenos a{" "}
           <a
             className="text-stone-900 underline"
-            href="mailto:soporte@ventitech.example"
+            href="mailto:soporte@ventitech.com"
           >
-            soporte@ventitech.example
+            soporte@ventitech.com
           </a>
           .
         </p>
