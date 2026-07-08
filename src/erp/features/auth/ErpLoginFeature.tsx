@@ -26,8 +26,6 @@ export function ErpLoginFeature() {
   const redirectTo = isSafeRedirect(rawRedirect) ? rawRedirect : "/dashboard";
   const defaults = getBrandingDefaults(tenantParam);
 
-  const supabase = getErpBrowserClient();
-
   const [showPassword, setShowPassword] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const [authError, setAuthError] = React.useState<string | null>(null);

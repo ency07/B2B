@@ -27,8 +27,6 @@ export function PortalLoginFeature() {
   const redirectTo = isSafeRedirect(rawRedirect) ? rawRedirect : "/portal";
   const defaults = getBrandingDefaults(tenantParam);
 
-  const supabase = getPortalBrowserClient();
-
   const [showPassword, setShowPassword] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const [authError, setAuthError] = React.useState<string | null>(null);
@@ -47,12 +45,12 @@ export function PortalLoginFeature() {
     setIsLoading(true);
     setAuthError(null);
 
-    const result = await loginPortal({
-      email: data.email,
-      password: data.password,
-      tenant: tenantParam,
-      redirect: redirectTo,
-    });
+    const result = await loginPortal(
+      data.email,
+      data.password,
+      tenantParam,
+      redirectTo
+    );
 
     if (!result.success) {
       setAuthError(result.error ?? "Error desconocido");
