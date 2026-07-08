@@ -78,9 +78,11 @@ export function PortalLoginFeature() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const userRole = await getUserRole(user.id);
-        if (userRole !== "CLIENTE") {
-           // Employee cannot enter portal, they are redirected to ERP dashboard
-           destination = applyTenantToPath("/dashboard", tenantParam);
+        // null → client_contact (not in public.users) → allow portal
+        // "CLIENTE" → legacy portal role → allow portal
+        // anything else (ADMIN, STAFF…) → ERP employee → send to ERP
+        if (userRole !== null && userRole !== "CLIENTE") {
+          destination = applyTenantToPath("/dashboard", tenantParam);
         }
       }
     } catch (err) {
