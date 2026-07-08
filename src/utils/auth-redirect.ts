@@ -19,7 +19,7 @@ const ALLOWED_REDIRECTS = new Set([
   "/profile/",
 ]);
 
-export function isSafeRedirect(path: string): boolean {
+export function isSafeRedirect(path: string | null | undefined): boolean {
   if (!path) return false;
   // Solo permitir urls que comiencen con '/' y NO con '//' o '\\'
   if (!path.startsWith("/") || path.startsWith("//") || path.startsWith("\\\\")) {

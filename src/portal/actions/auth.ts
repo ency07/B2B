@@ -35,7 +35,8 @@ export async function loginPortal(
   await logAuthEvent("LOGIN_SUCCESS", authData.user.id, { email });
 
   const cookieStore = await cookies();
-  const safeRedirect = isSafeRedirect(redirect) ? redirect : "/portal";
+  const redirectStr = redirect || "";
+  const safeRedirect: string = isSafeRedirect(redirectStr) ? redirectStr : "/portal";
   const destination = applyTenantToPath(safeRedirect, tenant);
 
   const session = authData.session;

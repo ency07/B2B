@@ -166,47 +166,50 @@ export async function getCurrentClient(
     // - No hay userRow (no es staff), O
     // - Modo explícito "client"
     if (!userRow || isClientMode) {
-    const { data: contactRow } = await admin
-      .from("client_contacts")
-      .select(`
-        id, client_id, first_name, last_name,
-        clients (
-          id, legal_name, tax_id, email, status, tenant_id,
-          tenants (tenant_code)
-        )
-      `)
-      .eq("auth_user_id", authUser.id)
-      .maybeSingle();
+      const { data: contactRow } = await admin
+        .from("client_contacts")
+        .select(`
+          id, client_id, first_name, last_name,
+          clients (
+            id, legal_name, tax_id, email, status, tenant_id,
+            tenants (tenant_code)
+          )
+        `)
+        .eq("auth_user_id", authUser.id)
+        .maybeSingle();
 
-    if (!contactRow) return null;
+      if (!contactRow) return null;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const clientObj = contactRow.clients as any;
-    if (!clientObj) return null;
-
-    // Marcar portal_registered_at si es la primera vez que acceden
-    // (async fire-and-forget: no bloqueamos la respuesta por esto)
-    admin
-      .from("client_contacts")
-      .update({ portal_registered_at: new Date().toISOString() })
-      .eq("id", contactRow.id)
-      .is("portal_registered_at", null)
-      .then(() => {/* sin-op */});
-
-    return {
-      userId: contactRow.id,
-      clientId: contactRow.client_id,
-      legalName: clientObj.legal_name,
-      taxId: clientObj.tax_id || "",
-      email: authUser.email || clientObj.email || "",
-      status: clientObj.status,
-      isPlatformAdmin: false,
-      isClientContact: true,
-      tenantId: clientObj.tenant_id,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tenantCode: (clientObj.tenants as any)?.tenant_code || null,
-      mode: "client",
-    };
+      const clientObj = contactRow.clients as any;
+      if (!clientObj) return null;
+
+      // Marcar portal_registered_at si es la primera vez que acceden
+      // (async fire-and-forget: no bloqueamos la respuesta por esto)
+      admin
+        .from("client_contacts")
+        .update({ portal_registered_at: new Date().toISOString() })
+        .eq("id", contactRow.id)
+        .is("portal_registered_at", null)
+        .then(() => {/* sin-op */});
+
+      return {
+        userId: contactRow.id,
+        clientId: contactRow.client_id,
+        legalName: clientObj.legal_name,
+        taxId: clientObj.tax_id || "",
+        email: authUser.email || clientObj.email || "",
+        status: clientObj.status,
+        isPlatformAdmin: false,
+        isClientContact: true,
+        tenantId: clientObj.tenant_id,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        tenantCode: (clientObj.tenants as any)?.tenant_code || null,
+        mode: "client",
+      };
+    }
+
+    return null;
   } catch {
     return null;
   }

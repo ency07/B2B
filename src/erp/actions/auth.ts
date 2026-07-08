@@ -33,21 +33,29 @@ export async function loginErp(data: {
     };
   }
 
+  if (!authData.session) {
+    return { success: false, error: "Error al iniciar sesión" };
+  }
+
   await logAuthEvent("LOGIN_SUCCESS", authData.user.id, { email: data.email });
 
   const cookieStore = await cookies();
-  const safeRedirect = isSafeRedirect(data.redirect) ? data.redirect : "/dashboard";
+  const redirectPath = data.redirect || "";
+  const safeRedirect: string = isSafeRedirect(redirectPath) ? redirectPath : "/dashboard";
   const destination = applyTenantToPath(safeRedirect, data.tenant || null);
 
-  // Set HttpOnly cookies
-  cookieStore.set("sb-erp-access-token", authData.session!.access_token, {
+  const session = authData.session;
+  if (!session.access_token || !session.refresh_token) {
+    return { success: false, error: "Error al obtener tokens de sesión" };
+  }
+  cookieStore.set("sb-erp-access-token", session.access_token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60,
   });
-  cookieStore.set("sb-erp-refresh-token", authData.session!.refresh_token, {
+  cookieStore.set("sb-erp-refresh-token", session.refresh_token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",

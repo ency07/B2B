@@ -122,7 +122,7 @@ export async function createLeadWithScore(
   const leadData = sanitizeObject(parsed.data as Record<string, unknown>) as z.infer<typeof createLeadSchema>;
 
   // Rate limiting
-  const { allowed } = checkRateLimit(`lead:${leadData.email}`);
+  const { allowed } = await checkRateLimit(`lead:${leadData.email}`);
   if (!allowed) {
     throw new Error("Demasiadas solicitudes. Intente nuevamente en un minuto.");
   }
@@ -195,7 +195,7 @@ export async function submitContactForm(
   const leadData = sanitizeObject(parsed.data as Record<string, unknown>) as z.infer<typeof contactFormSchema>;
 
   // Rate limiting
-  const { allowed } = checkRateLimit(`contact:${leadData.email}`);
+  const { allowed } = await checkRateLimit(`contact:${leadData.email}`);
   if (!allowed) {
     throw new Error("Demasiadas solicitudes. Intente nuevamente en un minuto.");
   }

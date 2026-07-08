@@ -94,7 +94,7 @@ export async function submitWizardData(
   const ip = headersList.get("x-forwarded-for")?.split(",")[0]?.trim()
     || headersList.get("x-real-ip")
     || "unknown";
-  const { allowed } = checkRateLimit(`wizard:${ip}`, 5, 60_000);
+  const { allowed } = await checkRateLimit(`wizard:${ip}`, 5, 60_000);
   if (!allowed) {
     throw new Error("Demasiadas solicitudes. Intente nuevamente en un minuto.");
   }
