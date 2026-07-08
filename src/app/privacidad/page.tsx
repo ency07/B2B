@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import Link from "next/link";
+import { ArcoForm } from "./arco-form";
 
 export const metadata: Metadata = {
   title: "Política de Privacidad — Portal de Clientes",
@@ -91,6 +92,8 @@ export default function PrivacyPage() {
               </p>
             </section>
           </div>
+
+          <ArcoForm />
         </div>
       </div>
     </main>
