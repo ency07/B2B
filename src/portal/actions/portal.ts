@@ -14,6 +14,7 @@
 
 import { getCurrentClient, getPortalAuthenticatedClient } from "@/lib/portal-auth";
 import { notifyStaffClientUpdate } from "./notifications";
+import { createTicketSchema, sendMessageSchema } from "@/lib/validations/portal";
 
 export interface ClientJob {
   id: string;
@@ -225,12 +226,18 @@ export async function createClientTicket(
     throw new Error("No autorizado: Sesión de cliente inválida.");
   }
 
+  const parsed = createTicketSchema.safeParse(input);
+  if (!parsed.success) {
+    const firstError = parsed.error.errors[0];
+    throw new Error(`Validación fallida: ${firstError.path.join(".")} — ${firstError.message}`);
+  }
+
   const { data, error } = await authClient.rpc("portal_create_client_ticket", {
     p_client_id: client.clientId,
-    p_subject: input.subject,
-    p_description: input.description,
-    p_severity: input.severity,
-    p_job_id: input.jobId ?? null,
+    p_subject: parsed.data.subject,
+    p_description: parsed.data.description,
+    p_severity: parsed.data.severity,
+    p_job_id: parsed.data.jobId ?? null,
   });
 
   if (error) {
@@ -311,9 +318,15 @@ export async function sendClientMessage(
     throw new Error("No autorizado: Sesión de cliente inválida.");
   }
 
+  const parsed = sendMessageSchema.safeParse({ body });
+  if (!parsed.success) {
+    const firstError = parsed.error.errors[0];
+    throw new Error(`Validación fallida: ${firstError.path.join(".")} — ${firstError.message}`);
+  }
+
   const { data, error } = await authClient.rpc("portal_send_client_message", {
     p_client_id: client.clientId,
-    p_body: body,
+    p_body: parsed.data.body,
   });
 
   if (error) {
