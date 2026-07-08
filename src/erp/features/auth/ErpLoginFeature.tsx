@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Eye, EyeOff, Lock, Mail, LayoutGrid } from "lucide-react";
 import { getBrandingDefaults } from "@/platform/branding/branding-defaults";
-import { getErpBrowserClient } from "@/platform/auth/clients";
+import { loginErp } from "@/erp/actions/auth";
 import { applyTenantToPath, isSafeRedirect } from "@/utils/auth-redirect";
 
 const loginSchema = z.object({
@@ -46,26 +46,20 @@ export function ErpLoginFeature() {
     setIsLoading(true);
     setAuthError(null);
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const result = await loginErp({
       email: data.email,
       password: data.password,
+      tenant: tenantParam,
+      redirect: redirectTo,
     });
 
-    if (error) {
-      setAuthError(
-        error.message === "Invalid login credentials"
-          ? "Credenciales incorrectas."
-          : error.message
-      );
+    if (!result.success) {
+      setAuthError(result.error ?? "Error desconocido");
       setIsLoading(false);
       return;
     }
 
-    // ERP always goes to /dashboard — no cross-check with portal needed.
-    // If a portal client accidentally uses this form, they'll see the ERP
-    // which will deny them via RLS/role checks.
-    const destination = applyTenantToPath(redirectTo, tenantParam);
-    router.push(destination);
+    router.push(result.redirectTo!);
     router.refresh();
   };
 

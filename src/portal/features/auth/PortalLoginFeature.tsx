@@ -8,9 +8,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Eye, EyeOff, Lock, Mail, ArrowLeft, ShieldCheck } from "lucide-react";
-import { getPortalBrowserClient } from "@/platform/auth/clients";
-import { applyTenantToPath, isSafeRedirect } from "@/utils/auth-redirect";
 import { getBrandingDefaults } from "@/platform/branding/branding-defaults";
+import { loginPortal } from "@/portal/actions/auth";
+import { applyTenantToPath, isSafeRedirect } from "@/utils/auth-redirect";
 
 const loginSchema = z.object({
   email: z.string().email("Correo no válido"),
@@ -47,26 +47,20 @@ export function PortalLoginFeature() {
     setIsLoading(true);
     setAuthError(null);
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const result = await loginPortal({
       email: data.email,
       password: data.password,
+      tenant: tenantParam,
+      redirect: redirectTo,
     });
 
-    if (error) {
-      setAuthError(
-        error.message === "Invalid login credentials"
-          ? "Credenciales incorrectas. Verifica tu correo y contraseña."
-          : error.message
-      );
+    if (!result.success) {
+      setAuthError(result.error ?? "Error desconocido");
       setIsLoading(false);
       return;
     }
 
-    // Portal login always goes to /portal — no getUserRole check needed.
-    // getCurrentClient() in the portal page resolves who the user is:
-    // admin → shows admin view; client_contact → shows their company only.
-    const destination = applyTenantToPath(redirectTo, tenantParam);
-    router.push(destination);
+    router.push(result.redirectTo!);
     router.refresh();
   };
 
