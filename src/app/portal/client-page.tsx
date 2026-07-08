@@ -125,7 +125,7 @@ export default function CustomerPortal({
   const config = getTenantConfig(tenantParam);
 
   // States
-  const [isLoading, setIsLoading] = React.useState(true);
+  const [isLoading, setIsLoading] = React.useState(false);
   const [activeSection, setActiveSection] = React.useState<"ots" | "invoices" | "docs" | "tickets">("ots");
   const [brandingState, setBrandingState] = React.useState<any>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = React.useState(false);
@@ -257,16 +257,8 @@ export default function CustomerPortal({
   // Search filter
   const [searchQuery, setSearchQuery] = React.useState("");
 
-  // Simulated initial load
-  React.useEffect(() => {
-    setClientName(config.name || "Cliente Activo");
-    setClientNit("NIT-000.000.000-0");
-
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1200);
-    return () => clearTimeout(timer);
-  }, [tenantParam]);
+  // ClientName/NIT se inicializan directamente desde clientInfo (ver init más abajo)
+  // No hay delay artificial — los datos ya vienen del servidor via props
 
   // Theme support
   React.useEffect(() => {
