@@ -48,8 +48,7 @@ export interface CurrentClient {
 export async function getPortalAuthenticatedClient() {
   const cookieStore = await cookies();
   const accessToken =
-    cookieStore.get("sb-portal-access-token")?.value ||
-    cookieStore.get("sb-access-token")?.value;
+    cookieStore.get("sb-portal-access-token")?.value;
   if (!accessToken) return null;
 
   return createSupabaseClient(supabaseUrl, supabaseAnonKey, {
@@ -62,8 +61,7 @@ export async function getCurrentClient(previewClientId?: string | null): Promise
   try {
     const cookieStore = await cookies();
     const accessToken =
-      cookieStore.get("sb-portal-access-token")?.value ||
-      cookieStore.get("sb-access-token")?.value;
+      cookieStore.get("sb-portal-access-token")?.value;
     if (!accessToken) return null;
 
     const anon = createSupabaseClient(supabaseUrl, supabaseAnonKey, {

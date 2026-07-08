@@ -6,9 +6,10 @@ function isBrowser(): boolean {
 
 function getCookieNames(): { access: string; refresh: string } {
   if (!isBrowser()) {
+    // Fallback solo para SSR/tests — en browser se detecta por pathname
     return {
-      access: "sb-access-token",
-      refresh: "sb-refresh-token",
+      access: "sb-erp-access-token",
+      refresh: "sb-erp-refresh-token",
     };
   }
   const search = window.location.search || "";
@@ -74,8 +75,6 @@ export const supabaseAuthStorage: SupportedStorage = {
   removeItem(key: string): void {
     if (!isBrowser()) return;
     window.localStorage.removeItem(key);
-    clearCookie("sb-access-token");
-    clearCookie("sb-refresh-token");
     clearCookie("sb-erp-access-token");
     clearCookie("sb-erp-refresh-token");
     clearCookie("sb-portal-access-token");

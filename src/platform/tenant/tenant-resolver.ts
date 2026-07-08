@@ -79,15 +79,10 @@ export async function resolveTenantIdAsync(tenantCode?: string | null): Promise<
     }
   } catch (err) {
     console.error(`[tenant-resolver] Error resolviendo tenant_code "${tenantCode}":`, err);
+    throw new Error(`Error resolviendo tenant ${tenantCode}: ${err instanceof Error ? err.message : String(err)}`);
   }
 
-  // Fallback a default
-  if (!SUPPRESS_TENANT_WARNINGS) {
-    console.warn(
-      `[tenant-resolver] Unknown tenant_code "${tenantCode}", falling back to default "${DEFAULT_TENANT_CODE}"`
-    );
-  }
-  return DEFAULT_TENANT_ID;
+  throw new Error(`Tenant no encontrado: "${tenantCode}". Verifique el código del tenant.`);
 }
 
 /**
@@ -168,9 +163,10 @@ export async function resolveTenantOwnerUserIdAsync(
     }
   } catch (err) {
     console.error(`[tenant-resolver] Error resolviendo owner para tenant_id "${tenantId}":`, err);
+    throw new Error(`Error resolviendo owner del tenant ${tenantId}: ${err instanceof Error ? err.message : String(err)}`);
   }
 
-  return TENANT_OWNER_USER_ID.acme;
+  throw new Error(`No se encontró usuario owner activo para tenant_id "${tenantId}"`);
 }
 
 export function resolveTenantOwnerUserId(tenantId: string): string {

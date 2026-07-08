@@ -7,6 +7,7 @@ export async function getUserRole(authUserId: string): Promise<string | null> {
     .from("users")
     .select("id")
     .eq("auth_user_id", authUserId)
+    .eq("status", "Activo")
     .limit(1)
     .maybeSingle();
 

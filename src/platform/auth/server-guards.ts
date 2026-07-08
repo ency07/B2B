@@ -10,7 +10,6 @@ import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 import { canPerform, type Action, type RoleName } from "@/lib/role-permissions";
 import { getUserRole } from "@/platform/users/users";
-import { supabaseAdmin } from "@/platform/auth/clients";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "";
@@ -29,8 +28,7 @@ export async function getAuthContext(): Promise<AuthContext | null> {
     const cookieStore = await cookies();
     const accessToken =
       cookieStore.get("sb-erp-access-token")?.value ||
-      cookieStore.get("sb-portal-access-token")?.value ||
-      cookieStore.get("sb-access-token")?.value;
+      cookieStore.get("sb-portal-access-token")?.value;
     if (!accessToken) return null;
 
     // Server-side: usamos un cliente anon dedicado (no persistimos sesion).
@@ -78,10 +76,26 @@ export async function validateTenantAccess(
     return; // Administradores de plataforma pueden saltarse la restricción de tenant
   }
 
-  const { data, error } = await supabaseAdmin
+  // Usamos el JWT del usuario (desde cookies) en vez de supabaseAdmin
+  // para que RLS restrinja la consulta solo a su propio registro.
+  const cookieStore = await cookies();
+  const accessToken =
+    cookieStore.get("sb-erp-access-token")?.value ||
+    cookieStore.get("sb-portal-access-token")?.value;
+  if (!accessToken) {
+    throw new Error("No autenticado");
+  }
+
+  const anonClient = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { headers: { Authorization: `Bearer ${accessToken}` } },
+  });
+
+  const { data, error } = await anonClient
     .from("users")
     .select("tenant_id")
     .eq("auth_user_id", userId)
+    .eq("status", "Activo")
     .limit(1)
     .maybeSingle();
 

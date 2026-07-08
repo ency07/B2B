@@ -12,7 +12,6 @@ export async function POST(request: Request) {
   const tokenNames = [
     "sb-portal-access-token",
     "sb-erp-access-token",
-    "sb-access-token",
   ];
 
   for (const name of tokenNames) {
@@ -33,8 +32,6 @@ export async function POST(request: Request) {
   const response = NextResponse.redirect(new URL("/login", request.url));
 
   const cookiesToClear = [
-    "sb-access-token",
-    "sb-refresh-token",
     "sb-portal-access-token",
     "sb-portal-refresh-token",
     "sb-erp-access-token",

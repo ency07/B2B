@@ -1,9 +1,9 @@
 "use server";
 
 import { z } from "zod";
+import { headers } from "next/headers";
 import { getPublicServerClient } from "@/platform/auth/clients";
 import { getTenantId } from "@/erp/actions/core";
-import { resolveTenantOwnerUserIdAsync } from "@/platform/tenant/tenant-resolver";
 import { sanitizeObject } from "@/lib/utils/sanitize";
 import { checkRateLimit } from "@/lib/utils/rate-limiter";
 import { calculateRequiredCfm } from "@/utils/engineering";
@@ -27,6 +27,7 @@ export interface WizardSubmission {
   ciudad: string;
   urgencia: "baja" | "media" | "alta";
   otroDetalle?: string;
+  website?: string; // honeypot — campo oculto que solo llenan los bots
 }
 
 const wizardSubmissionSchema = z.object({
@@ -43,6 +44,7 @@ const wizardSubmissionSchema = z.object({
   ciudad: z.string().min(2, "La ciudad debe tener al menos 2 caracteres"),
   urgencia: z.enum(["baja", "media", "alta"]),
   otroDetalle: z.string().optional(),
+  website: z.string().optional(), // honeypot — debe estar vacío
 });
 
 export interface WizardResult {
@@ -81,9 +83,18 @@ export async function submitWizardData(
   // 2. Sanitizar campos de texto contra XSS
   const data = sanitizeObject(parsed.data as Record<string, unknown>) as z.infer<typeof wizardSubmissionSchema>;
 
-  // 3. Rate limiting por IP (best-effort en serverless)
-  const ip = rawData.email || "unknown";
-  const { allowed } = checkRateLimit(`wizard:${ip}`);
+  // 3. Honeypot: si el campo oculto website tiene contenido, es un bot
+  if (data.website) {
+    // No revelamos al bot que fue detectado — respondemos como si todo estuviera bien
+    return getDummyResult();
+  }
+
+  // 4. Rate limiting por IP real (desde headers de Next.js)
+  const headersList = await headers();
+  const ip = headersList.get("x-forwarded-for")?.split(",")[0]?.trim()
+    || headersList.get("x-real-ip")
+    || "unknown";
+  const { allowed } = checkRateLimit(`wizard:${ip}`, 5, 60_000);
   if (!allowed) {
     throw new Error("Demasiadas solicitudes. Intente nuevamente en un minuto.");
   }
@@ -101,8 +112,6 @@ export async function submitWizardData(
     console.error("Tenant validation error:", tenantErr, tenantInfo);
     throw new Error("El servicio no está disponible para este tenant.");
   }
-
-  const userId = await resolveTenantOwnerUserIdAsync(tenantId);
 
 
   // 1. Cálculos de Motores Funcionales
@@ -154,9 +163,8 @@ export async function submitWizardData(
         city: data.ciudad,
         phone: data.telefono,
         email: data.email,
-        assigned_user_id: userId,
         status: "PROSPECTO",
-        created_by: userId
+        created_by: null
       })
       .select()
       .single();
@@ -193,7 +201,7 @@ export async function submitWizardData(
         position: data.cargo,
         email: data.email,
         phone: data.telefono,
-        created_by: userId
+        created_by: null
       })
       .select()
       .single();
@@ -246,7 +254,7 @@ export async function submitWizardData(
       estimated_price_max_cop: priceEstimation.rangeMaxCop,
       estimated_price_min_usd: priceEstimation.rangeMinUsd,
       estimated_price_max_usd: priceEstimation.rangeMaxUsd,
-      created_by: userId
+      created_by: null
     })
     .select()
     .single();
@@ -267,5 +275,24 @@ export async function submitWizardData(
     estimatedPriceMaxUsd: priceEstimation.rangeMaxUsd,
     materialsRecommendation,
     leadId: lead.id
+  };
+}
+
+/**
+ * Respuesta ficticia para bots que superan el honeypot.
+ * No persiste nada en BD.
+ */
+function getDummyResult(): WizardResult {
+  return {
+    diagnosticCode: "DUMMY",
+    requiredCfm: 0,
+    cfmCategory: "STANDARD",
+    calculatedVolumeM3: 0,
+    estimatedPriceMinCop: 0,
+    estimatedPriceMaxCop: 0,
+    estimatedPriceMinUsd: 0,
+    estimatedPriceMaxUsd: 0,
+    materialsRecommendation: "",
+    leadId: "00000000-0000-0000-0000-000000000000",
   };
 }

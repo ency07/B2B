@@ -39,9 +39,7 @@ async function hasAccessTokenCookie(): Promise<boolean> {
   try {
     const store = await cookies();
     return Boolean(
-      store.get("sb-portal-access-token")?.value ||
-      store.get("sb-erp-access-token")?.value ||
-      store.get("sb-access-token")?.value
+      store.get("sb-portal-access-token")?.value
     );
   } catch {
     return false;
@@ -58,19 +56,15 @@ export default async function PortalPage({ searchParams }: Props) {
   // P8 - portal: validar sesion y obtener client del usuario.
   const currentClient = await getCurrentClient(previewClientId);
 
-  // Verificar pertenencia al tenant si se especificó en la URL (prevención de tenant cruzado)
+  // Si el tenant en la URL no coincide con el tenant del cliente, redirigir
+  // automáticamente al portal correcto en lugar de mostrar un error.
   if (
     currentClient &&
     tenantParam &&
     !currentClient.isPlatformAdmin &&
     currentClient.tenantCode !== tenantParam
   ) {
-    return (
-      <PortalTenantMismatch
-        tenantParam={tenantParam}
-        currentClientTenant={currentClient.tenantCode}
-      />
-    );
+    redirect(`/portal?tenant=${currentClient.tenantCode || ""}`);
   }
 
   if (!currentClient) {
