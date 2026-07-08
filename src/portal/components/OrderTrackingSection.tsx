@@ -1,14 +1,12 @@
 "use client";
 
 import React from "react";
-import { Search, UserCheck, Wind, ChevronDown } from "lucide-react";
-import { Input } from "@/platform/ui/input";
-import { Button } from "@/platform/ui/button";
+import { Search, ChevronRight, UserCheck, Wind } from "lucide-react";
 
 interface OT {
   code: string;
   title: string;
-  status: string; // "DISEÑO" | "CORTE" | "BALANCEO" | "PRUEBAS" | "DESPACHO"
+  status: string;
   progress: number;
   startDate: string;
   endDate: string;
@@ -23,6 +21,30 @@ interface OrderTrackingSectionProps {
   setExpandedOt: (id: string | null) => void;
 }
 
+const PHASES = ["DISEÑO", "CORTE", "BALANCEO", "PRUEBAS", "DESPACHO"];
+const PHASE_LABELS: Record<string, string> = {
+  DISEÑO: "Diseño",
+  CORTE: "Corte CNC",
+  BALANCEO: "Balanceo ISO",
+  PRUEBAS: "Pruebas",
+  DESPACHO: "Despachado",
+};
+const PHASE_COLORS: Record<string, string> = {
+  DISEÑO: "text-violet-400 bg-violet-400/10 border-violet-400/20",
+  CORTE: "text-blue-400 bg-blue-400/10 border-blue-400/20",
+  BALANCEO: "text-amber-400 bg-amber-400/10 border-amber-400/20",
+  PRUEBAS: "text-sky-400 bg-sky-400/10 border-sky-400/20",
+  DESPACHO: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20",
+};
+
+function getPhaseInfo(status: string) {
+  const key = status.toUpperCase();
+  return {
+    label: PHASE_LABELS[key] ?? status,
+    color: PHASE_COLORS[key] ?? "text-muted-foreground bg-muted/30 border-border",
+  };
+}
+
 export function OrderTrackingSection({
   ots,
   searchQuery,
@@ -30,223 +52,203 @@ export function OrderTrackingSection({
   expandedOt,
   setExpandedOt,
 }: OrderTrackingSectionProps) {
+  const filtered = ots.filter(
+    (ot) =>
+      ot.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      ot.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
-    <div className="space-y-8 animate-in fade-in duration-300">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border/60 pb-4">
+    <div className="space-y-5">
+      {/* Header row */}
+      <div className="flex items-center justify-between gap-4">
         <div>
-          <span className="text-[10px] font-mono tracking-widest text-primary uppercase font-bold">// FABRICATION_STREAM</span>
-          <h3 className="text-lg font-bold text-foreground mt-0.5">Monitoreo Físico de Turbomáquinas</h3>
-          <p className="text-xs text-muted-foreground mt-1 font-sans">
-            Consulte los hitos de balanceo, curvas de presión e inspecciones de calidad de sus equipos.
+          <h3 className="text-sm font-semibold text-foreground">Órdenes de trabajo</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {ots.length} {ots.length === 1 ? "equipo en producción" : "equipos en producción"}
           </p>
         </div>
-
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por código de obra..."
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+          <input
+            placeholder="Buscar código o proyecto…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 text-xs font-mono border-border bg-background/50 h-9"
+            className="w-52 pl-9 pr-3 py-2 text-xs bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all"
           />
         </div>
       </div>
 
-      {/* OTs Grid */}
-      <div className="space-y-6">
-        {ots
-          .filter(ot => ot.code.toLowerCase().includes(searchQuery.toLowerCase()) || ot.title.toLowerCase().includes(searchQuery.toLowerCase()))
-          .map((ot) => {
-            const phases = ["DISEÑO", "CORTE", "BALANCEO", "PRUEBAS", "DESPACHO"];
-            const currentPhaseIdx = phases.indexOf(ot.status);
-            const isSelected = expandedOt === ot.code;
+      {/* Table */}
+      <div className="rounded-xl border border-border overflow-hidden">
+        {/* Table header */}
+        <div className="grid grid-cols-[120px_1fr_130px_100px_100px_36px] gap-x-4 items-center px-4 py-2.5 bg-muted/30 border-b border-border text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+          <span>Código</span>
+          <span>Proyecto</span>
+          <span className="hidden md:block">Fase</span>
+          <span className="hidden sm:block">Avance</span>
+          <span className="hidden lg:block">Entrega est.</span>
+          <span />
+        </div>
+
+        {/* Rows */}
+        <div className="divide-y divide-border/50">
+          {filtered.map((ot) => {
+            const isExpanded = expandedOt === ot.code;
+            const { label, color } = getPhaseInfo(ot.status);
+            const currentPhaseIdx = PHASES.indexOf(ot.status.toUpperCase());
 
             return (
-              <div 
-                key={ot.code} 
-                className={`rounded-xl border transition-all duration-300 ${
-                  isSelected ? "border-primary/50 bg-primary/[0.01]" : "border-border hover:border-border-hover bg-background/20"
-                } overflow-hidden`}
-              >
-                <div className="p-5 space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded">
-                          {ot.code}
-                        </span>
-                        <span className="text-[10px] font-mono text-muted-foreground tracking-tight">// IN-FACTORY</span>
-                      </div>
-                      <h4 className="text-base font-bold text-foreground mt-1">{ot.title}</h4>
+              <React.Fragment key={ot.code}>
+                {/* Main row */}
+                <div
+                  className={`grid grid-cols-[120px_1fr_130px_100px_100px_36px] gap-x-4 items-center px-4 py-3.5 cursor-pointer transition-colors select-none ${
+                    isExpanded
+                      ? "bg-primary/[0.04] border-l-2 border-l-primary"
+                      : "hover:bg-muted/20 border-l-2 border-l-transparent"
+                  }`}
+                  onClick={() => setExpandedOt(isExpanded ? null : ot.code)}
+                >
+                  <span className="text-xs font-mono text-primary font-medium truncate">
+                    {ot.code}
+                  </span>
+                  <span className="text-sm text-foreground truncate pr-4">{ot.title}</span>
+                  <span className="hidden md:block">
+                    <span className={`inline-flex text-[10px] px-2 py-0.5 rounded border font-mono ${color}`}>
+                      {label}
+                    </span>
+                  </span>
+                  <span className="hidden sm:flex items-center gap-2">
+                    <div className="h-1 w-14 bg-muted rounded-full overflow-hidden flex-shrink-0">
+                      <div
+                        className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                        style={{ width: `${ot.progress}%` }}
+                      />
                     </div>
-                    <div className="text-left sm:text-right">
-                      <span className="text-[10px] font-mono text-muted-foreground block tracking-wider uppercase font-bold">Avance Est.</span>
-                      <span className="text-2xl font-mono font-bold text-emerald-500">{ot.progress}%</span>
-                    </div>
-                  </div>
-
-                  {/* Stepper with details */}
-                  <div className="grid grid-cols-5 gap-2 pt-2 relative">
-                    {phases.map((ph, idx) => {
-                      const isCompleted = idx < currentPhaseIdx;
-                      const isCurrent = idx === currentPhaseIdx;
-
-                      return (
-                        <div key={ph} className="space-y-2 text-center relative z-10">
-                          <div className={`h-2 rounded-full transition-all duration-500 ${
-                            isCompleted ? "bg-emerald-500" : isCurrent ? "bg-primary animate-pulse shadow-[0_0_10px_var(--primary)]" : "bg-muted"
-                          }`} />
-                          <span className={`text-[9px] font-mono tracking-wider font-bold block ${
-                            isCompleted ? "text-emerald-500" : isCurrent ? "text-primary" : "text-muted-foreground"
-                          }`}>
-                            {ph}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Tech and Dates metadata row */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs pt-4 border-t border-border/60 font-mono text-muted-foreground">
-                    <div>
-                      <span className="block text-[10px] text-muted-foreground">Supervisor Responsable:</span>
-                      <span className="text-foreground font-sans font-bold flex items-center gap-1.5 mt-0.5">
-                        <UserCheck className="w-3.5 h-3.5 text-primary" /> {ot.tech}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="block text-[10px] text-muted-foreground">Inicio de Obra:</span>
-                      <span className="text-foreground font-bold mt-0.5 block">{ot.startDate}</span>
-                    </div>
-                    <div>
-                      <span className="block text-[10px] text-muted-foreground">Fecha Despacho Est:</span>
-                      <span className="text-foreground font-bold mt-0.5 block">{ot.endDate}</span>
-                    </div>
-                    <div className="flex items-center justify-end gap-2">
-                      <Button 
-                        onClick={() => setExpandedOt(isSelected ? null : ot.code)}
-                        variant="outline" 
-                        className="text-xs font-mono flex items-center gap-1.5 h-9 cursor-pointer"
-                      >
-                        <span>Hitos QA</span>
-                        <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isSelected ? "rotate-180 text-primary" : ""}`} />
-                      </Button>
-                    </div>
-                  </div>
+                    <span className="text-[11px] text-muted-foreground font-mono tabular-nums">
+                      {ot.progress}%
+                    </span>
+                  </span>
+                  <span className="hidden lg:block text-xs text-muted-foreground font-mono">
+                    {ot.endDate || "Fecha por confirmar"}
+                  </span>
+                  <ChevronRight
+                    className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${
+                      isExpanded ? "rotate-90 text-primary" : ""
+                    }`}
+                  />
                 </div>
 
-                {/* Hitos Expandable Timeline */}
-                {isSelected && (
-                  <div className="border-t border-border bg-card/65 p-5 space-y-4 font-mono text-xs animate-in slide-in-from-top duration-300">
-                    <div className="flex justify-between items-center text-[10px] text-muted-foreground border-b border-border pb-2.5">
-                      <span>// MONITOREO DE CERTIFICADOS E INSPECCIÓN EN FABRICACIÓN</span>
-                      <span className="text-primary font-bold flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" /> LIVE SYSTEM
-                      </span>
+                {/* Expanded detail */}
+                {isExpanded && (
+                  <div className="border-t border-border/50 bg-card/50 px-6 py-5 space-y-5">
+                    {/* Phase stepper */}
+                    <div className="flex items-center">
+                      {PHASES.map((ph, idx) => {
+                        const done = idx < currentPhaseIdx;
+                        const active = idx === currentPhaseIdx;
+                        return (
+                          <React.Fragment key={ph}>
+                            <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
+                              <div
+                                className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-mono font-bold border transition-all ${
+                                  done
+                                    ? "bg-emerald-500 border-emerald-500 text-white"
+                                    : active
+                                    ? "border-primary bg-primary/10 text-primary"
+                                    : "border-border/60 bg-background text-muted-foreground/60"
+                                }`}
+                              >
+                                {done ? "✓" : idx + 1}
+                              </div>
+                              <span
+                                className={`text-[9px] font-mono uppercase tracking-wider leading-none ${
+                                  done
+                                    ? "text-emerald-500"
+                                    : active
+                                    ? "text-primary"
+                                    : "text-muted-foreground/50"
+                                }`}
+                              >
+                                {PHASE_LABELS[ph]}
+                              </span>
+                            </div>
+                            {idx < PHASES.length - 1 && (
+                              <div
+                                className={`h-px flex-1 mx-2 mb-4 transition-colors ${
+                                  done ? "bg-emerald-500/60" : "bg-border/40"
+                                }`}
+                              />
+                            )}
+                          </React.Fragment>
+                        );
+                      })}
                     </div>
-                    
-                    <div className="space-y-5 relative pl-4 before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-[1px] before:bg-border">
-                      
-                      {/* DISEÑO */}
-                      <div className="relative space-y-1">
-                        <div className="absolute left-[-13px] top-1.5 w-2 h-2 rounded-full bg-emerald-500" />
-                        <div className="flex justify-between font-bold text-foreground">
-                          <span>Fase 1: DISEÑO MECÁNICO Y SIMULACIÓN CFD</span>
-                          <span className="text-[10px] text-emerald-500 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border-none">COMPLETADO</span>
-                        </div>
-                        <p className="text-muted-foreground font-sans">
-                          Planos tridimensionales de anclajes firmados. Modelado CFD completado, simulando un flujo térmico continuo de aire a 7,500 CFM sin turbulencias residuales.
-                        </p>
-                        <span className="text-[10px] text-muted-foreground block leading-none">// Aprobado por Ing. Carlos Mendoza (2026-06-12)</span>
-                      </div>
 
-                      {/* CORTE */}
-                      <div className="relative space-y-1">
-                        <div className="absolute left-[-13px] top-1.5 w-2 h-2 rounded-full bg-emerald-500" />
-                        <div className="flex justify-between font-bold text-foreground">
-                          <span>Fase 2: CORTE Y EMBUTIDO DE ÁLABES CNC</span>
-                          <span className="text-[10px] text-emerald-500 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border-none">COMPLETADO</span>
-                        </div>
-                        <p className="text-muted-foreground font-sans">
-                          Láminas de acero al carbón cortadas por láser CNC. Calibración dimensional del cono de entrada de 1.2 mm completada sin excentricidad.
+                    {/* Metadata grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-border/40">
+                      <div>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">
+                          Supervisor
                         </p>
-                        <span className="text-[10px] text-muted-foreground block leading-none">// Liberación física en Taller 1 (2026-06-15)</span>
+                        <p className="text-xs text-foreground font-medium flex items-center gap-1.5">
+                          <UserCheck className="w-3 h-3 text-primary shrink-0" />
+                          {ot.tech}
+                        </p>
                       </div>
-
-                      {/* BALANCEO */}
-                      <div className="relative space-y-1">
-                        <div className="absolute left-[-13.5px] top-1.5 w-2.5 h-2.5 rounded-full border border-primary bg-background flex items-center justify-center">
-                          <div className={`w-1 h-1 rounded-full ${ot.status === "BALANCEO" ? "bg-primary animate-pulse" : "bg-emerald-500"}`} />
-                        </div>
-                        <div className="flex justify-between font-bold text-foreground">
-                          <span>Fase 3: BALANCEO ESTÁTICO Y DINÁMICO ISO G2.5</span>
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded border-none ${ot.progress >= 60 ? "bg-emerald-500/10 text-emerald-500" : "bg-sky-500/10 text-sky-500 animate-pulse"}`}>
-                            {ot.progress >= 60 ? "COMPLETADO" : "EN CALIBRACIÓN"}
-                          </span>
-                        </div>
-                        <p className="text-muted-foreground font-sans">
-                          {ot.progress >= 60 
-                            ? "Sometido a banco de pruebas de balanceo dinámico dinámico. Registro de vibraciones dentro de límites seguros de la norma ISO G2.5."
-                            : "Montaje del rotor VT-7500 en banco de balanceo. Pendiente inyección de contrapesos correctores en masa de álabes."}
+                      <div>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">
+                          Inicio de obra
                         </p>
-                        <span className="text-[10px] text-muted-foreground block leading-none">
-                          {ot.progress >= 60 
-                            ? "// Certificado de Balanceo QA-ISO-042 adjunto en descargas" 
-                            : "// Responsable: Téc. Andrés Silva"}
+                        <p className="text-xs text-foreground font-mono">{ot.startDate || "—"}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">
+                          Entrega estimada
+                        </p>
+                        <p className="text-xs text-foreground font-mono">{ot.endDate || "Fecha por confirmar"}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">
+                          Avance
+                        </p>
+                        <p className="text-xs text-foreground font-mono font-semibold">
+                          {ot.progress}%
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Live telemetry — only for PRUEBAS */}
+                    {ot.status.toUpperCase() === "PRUEBAS" && (
+                      <div className="flex items-center gap-6 px-4 py-3 rounded-lg border border-sky-500/20 bg-sky-500/5 text-[11px] font-mono text-sky-400">
+                        <span className="flex items-center gap-1.5">
+                          <Wind className="w-3.5 h-3.5 animate-spin-slow" />
+                          FLUJO: 7,490 CFM
+                        </span>
+                        <span>RPM: 1,740</span>
+                        <span>TEMP: 43.2 °C</span>
+                        <span className="ml-auto flex items-center gap-1.5 text-emerald-400">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                          EN TÚNEL
                         </span>
                       </div>
-
-                      {/* PRUEBAS */}
-                      <div className="relative space-y-1">
-                        <div className="absolute left-[-13.5px] top-1.5 w-2.5 h-2.5 rounded-full border border-border bg-background flex items-center justify-center">
-                          <div className={`w-1.5 h-1.5 rounded-full ${ot.status === "PRUEBAS" ? "bg-primary animate-pulse" : "bg-border"}`} />
-                        </div>
-                        <div className="flex justify-between font-bold text-foreground">
-                          <span>Fase 4: PRUEBAS ELÉCTRICAS Y CURVA DE CAUDAL</span>
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded border-none ${ot.status === "PRUEBAS" ? "bg-sky-500/10 text-sky-500 animate-pulse" : ot.status === "DESPACHO" ? "bg-emerald-500/10 text-emerald-500" : "bg-muted text-muted-foreground"}`}>
-                            {ot.status === "PRUEBAS" ? "EN CURSO EN TÚNEL" : ot.status === "DESPACHO" ? "COMPLETADO" : "PENDIENTE"}
-                          </span>
-                        </div>
-                        <p className="text-muted-foreground font-sans">
-                          Ensayos de motor en cámara de aislamiento y túnel de viento. Medición de curvas CFM contra caída de presión en inWG. Termografía en devanados del estator.
-                        </p>
-                        {ot.status === "PRUEBAS" && (
-                          <div className="bg-background border border-border/80 p-2.5 rounded-lg flex items-center justify-between text-[10px] font-mono mt-1 text-primary">
-                            <span className="flex items-center gap-1.5"><Wind className="w-3.5 h-3.5 animate-spin" /> FLUJO DETECTADO: 7,490 CFM</span>
-                            <span>RPM: 1,740 RPM</span>
-                            <span>TEMP: 43.2°C</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* DESPACHO */}
-                      <div className="relative space-y-1">
-                        <div className="absolute left-[-13px] top-1.5 w-2 h-2 rounded-full bg-border" />
-                        <div className="flex justify-between font-bold text-foreground">
-                          <span>Fase 5: LOGÍSTICA DE DESPACHO INTERNACIONAL</span>
-                          <span className="text-[10px] text-muted-foreground bg-muted/10 px-2 py-0.5 rounded border-none">PENDIENTE</span>
-                        </div>
-                        <p className="text-muted-foreground font-sans">
-                          Manifiesto de embarque terrestre en camión de plataforma baja. Envoltura plástica protectora reforzada contra ambiente salino y huacal de madera.
-                        </p>
-                      </div>
-
-                    </div>
+                    )}
                   </div>
                 )}
-              </div>
+              </React.Fragment>
             );
           })}
 
-        {ots.filter(ot => ot.code.toLowerCase().includes(searchQuery.toLowerCase()) || ot.title.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
-          <div className="text-center py-12 border border-dashed border-border rounded-xl">
-            <svg className="w-12 h-12 mx-auto text-muted-foreground/30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="8" y1="12" x2="16" y2="12" />
-            </svg>
-            <span className="text-xs font-mono text-muted-foreground block mt-3">// NO_RESULTS_FOUND_FOR_SEARCH</span>
-          </div>
-        )}
+          {filtered.length === 0 && (
+            <div className="py-12 text-center">
+              <p className="text-sm text-muted-foreground">
+                {searchQuery
+                  ? `Sin resultados para "${searchQuery}"`
+                  : "No hay órdenes de trabajo activas."}
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
