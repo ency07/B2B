@@ -61,13 +61,16 @@ export async function POST(request: Request) {
     response.cookies.set(name, "", { path: "/", maxAge: 0, sameSite: "lax" });
   }
 
-  // Increment session version to force other tabs to detect logout
+  // Increment session version to force other tabs to detect logout.
+  // httpOnly: false es intencional — el SessionVersionListener necesita
+  // leer esta cookie desde JS. No contiene datos sensibles.
   const sessionVersion = Number(cookieStore.get("sb-session-version")?.value || "0") + 1;
   response.cookies.set("sb-session-version", String(sessionVersion), {
     path: "/",
     sameSite: "lax",
-    httpOnly: true,
+    httpOnly: false,
     secure: process.env.NODE_ENV === "production",
+    maxAge: 60 * 60 * 24 * 2,
   });
 
   // Log logout event (fire-and-forget)

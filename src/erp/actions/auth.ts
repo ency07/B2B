@@ -64,12 +64,14 @@ export async function loginErp(data: {
   });
 
   const sessionVersion = Number(cookieStore.get("sb-session-version")?.value || "0") + 1;
+  // httpOnly: false es intencional — el SessionVersionListener necesita leer esta cookie
+  // desde JS para detectar logouts en otras pestañas. No contiene datos sensibles.
   cookieStore.set("sb-session-version", String(sessionVersion), {
-    httpOnly: true,
+    httpOnly: false,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: 60 * 60 * 24 * 365,
+    maxAge: 60 * 60 * 24 * 2,
   });
 
   return { success: true, redirectTo: destination };
