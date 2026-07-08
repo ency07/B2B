@@ -7,7 +7,6 @@ import {
   Sparkles,
   Search,
   Clock,
-  Printer,
   FileText,
   Download,
   CreditCard,
@@ -344,6 +343,35 @@ export default function CustomerPortal({
       toast.error("No se pudo registrar el ticket.");
     } finally {
       setIsCreatingTicket(false);
+    }
+  };
+
+  // Genera y descarga PDF de factura usando jspdf
+  const downloadInvoicePdf = async (invoiceCode: string) => {
+    try {
+      const { jsPDF } = await import("jspdf");
+      const doc = new jsPDF({ unit: "mm", format: "letter" });
+      const inv = invoices.find(i => i.code === invoiceCode);
+      if (!inv) return;
+
+      doc.setFontSize(18);
+      doc.text(`${companyName}`, 20, 30);
+      doc.setFontSize(10);
+      doc.text(`Factura: ${inv.code}`, 20, 42);
+      doc.text(`Fecha: ${inv.date}`, 20, 50);
+      doc.text(`Cliente: ${clientName}`, 20, 58);
+      doc.text(`NIT: ${clientNit}`, 20, 66);
+      doc.line(20, 74, 190, 74);
+      doc.setFontSize(12);
+      doc.text(`Total: ${formatCurrency(inv.total)}`, 20, 86);
+      doc.text(`Pagado: ${formatCurrency(inv.paid)}`, 20, 96);
+      doc.text(`Saldo: ${formatCurrency(inv.total - inv.paid)}`, 20, 106);
+      doc.text(`Estado: ${inv.status}`, 20, 116);
+
+      doc.save(`factura-${inv.code}.pdf`);
+    } catch (err) {
+      console.error("Error generando PDF:", err);
+      toast.error("No se pudo generar el PDF.");
     }
   };
 
@@ -802,11 +830,11 @@ export default function CustomerPortal({
                                     </Sheet>
                                   ) : (
                                     <button 
-                                      onClick={() => toast.info(`Imprimiendo comprobante de pago para factura ${inv.code}...`)}
+                                      onClick={() => downloadInvoicePdf(inv.code)}
                                       className="text-muted-foreground hover:text-foreground transition-colors p-1"
-                                      title="Imprimir Comprobante"
+                                      title="Descargar PDF de la factura"
                                     >
-                                      <Printer className="w-4 h-4" />
+                                      <Download className="w-4 h-4" />
                                     </button>
                                   )}
                                 </div>
@@ -836,7 +864,7 @@ export default function CustomerPortal({
                           <div className="text-right">
                             <span className="font-bold text-foreground block">{formatCurrency(rec.amount)}</span>
                             <a 
-                              onClick={() => toast.info(`Descargando comprobante PDF para el recibo ${rec.id}`)}
+                              onClick={() => downloadInvoicePdf(rec.code)}
                               className="text-primary hover:text-primary/80 text-[10px] flex items-center gap-1 justify-end cursor-pointer mt-1 font-sans"
                             >
                               <Download className="w-3 h-3" /> Recibo PDF
