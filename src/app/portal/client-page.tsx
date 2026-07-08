@@ -165,9 +165,9 @@ export default function CustomerPortal({
   const [expandedOt, setExpandedOt] = React.useState<string | null>("JOB-2026-001");
   const router = useRouter();
 
-  // Client info derived dynamically
-  const [clientName, setClientName] = React.useState("Cliente B2B");
-  const [clientNit, setClientNit] = React.useState("NIT-000.000.000-0");
+  // Client info derivado directamente desde props del servidor
+  const [clientName, setClientName] = React.useState(clientInfo.legalName);
+  const [clientNit, setClientNit] = React.useState(clientInfo.taxId);
 
   // OTs state — inicializado con datos reales del client (per-client filtering)
   const [ots, setOts] = React.useState(
