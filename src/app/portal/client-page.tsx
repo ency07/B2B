@@ -247,6 +247,8 @@ export default function CustomerPortal({
   const [newMessageText, setNewMessageText] = React.useState("");
   const [isChatOpen, setIsChatOpen] = React.useState(false);
   const [isSendingMessage, setIsSendingMessage] = React.useState(false);
+  const chatToggleRef = React.useRef<HTMLButtonElement>(null);
+  const chatCloseRef = React.useRef<HTMLButtonElement>(null);
 
   // Payment: sin gateway real conectado todavía (no hay credenciales de
   // Wompi/PSE configuradas). No se simula un pago exitoso — se muestra un
@@ -256,6 +258,15 @@ export default function CustomerPortal({
 
   // Search filter
   const [searchQuery, setSearchQuery] = React.useState("");
+
+  // Gestion de foco: al abrir/cerrar el chat, mover el foco al elemento correspondiente
+  React.useEffect(() => {
+    if (isChatOpen) {
+      chatCloseRef.current?.focus();
+    } else {
+      chatToggleRef.current?.focus();
+    }
+  }, [isChatOpen]);
 
   // ClientName/NIT se inicializan directamente desde clientInfo (ver init más abajo)
   // No hay delay artificial — los datos ya vienen del servidor via props
@@ -594,6 +605,7 @@ export default function CustomerPortal({
 
             {/* Support chat toggle button */}
             <Button
+              ref={chatToggleRef}
               onClick={() => setIsChatOpen(!isChatOpen)}
               className="bg-primary hover:bg-primary/95 text-white text-xs font-mono flex items-center gap-2 px-5 py-5 rounded-full shadow-lg hover:shadow-primary/20 transition-all hover:translate-y-[-1px] active:translate-y-0 cursor-pointer"
             >
@@ -1012,8 +1024,10 @@ export default function CustomerPortal({
                   </div>
                 </div>
                 <button
+                  ref={chatCloseRef}
                   onClick={() => setIsChatOpen(false)}
                   className="text-muted-foreground hover:text-foreground p-1 cursor-pointer"
+                  aria-label="Cerrar chat de soporte"
                 >
                   <X className="w-4 h-4" />
                 </button>
