@@ -1,0 +1,68 @@
+import type { Theme } from '../_schema'
+
+export const neoEmerald: Theme = {
+  id: 'neo-emerald',
+  name: 'Neo Emerald',
+  mode: 'dark',
+  surface: {
+    background: 'gray.950',
+    card: 'gray.900',
+    sidebar: 'gray.950',
+    modal: 'gray.900',
+    overlay: 'gray.950/80',
+    hover: 'green.950',
+    active: 'green.900',
+    selected: 'green.900',
+    disabled: 'gray.800',
+  },
+  text: {
+    primary: 'gray.100',
+    secondary: 'gray.400',
+    muted: 'gray.600',
+    inverse: 'gray.900',
+    disabled: 'gray.700',
+    link: 'green.400',
+    success: 'green.400',
+    warning: 'orange.400',
+    error: 'red.400',
+  },
+  border: {
+    default: 'gray.800',
+    subtle: 'gray.800',
+    focus: 'green.500',
+    error: 'red.500',
+    success: 'green.500',
+  },
+  icon: {
+    default: 'green.400',
+    secondary: 'green.600',
+    disabled: 'gray.700',
+    inverse: 'gray.900',
+  },
+  chart: {
+    primary: 'green.400',
+    secondary: 'teal.400',
+    success: 'green.400',
+    warning: 'orange.400',
+    error: 'red.400',
+  },
+  status: {
+    success: 'green.400',
+    warning: 'orange.400',
+    error: 'red.400',
+    info: 'blue.400',
+  },
+  action: {
+    primary: 'green.500',
+    secondary: 'green.900',
+    danger: 'red.400',
+    success: 'green.500',
+    hover: 'green.400',
+    pressed: 'green.300',
+  },
+  special: {
+    focusRing: 'green.500',
+    selectionBackground: 'green.800',
+    selectionText: 'green.200',
+  },
+}

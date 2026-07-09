@@ -1,0 +1,113 @@
+'use client'
+
+import {
+  createContext,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
+import type { ReactNode } from 'react'
+import { themes, themeMap, getThemeById } from '../themes'
+import type { Theme } from '../themes'
+import { flattenThemeToCSS } from '../utils'
+import { resolveToken, resolveSemanticToken } from '../utils/resolve-token'
+import type { TokenPath } from '../utils/resolve-token'
+
+export interface ThemeContextValue {
+  theme: Theme
+  themes: Theme[]
+  setTheme: (id: string) => void
+  resolved: (path: TokenPath) => string
+  resolve: (category: keyof Theme, key: string) => string
+  cssVars: Record<string, string>
+}
+
+export const DesignSystemContext = createContext<ThemeContextValue | null>(null)
+
+const STORAGE_KEY = 'ds-theme-id'
+
+function getInitialTheme(): Theme {
+  if (typeof window === 'undefined') return themes[0]
+  const stored = localStorage.getItem(STORAGE_KEY)
+  if (stored && themeMap[stored]) return themeMap[stored]
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+  if (prefersDark) return themes.find((t) => t.id === 'carbon') ?? themes[0]
+  return themes[0]
+}
+
+interface DesignSystemProviderProps {
+  children: ReactNode
+  initialThemeId?: string
+}
+
+export function DesignSystemProvider({
+  children,
+  initialThemeId,
+}: DesignSystemProviderProps) {
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (initialThemeId && themeMap[initialThemeId]) {
+      return themeMap[initialThemeId]
+    }
+    return getInitialTheme()
+  })
+
+  const setTheme = useCallback((id: string) => {
+    const next = getThemeById(id)
+    if (!next) return
+    setThemeState(next)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY, id)
+    }
+  }, [])
+
+  const cssVars = useMemo(() => flattenThemeToCSS(theme), [theme])
+
+  useEffect(() => {
+    const root = document.documentElement
+    for (const [name, value] of Object.entries(cssVars)) {
+      root.style.setProperty(name, value)
+    }
+
+    if (theme.mode === 'dark') {
+      root.classList.add('dark')
+    } else {
+      root.classList.remove('dark')
+    }
+
+    return () => {
+      for (const name of Object.keys(cssVars)) {
+        root.style.removeProperty(name)
+      }
+    }
+  }, [cssVars, theme.mode])
+
+  const resolved = useCallback(
+    (path: TokenPath) => resolveToken(theme, path),
+    [theme],
+  )
+
+  const resolve = useCallback(
+    (category: keyof Theme, key: string) =>
+      resolveSemanticToken(theme, category, key),
+    [theme],
+  )
+
+  const value = useMemo<ThemeContextValue>(
+    () => ({
+      theme,
+      themes: [...themes],
+      setTheme,
+      resolved,
+      resolve,
+      cssVars,
+    }),
+    [theme, setTheme, resolved, resolve, cssVars],
+  )
+
+  return (
+    <DesignSystemContext.Provider value={value}>
+      {children}
+    </DesignSystemContext.Provider>
+  )
+}

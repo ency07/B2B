@@ -1,0 +1,68 @@
+import type { Theme } from '../_schema'
+
+export const midnightBlue: Theme = {
+  id: 'midnight-blue',
+  name: 'Midnight Blue',
+  mode: 'dark',
+  surface: {
+    background: 'blue.950',
+    card: 'blue.900',
+    sidebar: 'blue.950',
+    modal: 'blue.900',
+    overlay: 'blue.950/80',
+    hover: 'blue.800',
+    active: 'blue.700',
+    selected: 'blue.800',
+    disabled: 'blue.900',
+  },
+  text: {
+    primary: 'blue.50',
+    secondary: 'blue.300',
+    muted: 'blue.400',
+    inverse: 'blue.950',
+    disabled: 'blue.700',
+    link: 'blue.300',
+    success: 'green.400',
+    warning: 'orange.400',
+    error: 'red.400',
+  },
+  border: {
+    default: 'blue.800',
+    subtle: 'blue.900',
+    focus: 'blue.400',
+    error: 'red.500',
+    success: 'green.500',
+  },
+  icon: {
+    default: 'blue.300',
+    secondary: 'blue.400',
+    disabled: 'blue.700',
+    inverse: 'blue.950',
+  },
+  chart: {
+    primary: 'blue.300',
+    secondary: 'purple.400',
+    success: 'green.400',
+    warning: 'orange.400',
+    error: 'red.400',
+  },
+  status: {
+    success: 'green.400',
+    warning: 'orange.400',
+    error: 'red.400',
+    info: 'blue.300',
+  },
+  action: {
+    primary: 'blue.400',
+    secondary: 'blue.800',
+    danger: 'red.400',
+    success: 'green.400',
+    hover: 'blue.300',
+    pressed: 'blue.200',
+  },
+  special: {
+    focusRing: 'blue.400',
+    selectionBackground: 'blue.700',
+    selectionText: 'blue.200',
+  },
+}

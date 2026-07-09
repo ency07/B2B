@@ -1,0 +1,68 @@
+import type { Theme } from '../_schema'
+
+export const corporateEmerald: Theme = {
+  id: 'corporate-emerald',
+  name: 'Corporate Emerald',
+  mode: 'light',
+  surface: {
+    background: 'white',
+    card: 'white',
+    sidebar: 'white',
+    modal: 'white',
+    overlay: 'gray.900/40',
+    hover: 'green.50',
+    active: 'green.100',
+    selected: 'green.50',
+    disabled: 'gray.100',
+  },
+  text: {
+    primary: 'gray.900',
+    secondary: 'gray.600',
+    muted: 'gray.400',
+    inverse: 'white',
+    disabled: 'gray.300',
+    link: 'green.700',
+    success: 'green.600',
+    warning: 'orange.600',
+    error: 'red.600',
+  },
+  border: {
+    default: 'gray.200',
+    subtle: 'gray.100',
+    focus: 'green.600',
+    error: 'red.500',
+    success: 'green.600',
+  },
+  icon: {
+    default: 'green.700',
+    secondary: 'green.400',
+    disabled: 'gray.300',
+    inverse: 'white',
+  },
+  chart: {
+    primary: 'green.600',
+    secondary: 'teal.500',
+    success: 'green.600',
+    warning: 'orange.500',
+    error: 'red.500',
+  },
+  status: {
+    success: 'green.700',
+    warning: 'orange.600',
+    error: 'red.600',
+    info: 'blue.600',
+  },
+  action: {
+    primary: 'green.600',
+    secondary: 'green.100',
+    danger: 'red.600',
+    success: 'green.600',
+    hover: 'green.700',
+    pressed: 'green.800',
+  },
+  special: {
+    focusRing: 'green.600',
+    selectionBackground: 'green.200',
+    selectionText: 'green.900',
+  },
+}

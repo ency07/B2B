@@ -1,0 +1,68 @@
+import type { Theme } from '../_schema'
+
+export const modernBlue: Theme = {
+  id: 'modern-blue',
+  name: 'Modern Blue',
+  mode: 'light',
+  surface: {
+    background: 'blue.50',
+    card: 'white',
+    sidebar: 'white',
+    modal: 'white',
+    overlay: 'blue.900/40',
+    hover: 'blue.50',
+    active: 'blue.100',
+    selected: 'blue.100',
+    disabled: 'gray.100',
+  },
+  text: {
+    primary: 'gray.900',
+    secondary: 'gray.600',
+    muted: 'gray.400',
+    inverse: 'white',
+    disabled: 'gray.300',
+    link: 'blue.700',
+    success: 'green.600',
+    warning: 'orange.600',
+    error: 'red.600',
+  },
+  border: {
+    default: 'blue.200',
+    subtle: 'blue.100',
+    focus: 'blue.600',
+    error: 'red.500',
+    success: 'green.500',
+  },
+  icon: {
+    default: 'blue.700',
+    secondary: 'blue.400',
+    disabled: 'gray.300',
+    inverse: 'white',
+  },
+  chart: {
+    primary: 'blue.700',
+    secondary: 'indigo.500',
+    success: 'green.500',
+    warning: 'orange.500',
+    error: 'red.500',
+  },
+  status: {
+    success: 'green.600',
+    warning: 'orange.600',
+    error: 'red.600',
+    info: 'blue.700',
+  },
+  action: {
+    primary: 'blue.700',
+    secondary: 'blue.100',
+    danger: 'red.600',
+    success: 'green.600',
+    hover: 'blue.800',
+    pressed: 'blue.900',
+  },
+  special: {
+    focusRing: 'blue.600',
+    selectionBackground: 'blue.200',
+    selectionText: 'blue.900',
+  },
+}

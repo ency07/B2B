@@ -1,0 +1,68 @@
+import type { Theme } from '../_schema'
+
+export const executivePurple: Theme = {
+  id: 'executive-purple',
+  name: 'Executive Purple',
+  mode: 'light',
+  surface: {
+    background: 'gray.50',
+    card: 'white',
+    sidebar: 'white',
+    modal: 'white',
+    overlay: 'purple.900/30',
+    hover: 'purple.50',
+    active: 'purple.100',
+    selected: 'purple.50',
+    disabled: 'gray.100',
+  },
+  text: {
+    primary: 'gray.900',
+    secondary: 'gray.600',
+    muted: 'gray.400',
+    inverse: 'white',
+    disabled: 'gray.300',
+    link: 'purple.700',
+    success: 'green.600',
+    warning: 'orange.600',
+    error: 'red.600',
+  },
+  border: {
+    default: 'gray.200',
+    subtle: 'gray.100',
+    focus: 'purple.600',
+    error: 'red.500',
+    success: 'green.500',
+  },
+  icon: {
+    default: 'purple.700',
+    secondary: 'purple.400',
+    disabled: 'gray.300',
+    inverse: 'white',
+  },
+  chart: {
+    primary: 'purple.600',
+    secondary: 'pink.500',
+    success: 'green.500',
+    warning: 'orange.500',
+    error: 'red.500',
+  },
+  status: {
+    success: 'green.600',
+    warning: 'orange.600',
+    error: 'red.600',
+    info: 'purple.600',
+  },
+  action: {
+    primary: 'purple.600',
+    secondary: 'purple.100',
+    danger: 'red.600',
+    success: 'green.600',
+    hover: 'purple.700',
+    pressed: 'purple.800',
+  },
+  special: {
+    focusRing: 'purple.600',
+    selectionBackground: 'purple.200',
+    selectionText: 'purple.900',
+  },
+}

@@ -1,0 +1,68 @@
+import type { Theme } from '../_schema'
+
+export const carbon: Theme = {
+  id: 'carbon',
+  name: 'Carbon',
+  mode: 'dark',
+  surface: {
+    background: 'gray.950',
+    card: 'gray.900',
+    sidebar: 'gray.950',
+    modal: 'gray.900',
+    overlay: 'gray.950/80',
+    hover: 'gray.800',
+    active: 'gray.700',
+    selected: 'blue.900',
+    disabled: 'gray.800',
+  },
+  text: {
+    primary: 'gray.100',
+    secondary: 'gray.400',
+    muted: 'gray.600',
+    inverse: 'gray.900',
+    disabled: 'gray.700',
+    link: 'blue.400',
+    success: 'green.400',
+    warning: 'orange.400',
+    error: 'red.400',
+  },
+  border: {
+    default: 'gray.800',
+    subtle: 'gray.800',
+    focus: 'blue.500',
+    error: 'red.500',
+    success: 'green.500',
+  },
+  icon: {
+    default: 'gray.400',
+    secondary: 'gray.600',
+    disabled: 'gray.700',
+    inverse: 'gray.900',
+  },
+  chart: {
+    primary: 'blue.400',
+    secondary: 'purple.400',
+    success: 'green.400',
+    warning: 'orange.400',
+    error: 'red.400',
+  },
+  status: {
+    success: 'green.400',
+    warning: 'orange.400',
+    error: 'red.400',
+    info: 'blue.400',
+  },
+  action: {
+    primary: 'blue.500',
+    secondary: 'gray.800',
+    danger: 'red.500',
+    success: 'green.500',
+    hover: 'blue.400',
+    pressed: 'blue.300',
+  },
+  special: {
+    focusRing: 'blue.500',
+    selectionBackground: 'blue.800',
+    selectionText: 'blue.200',
+  },
+}

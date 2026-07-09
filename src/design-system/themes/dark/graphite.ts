@@ -1,0 +1,68 @@
+import type { Theme } from '../_schema'
+
+export const graphite: Theme = {
+  id: 'graphite',
+  name: 'Graphite',
+  mode: 'dark',
+  surface: {
+    background: 'gray.900',
+    card: 'gray.800',
+    sidebar: 'gray.900',
+    modal: 'gray.800',
+    overlay: 'gray.900/80',
+    hover: 'gray.700',
+    active: 'gray.600',
+    selected: 'blue.900',
+    disabled: 'gray.800',
+  },
+  text: {
+    primary: 'gray.100',
+    secondary: 'gray.400',
+    muted: 'gray.500',
+    inverse: 'gray.900',
+    disabled: 'gray.600',
+    link: 'blue.400',
+    success: 'green.400',
+    warning: 'orange.400',
+    error: 'red.400',
+  },
+  border: {
+    default: 'gray.700',
+    subtle: 'gray.800',
+    focus: 'blue.400',
+    error: 'red.400',
+    success: 'green.400',
+  },
+  icon: {
+    default: 'gray.400',
+    secondary: 'gray.500',
+    disabled: 'gray.600',
+    inverse: 'gray.900',
+  },
+  chart: {
+    primary: 'blue.400',
+    secondary: 'purple.400',
+    success: 'green.400',
+    warning: 'orange.400',
+    error: 'red.400',
+  },
+  status: {
+    success: 'green.400',
+    warning: 'orange.400',
+    error: 'red.400',
+    info: 'blue.400',
+  },
+  action: {
+    primary: 'blue.400',
+    secondary: 'gray.700',
+    danger: 'red.400',
+    success: 'green.400',
+    hover: 'blue.300',
+    pressed: 'blue.200',
+  },
+  special: {
+    focusRing: 'blue.400',
+    selectionBackground: 'blue.800',
+    selectionText: 'blue.200',
+  },
+}

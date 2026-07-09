@@ -1,0 +1,68 @@
+import type { Theme } from '../_schema'
+
+export const minimalWhite: Theme = {
+  id: 'minimal-white',
+  name: 'Minimal White',
+  mode: 'light',
+  surface: {
+    background: 'gray.50',
+    card: 'white',
+    sidebar: 'white',
+    modal: 'white',
+    overlay: 'gray.900/50',
+    hover: 'gray.100',
+    active: 'gray.200',
+    selected: 'blue.50',
+    disabled: 'gray.100',
+  },
+  text: {
+    primary: 'gray.900',
+    secondary: 'gray.600',
+    muted: 'gray.400',
+    inverse: 'white',
+    disabled: 'gray.300',
+    link: 'blue.600',
+    success: 'green.600',
+    warning: 'orange.600',
+    error: 'red.600',
+  },
+  border: {
+    default: 'gray.200',
+    subtle: 'gray.100',
+    focus: 'blue.500',
+    error: 'red.500',
+    success: 'green.500',
+  },
+  icon: {
+    default: 'gray.600',
+    secondary: 'gray.400',
+    disabled: 'gray.300',
+    inverse: 'white',
+  },
+  chart: {
+    primary: 'blue.600',
+    secondary: 'purple.500',
+    success: 'green.500',
+    warning: 'orange.500',
+    error: 'red.500',
+  },
+  status: {
+    success: 'green.600',
+    warning: 'orange.600',
+    error: 'red.600',
+    info: 'blue.600',
+  },
+  action: {
+    primary: 'blue.600',
+    secondary: 'gray.200',
+    danger: 'red.600',
+    success: 'green.600',
+    hover: 'blue.700',
+    pressed: 'blue.800',
+  },
+  special: {
+    focusRing: 'blue.500',
+    selectionBackground: 'blue.200',
+    selectionText: 'blue.900',
+  },
+}
