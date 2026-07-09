@@ -58,7 +58,7 @@ export function Footer({ siteName, tenantCode, branding = {} }: FooterProps) {
   ];
 
   return (
-    <footer className="relative w-full bg-[#081418] text-paper overflow-hidden">
+    <footer className="relative w-full bg-[var(--ds-c-marketing-footer-background)] text-paper overflow-hidden">
       {/* === HERO CTA STRIP (cierre memorable) === */}
       <div className="border-b border-white/10 bg-gradient-to-b from-white/[0.04] to-transparent">
         <div className="max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-14 py-24 lg:py-32">
@@ -179,7 +179,7 @@ export function Footer({ siteName, tenantCode, branding = {} }: FooterProps) {
         {/* === Manifesto / Stat strip === */}
         <div className="border-t border-white/10 pt-10 mb-10">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-white/10 reveal-stagger">
-            <div className="bg-[#081418] p-6">
+            <div className="bg-[var(--ds-c-marketing-footer-stat-background)] p-6">
               <p className="font-display text-3xl lg:text-4xl font-light tracking-[-0.03em] text-paper tabular-nums">
                 22
               </p>
@@ -187,7 +187,7 @@ export function Footer({ siteName, tenantCode, branding = {} }: FooterProps) {
                 Años operando
               </p>
             </div>
-            <div className="bg-[#081418] p-6">
+            <div className="bg-[var(--ds-c-marketing-footer-stat-background)] p-6">
               <p className="font-display text-3xl lg:text-4xl font-light tracking-[-0.03em] text-paper tabular-nums">
                 312
               </p>
@@ -195,7 +195,7 @@ export function Footer({ siteName, tenantCode, branding = {} }: FooterProps) {
                 Plantas activas
               </p>
             </div>
-            <div className="bg-[#081418] p-6">
+            <div className="bg-[var(--ds-c-marketing-footer-stat-background)] p-6">
               <p className="font-display text-3xl lg:text-4xl font-light tracking-[-0.03em] text-paper tabular-nums">
                 3.8M
               </p>
@@ -203,8 +203,8 @@ export function Footer({ siteName, tenantCode, branding = {} }: FooterProps) {
                 CFM instalados
               </p>
             </div>
-            <div className="bg-[#081418] p-6">
-              <p className="font-display text-3xl lg:text-4xl font-light tracking-[-0.03em] text-[#7FC98F] tabular-nums">
+            <div className="bg-[var(--ds-c-marketing-footer-stat-background)] p-6">
+              <p className="font-display text-3xl lg:text-4xl font-light tracking-[-0.03em] text-[var(--ds-c-marketing-footer-stat-accent)] tabular-nums">
                 0
               </p>
               <p className="font-mono text-[10px] tracking-widest text-white/50 uppercase mt-2">
@@ -237,7 +237,7 @@ export function Footer({ siteName, tenantCode, branding = {} }: FooterProps) {
       <div className="border-t border-white/10">
         <div className="max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-14 h-10 flex items-center justify-between text-[10px] text-white/40 font-mono tracking-widest uppercase">
           <div className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#7FC98F] animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--ds-c-marketing-footer-stat-accent)] animate-pulse" />
             <span>Sistema operativo</span>
           </div>
           <div className="hidden sm:flex items-center gap-6">

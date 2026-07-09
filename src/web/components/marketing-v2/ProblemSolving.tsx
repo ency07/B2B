@@ -255,9 +255,9 @@ const CHALLENGES = [
 ];
 
 const accentColor = {
-  green: "#5FBE84",
-  blue: "#6699FF",
-  warm: "#E8896B",
+  green: "var(--ds-c-marketing-problem-solving-accent-1)",
+  blue: "var(--ds-c-marketing-problem-solving-accent-2)",
+  warm: "var(--ds-c-marketing-problem-solving-accent-3)",
 } as const;
 
 interface ProblemSolvingProps {
@@ -323,7 +323,7 @@ export function ProblemSolving({ content }: ProblemSolvingProps = {}) {
                 delay: idx * 0.1,
                 ease: [0.16, 1, 0.3, 1],
               }}
-              className="relative bg-[#0F2A30] text-paper p-8 lg:p-10 min-h-[420px] flex flex-col group overflow-hidden"
+              className="relative bg-[var(--ds-c-marketing-problem-solving-card-background)] text-paper p-8 lg:p-10 min-h-[420px] flex flex-col group overflow-hidden"
             >
               {/* Dot indicator en el accent color */}
               <div className="flex items-center justify-between mb-10">

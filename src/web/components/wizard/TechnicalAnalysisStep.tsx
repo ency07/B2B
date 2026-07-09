@@ -88,7 +88,7 @@ export function TechnicalAnalysisStep({
               </span>
             </div>
             <div className="mt-3 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#3F8F5F] animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--ds-c-wizard-technical-analysis-dot-background)] animate-pulse" />
               <span className="font-mono text-[9px] tracking-widest text-fg-muted uppercase">
                 Live
               </span>
@@ -147,7 +147,7 @@ export function TechnicalAnalysisStep({
                 </span>
               </div>
               {errors[dim.key] && (
-                <p className="mt-3 font-mono text-[10px] text-[#DC2626] tracking-wide">
+                <p className="mt-3 font-mono text-[10px] text-[var(--ds-c-wizard-technical-analysis-error-foreground)] tracking-wide">
                   {errors[dim.key]}
                 </p>
               )}
@@ -210,7 +210,7 @@ export function TechnicalAnalysisStep({
             className="w-full h-14 px-5 bg-paper-warm border-0 text-ink text-base placeholder:text-fg-muted focus:bg-paper focus:ring-1 focus:ring-ink focus:outline-none transition-colors font-sans"
           />
           {errors.ciudad && (
-            <p className="mt-3 font-mono text-[10px] text-[#DC2626] tracking-wide">
+            <p className="mt-3 font-mono text-[10px] text-[var(--ds-c-wizard-technical-analysis-error-foreground)] tracking-wide">
               {errors.ciudad}
             </p>
           )}

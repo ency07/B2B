@@ -15,10 +15,10 @@ interface HeroProps {
 }
 
 const SLIDE_STYLE = [
-  { accent: "#9FD9B4" },
-  { accent: "#6699FF" },
-  { accent: "#E8896B" },
-  { accent: "#8B7FD1" },
+  { accent: "var(--ds-c-marketing-hero-slide-accent-1)" },
+  { accent: "var(--ds-c-marketing-hero-slide-accent-2)" },
+  { accent: "var(--ds-c-marketing-hero-slide-accent-3)" },
+  { accent: "var(--ds-c-marketing-hero-slide-accent-4)" },
 ];
 
 const DEFAULT_SLIDES: HeroSlideContent[] = [
@@ -146,7 +146,7 @@ export function Hero({ tenantCode, branding = {} }: HeroProps) {
       {/* Franja meta superior */}
       <div className="relative z-10 flex items-center justify-between px-6 sm:px-10 lg:px-14 py-2.5 border-b border-white/10 font-mono text-[11px] tracking-[0.06em] text-white/55">
         <div className="flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ backgroundColor: "#5FBE84" }} />
+          <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ backgroundColor: "var(--ds-c-marketing-hero-slide-accent-1)" }} />
           <span>OPERATIVO · 22 AÑOS · 312 PLANTAS</span>
         </div>
         <div className="hidden md:block">
@@ -175,7 +175,7 @@ export function Hero({ tenantCode, branding = {} }: HeroProps) {
             <h1 className="font-display font-light tracking-[-0.03em] leading-[1.05] text-[clamp(36px,4.6vw,60px)] text-white mb-1.5">
               {slide.titleMain}
             </h1>
-            <h1 className="font-display italic font-light tracking-[-0.03em] leading-[1.05] text-[clamp(36px,4.6vw,60px)] mb-6" style={{ color: "#C9D6D9" }}>
+            <h1 className="font-display italic font-light tracking-[-0.03em] leading-[1.05] text-[clamp(36px,4.6vw,60px)] mb-6" style={{ color: "var(--ds-c-marketing-hero-slide-accent-1)" }}>
               {slide.titleItalic}
             </h1>
             <p className="text-[17px] leading-[1.6] text-white/80 max-w-md mb-9">{slide.desc}</p>
@@ -215,7 +215,7 @@ export function Hero({ tenantCode, branding = {} }: HeroProps) {
                 onClick={() => setIdx(i)}
                 aria-label={`Ir a la etapa ${i + 1}`}
                 className="h-1 transition-all duration-300"
-                style={{ width: i === idx ? 28 : 8, backgroundColor: i === idx ? "#fff" : "rgba(255,255,255,0.3)" }}
+                style={{ width: i === idx ? 28 : 8, backgroundColor: i === idx ? "var(--ds-c-marketing-hero-dot-active)" : "var(--ds-c-marketing-hero-dot-inactive)" }}
               />
             ))}
           </div>

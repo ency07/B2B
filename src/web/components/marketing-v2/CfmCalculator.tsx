@@ -39,7 +39,7 @@ function CircularGauge({
   max,
   label,
   unit,
-  color = "#7FC98F",
+  color = "var(--ds-c-marketing-cfm-gauge-color)",
 }: {
   value: number;
   max: number;
@@ -169,7 +169,7 @@ export function CfmCalculator() {
   return (
     <section
       id="calculadora"
-      className="relative w-full bg-[#0A181D] text-paper section-py overflow-hidden"
+      className="relative w-full bg-[var(--ds-c-marketing-cfm-background)] text-paper section-py overflow-hidden"
     >
       {/* Grid background técnico */}
       <div className="absolute inset-0 opacity-[0.04]">
@@ -219,14 +219,14 @@ export function CfmCalculator() {
           {/* === LEFT: Inputs como terminal === */}
           <form
             onSubmit={handleCalc}
-            className="lg:col-span-5 bg-[#0A181D] p-8 lg:p-10"
+            className="lg:col-span-5 bg-[var(--ds-c-marketing-cfm-terminal-background)] p-8 lg:p-10"
           >
             {/* Terminal header */}
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-[#E8896B]" />
-                <div className="w-2 h-2 rounded-full bg-[#E0C86B]" />
-                <div className="w-2 h-2 rounded-full bg-[#7FC98F]" />
+                <div className="w-2 h-2 rounded-full bg-[var(--ds-c-marketing-cfm-terminal-dot-red)]" />
+                <div className="w-2 h-2 rounded-full bg-[var(--ds-c-marketing-cfm-terminal-dot-yellow)]" />
+                <div className="w-2 h-2 rounded-full bg-[var(--ds-c-marketing-cfm-terminal-dot-green)]" />
               </div>
               <p className="font-mono text-[10px] tracking-widest text-white/40 uppercase">
                 input.terminal
@@ -276,7 +276,7 @@ export function CfmCalculator() {
                   className="w-full h-12 px-4 bg-white/5 text-paper text-sm font-sans focus-expand focus:bg-white/10 focus:ring-0 focus:outline-none transition-colors appearance-none cursor-pointer"
                 >
                   {ACTIVITIES.map((a) => (
-                    <option key={a.value} value={a.value} className="bg-[#0A181D] text-paper">
+                    <option key={a.value} value={a.value} className="bg-[var(--ds-c-marketing-cfm-terminal-background)] text-paper">
                       {a.label} · {a.ach} ACH
                     </option>
                   ))}
@@ -305,7 +305,7 @@ export function CfmCalculator() {
                 </div>
                 <div className="relative h-1 bg-white/10 overflow-hidden">
                   <motion.div
-                    className="absolute inset-y-0 left-0 bg-[#7FC98F]"
+                    className="absolute inset-y-0 left-0 bg-[var(--ds-c-marketing-cfm-progress)]"
                     style={{ width: `${isCalc ? progress : 0}%` }}
                     transition={{ duration: 0.1 }}
                   />
@@ -337,7 +337,7 @@ export function CfmCalculator() {
           </form>
 
           {/* === RIGHT: Output como dashboard === */}
-          <div className="lg:col-span-7 bg-[#0A181D] p-8 lg:p-10 flex flex-col">
+          <div className="lg:col-span-7 bg-[var(--ds-c-marketing-cfm-terminal-background)] p-8 lg:p-10 flex flex-col">
             <div className="flex items-center justify-between mb-8">
               <p className="font-mono text-[10px] tracking-widest text-white/40 uppercase">
                 Resultado
@@ -346,9 +346,9 @@ export function CfmCalculator() {
                 <span
                   className={`w-1.5 h-1.5 rounded-full ${
                     isCalc
-                      ? "bg-[#E0C86B] animate-pulse"
+                      ? "bg-[var(--ds-c-marketing-cfm-status-calculating)] animate-pulse"
                       : computed
-                        ? "bg-[#7FC98F]"
+                        ? "bg-[var(--ds-c-marketing-cfm-status-done)]"
                         : "bg-white/30"
                   }`}
                 />
@@ -366,7 +366,7 @@ export function CfmCalculator() {
                   max={100000}
                   label="Caudal"
                   unit="CFM"
-                  color="#7FC98F"
+                  color="var(--ds-c-marketing-cfm-gauge-color)"
                 />
               </div>
               <div className="flex flex-col items-center">
@@ -375,7 +375,7 @@ export function CfmCalculator() {
                   max={60}
                   label="Renovación"
                   unit="ACH"
-                  color="#6699FF"
+                  color="var(--ds-c-marketing-cfm-gauge-secondary)"
                 />
               </div>
               <div className="flex flex-col items-center">
@@ -384,7 +384,7 @@ export function CfmCalculator() {
                   max={50000}
                   label="Volumen"
                   unit="m³"
-                  color="#E0A05F"
+                  color="var(--ds-c-marketing-cfm-gauge-accent)"
                 />
               </div>
             </div>
@@ -434,7 +434,7 @@ export function CfmCalculator() {
                   window.location.href = `/wizard?${params.toString()}`;
                 }}
                 disabled={!computed}
-                className="group flex-1 h-12 bg-[#7FC98F] text-ink text-sm font-medium tracking-tight rounded-sm hover:bg-[#93d4a1] transition-colors flex items-center justify-center gap-2 disabled:opacity-30"
+                className="group flex-1 h-12 bg-[var(--ds-c-marketing-cfm-button-background)] text-ink text-sm font-medium tracking-tight rounded-sm hover:bg-[var(--ds-c-marketing-cfm-button-hover)] transition-colors flex items-center justify-center gap-2 disabled:opacity-30"
               >
                 <span>Cotizar con estos datos</span>
                 <ArrowRight

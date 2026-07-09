@@ -35,6 +35,8 @@ export { dashboardShellTokens } from './dashboard-shell'
 export { dashboardSidebarTokens } from './dashboard-sidebar'
 export { dashboardHeaderTokens } from './dashboard-header'
 export { themeCustomizerTokens } from './theme-customizer'
+export { marketingTokens } from './marketing'
+export { wizardTokens } from './wizard'
 
 import type { ComponentTokenRegistry } from './types'
 import { buttonTokens } from './button'
@@ -72,6 +74,8 @@ import { dashboardShellTokens } from './dashboard-shell'
 import { dashboardSidebarTokens } from './dashboard-sidebar'
 import { dashboardHeaderTokens } from './dashboard-header'
 import { themeCustomizerTokens } from './theme-customizer'
+import { marketingTokens } from './marketing'
+import { wizardTokens } from './wizard'
 
 export const componentTokenRegistry: ComponentTokenRegistry = {
   button: buttonTokens,
@@ -109,4 +113,6 @@ export const componentTokenRegistry: ComponentTokenRegistry = {
   dashboardSidebar: dashboardSidebarTokens,
   dashboardHeader: dashboardHeaderTokens,
   themeCustomizer: themeCustomizerTokens,
+  marketing: marketingTokens,
+  wizard: wizardTokens,
 }

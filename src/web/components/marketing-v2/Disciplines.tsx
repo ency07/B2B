@@ -33,7 +33,7 @@ const DISCIPLINES: Discipline[] = [
     ],
     stat: { value: "10-14", label: "días de diseño" },
     code: "ING-DSG-01",
-    color: "#3F8F5F", // verde
+    color: "var(--ds-c-marketing-discipline-color-1)",
     Icon: DraftingCompass,
   },
   {
@@ -51,7 +51,7 @@ const DISCIPLINES: Discipline[] = [
     ],
     stat: { value: "5-10", label: "días de montaje" },
     code: "INS-MNT-02",
-    color: "#C96A4A", // terracota
+    color: "var(--ds-c-marketing-discipline-color-2)",
     Icon: HardHat,
   },
   {
@@ -69,7 +69,7 @@ const DISCIPLINES: Discipline[] = [
     ],
     stat: { value: "12", label: "meses entre visitas" },
     code: "MTT-PRV-03",
-    color: "#3B6FD6", // azul
+    color: "var(--ds-c-marketing-discipline-color-3)",
     Icon: Wrench,
   },
   {
@@ -87,7 +87,7 @@ const DISCIPLINES: Discipline[] = [
     ],
     stat: { value: "100%", label: "normas AMCA" },
     code: "AUD-AMD-04",
-    color: "#8B7FD1", // violeta
+    color: "var(--ds-c-marketing-discipline-color-4)",
     Icon: ClipboardCheck,
   },
 ];

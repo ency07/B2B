@@ -85,7 +85,7 @@ export function CorporateInfoStep({ form, handleChange, errors, exampleDomain }:
               className="w-full h-14 px-5 bg-paper-warm border-0 text-ink text-base placeholder:text-fg-muted focus:bg-paper focus:ring-1 focus:ring-ink focus:outline-none transition-colors font-sans"
             />
             {errors.nombre && (
-              <p className="mt-3 font-mono text-[10px] text-[#DC2626] tracking-wide">
+              <p className="mt-3 font-mono text-[10px] text-[var(--ds-c-wizard-corporate-info-error-foreground)] tracking-wide">
                 {errors.nombre}
               </p>
             )}
@@ -103,7 +103,7 @@ export function CorporateInfoStep({ form, handleChange, errors, exampleDomain }:
               className="w-full h-14 px-5 bg-paper-warm border-0 text-ink text-base placeholder:text-fg-muted focus:bg-paper focus:ring-1 focus:ring-ink focus:outline-none transition-colors font-sans"
             />
             {errors.empresa && (
-              <p className="mt-3 font-mono text-[10px] text-[#DC2626] tracking-wide">
+              <p className="mt-3 font-mono text-[10px] text-[var(--ds-c-wizard-corporate-info-error-foreground)] tracking-wide">
                 {errors.empresa}
               </p>
             )}
@@ -121,7 +121,7 @@ export function CorporateInfoStep({ form, handleChange, errors, exampleDomain }:
               className="w-full h-14 px-5 bg-paper-warm border-0 text-ink text-base placeholder:text-fg-muted focus:bg-paper focus:ring-1 focus:ring-ink focus:outline-none transition-colors font-sans"
             />
             {errors.email && (
-              <p className="mt-3 font-mono text-[10px] text-[#DC2626] tracking-wide">
+              <p className="mt-3 font-mono text-[10px] text-[var(--ds-c-wizard-corporate-info-error-foreground)] tracking-wide">
                 {errors.email}
               </p>
             )}
@@ -139,7 +139,7 @@ export function CorporateInfoStep({ form, handleChange, errors, exampleDomain }:
               className="w-full h-14 px-5 bg-paper-warm border-0 text-ink text-base placeholder:text-fg-muted focus:bg-paper focus:ring-1 focus:ring-ink focus:outline-none transition-colors font-sans font-mono"
             />
             {errors.telefono && (
-              <p className="mt-3 font-mono text-[10px] text-[#DC2626] tracking-wide">
+              <p className="mt-3 font-mono text-[10px] text-[var(--ds-c-wizard-corporate-info-error-foreground)] tracking-wide">
                 {errors.telefono}
               </p>
             )}
@@ -184,9 +184,9 @@ export function CorporateInfoStep({ form, handleChange, errors, exampleDomain }:
       </div>
 
       {isPublicEmail && (
-        <div className="border-l-2 border-[#C96A4A] bg-[#C96A4A]/5 p-6 flex items-start gap-4">
+        <div className="border-l-2 border-[var(--ds-c-wizard-corporate-info-warning-border)] bg-[color-mix(in srgb,var(--ds-c-wizard-corporate-info-warning-background) 5%,transparent)] p-6 flex items-start gap-4">
           <AlertTriangle
-            className="w-4 h-4 text-[#C96A4A] mt-0.5 shrink-0"
+            className="w-4 h-4 text-[var(--ds-c-wizard-corporate-info-warning-icon)] mt-0.5 shrink-0"
             strokeWidth={1.5}
           />
           <div>

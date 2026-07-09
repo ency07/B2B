@@ -334,9 +334,9 @@ function extractFromCatalog(
 }
 
 const statusColor: Record<CapacityItem["status"], string> = {
-  DISPONIBLE: "#3F8F5F",
-  "BAJO PEDIDO": "#C96A4A",
-  "SERIE ESPECIAL": "#3B6FD6",
+  DISPONIBLE: "var(--ds-c-marketing-engineering-status-success)",
+  "BAJO PEDIDO": "var(--ds-c-marketing-engineering-status-warning)",
+  "SERIE ESPECIAL": "var(--ds-c-marketing-engineering-status-info)",
 };
 
 interface Props {
@@ -488,7 +488,7 @@ function TechnicalDetailModal({
     };
   }, [item, onClose]);
 
-  const accent = item ? statusColor[item.status] : "#3FB950";
+  const accent = item ? statusColor[item.status] : "var(--ds-c-marketing-engineering-status-success)";
 
   return (
     <AnimatePresence>

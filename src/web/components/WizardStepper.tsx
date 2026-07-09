@@ -566,7 +566,7 @@ Solicito una cotización formal y confirmación de disponibilidad técnica. Grac
         <div className="max-w-[1600px] mx-auto px-6 sm:px-10 lg:px-14 h-10 flex items-center justify-between font-mono text-[10px] tracking-widest text-fg-muted uppercase">
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#3F8F5F] animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--ds-c-wizard-stepper-dot-background)] animate-pulse" />
               <span>Cotizador en línea</span>
             </span>
             <span className="hidden md:inline">Preingeniería · Cálculo técnico</span>
@@ -636,12 +636,12 @@ Solicito una cotización formal y confirmación de disponibilidad técnica. Grac
                   Configurando
                 </span>
                 {qProduct && (
-                  <span className="font-mono text-[11px] tracking-widest text-[#3F8F5F] uppercase font-medium">
+                  <span className="font-mono text-[11px] tracking-widest text-[var(--ds-c-wizard-stepper-completed-foreground)] uppercase font-medium">
                     {qProduct}
                   </span>
                 )}
                 {qServicio && !qProduct && (
-                  <span className="font-mono text-[11px] tracking-widest text-[#3F8F5F] uppercase font-medium">
+                  <span className="font-mono text-[11px] tracking-widest text-[var(--ds-c-wizard-stepper-completed-foreground)] uppercase font-medium">
                     Servicio {qServicio}
                   </span>
                 )}
@@ -718,7 +718,7 @@ Solicito una cotización formal y confirmación de disponibilidad técnica. Grac
                           isActive
                             ? "text-ink font-medium"
                             : isCompleted
-                              ? "text-[#3F8F5F] font-medium"
+                              ? "text-[var(--ds-c-wizard-stepper-completed-foreground)] font-medium"
                               : "text-fg-muted"
                         }`}
                       >
@@ -726,7 +726,7 @@ Solicito una cotización formal y confirmación de disponibilidad técnica. Grac
                       </span>
                       {isCompleted && (
                         <Check
-                          className="w-3.5 h-3.5 text-[#3F8F5F]"
+                          className="w-3.5 h-3.5 text-[var(--ds-c-wizard-stepper-completed-foreground)]"
                           strokeWidth={2.5}
                         />
                       )}
@@ -756,7 +756,7 @@ Solicito una cotización formal y confirmación de disponibilidad técnica. Grac
                         isActive
                           ? "bg-ink"
                           : isCompleted
-                            ? "bg-[#3F8F5F]"
+                            ? "bg-[var(--ds-c-wizard-stepper-dot-background)]"
                             : "bg-transparent"
                       }`}
                     />
@@ -774,9 +774,9 @@ Solicito una cotización formal y confirmación de disponibilidad técnica. Grac
           className="px-6 sm:px-10 lg:px-20 xl:px-32 py-16 lg:py-24 min-h-[480px]"
         >
           {errors.global && (
-            <div className="mb-6 p-4 border-l-2 border-[#DC2626] bg-[#DC2626]/5 flex items-start gap-3">
+            <div className="mb-6 p-4 border-l-2 border-[var(--ds-c-wizard-stepper-error-background)] bg-[color-mix(in srgb,var(--ds-c-wizard-stepper-error-background) 5%,transparent)] flex items-start gap-3">
               <AlertCircle
-                className="w-4 h-4 text-[#DC2626] mt-0.5 shrink-0"
+                className="w-4 h-4 text-[var(--ds-c-wizard-stepper-error-foreground)] mt-0.5 shrink-0"
                 strokeWidth={1.5}
               />
               <p className="text-sm text-ink font-sans">{errors.global}</p>

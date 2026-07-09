@@ -66,13 +66,13 @@ export function PortalLoginFeature() {
   const companyName = defaults.nombre_comercial;
 
   return (
-    <div className="min-h-screen bg-[#080b12] flex flex-col items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-[var(--ds-c-marketing-cfm-background)] flex flex-col items-center justify-center p-4 relative overflow-hidden">
       {/* Background grid */}
       <div
         className="absolute inset-0 opacity-[0.03]"
         style={{
           backgroundImage:
-            "linear-gradient(#60a5fa 1px, transparent 1px), linear-gradient(90deg, #60a5fa 1px, transparent 1px)",
+            "linear-gradient(var(--ds-c-marketing-hero-slide-accent-2) 1px, transparent 1px), linear-gradient(90deg, var(--ds-c-marketing-hero-slide-accent-2) 1px, transparent 1px)",
           backgroundSize: "40px 40px",
         }}
       />

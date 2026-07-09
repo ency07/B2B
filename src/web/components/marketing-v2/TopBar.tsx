@@ -135,7 +135,7 @@ export function TopBar({ siteName, logoUrl, tenantCode }: TopBarProps) {
                   <span
                     className={`
                       absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full
-                      bg-[#7FC98F]
+                      bg-[var(--ds-c-marketing-top-bar-dot)]
                       animate-pulse
                     `}
                   />
