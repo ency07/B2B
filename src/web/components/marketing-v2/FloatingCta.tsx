@@ -71,10 +71,10 @@ export function FloatingCta({ tenantCode }: FloatingCtaProps) {
         >
           <a
             href={`/wizard?tenant=${tenantCode}`}
-            className="group inline-flex items-center gap-3 h-12 pl-5 pr-2 bg-ink text-paper text-sm font-medium tracking-tight rounded-sm shadow-2xl hover:bg-ink-soft transition-all duration-200"
+            className="group inline-flex items-center gap-3 h-12 pl-5 pr-2 bg-foreground text-background text-sm font-medium tracking-tight rounded-lg shadow-2xl hover:opacity-90 transition-all duration-200"
           >
             <span>Iniciar Cotización</span>
-            <span className="w-8 h-8 rounded-sm bg-paper text-ink flex items-center justify-center group-hover:translate-x-0.5 transition-transform duration-200">
+            <span className="w-8 h-8 rounded-lg bg-background text-foreground flex items-center justify-center group-hover:translate-x-0.5 transition-transform duration-200">
               <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.5} />
             </span>
           </a>
