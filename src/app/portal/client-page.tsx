@@ -43,7 +43,7 @@ import { Badge } from "@/platform/ui/badge";
 import { Skeleton } from "@/platform/ui/skeleton";
 import { getTenantConfig } from "@/platform/tenant/tenant";
 import { getTenantBranding } from "@/web/actions/branding";
-import { ThemeCustomizer } from "@/platform/components/theme-customizer";
+import { ThemeToggle } from "@/platform/components/theme-toggle";
 import {
   Sheet,
   SheetContent,
@@ -59,8 +59,10 @@ import {
   type ClientPayment,
   type ClientSupportTicket,
   type ClientSupportMessage,
+  type ClientRequirement,
 } from "@/portal/actions/portal";
 import { ClientProfileModal } from "@/portal/components/ClientProfileModal";
+import { NewRequirementSheet } from "@/portal/components/NewRequirementSheet";
 import { capture } from "@/lib/analytics";
 
 interface PortalClientInfo {
@@ -109,6 +111,7 @@ export default function CustomerPortal({
   tickets: initialTickets = [],
   messages: initialMessages = [],
   documents: initialDocs = [],
+  requirements: initialRequirements = [],
   previewClientId = null,
   isPlatformAdmin = false,
   isClientContact = false,
@@ -121,6 +124,7 @@ export default function CustomerPortal({
   tickets?: ClientSupportTicket[];
   messages?: ClientSupportMessage[];
   documents?: Array<{ id: string; name: string; type: string; url: string }>;
+  requirements?: ClientRequirement[];
   previewClientId?: string | null;
   isPlatformAdmin?: boolean;
   isClientContact?: boolean;
@@ -132,9 +136,13 @@ export default function CustomerPortal({
 
   // States
   const [isLoading, setIsLoading] = React.useState(false);
-  const [activeSection, setActiveSection] = React.useState<"ots" | "invoices" | "docs" | "tickets">("ots");
+  const [activeSection, setActiveSection] = React.useState<"ots" | "invoices" | "docs" | "tickets" | "requirements">("ots");
   const [brandingState, setBrandingState] = React.useState<any>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = React.useState(false);
+  const [isRequirementSheetOpen, setIsRequirementSheetOpen] = React.useState(false);
+  const [requirements, setRequirements] = React.useState<ClientRequirement[]>(initialRequirements);
+  const [invoiceFilter, setInvoiceFilter] = React.useState<"ALL" | "PENDIENTE" | "PAGADA">("ALL");
+  const [isTicketSheetOpen, setIsTicketSheetOpen] = React.useState(false);
 
   // Theme controlled by next-themes via platform/providers/theme-provider
 
@@ -501,6 +509,7 @@ export default function CustomerPortal({
   const unpaidTotal = invoices.reduce((sum, inv) => sum + (inv.status === "PENDIENTE" ? inv.total - inv.paid : 0), 0);
   const activeOtsCount = ots.filter(o => o.status !== "DESPACHO").length;
   const activeTicketsCount = tickets.filter(t => t.status !== "RESUELTO").length;
+  const openRequirementsCount = requirements.filter(r => !["CERRADO", "CANCELADO"].includes(r.status)).length;
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans relative overflow-hidden">
@@ -550,31 +559,34 @@ export default function CustomerPortal({
       )}
 
       {/* Navigation Header */}
-      <header className="border-b border-border bg-card/85 backdrop-blur-md sticky top-0 z-40 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center font-bold text-white font-mono shadow-md">
+      <header className="border-b border-border bg-background/95 backdrop-blur-xl sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+
+          {/* Brand identity */}
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center font-bold text-primary-foreground font-mono text-xs shadow-sm shrink-0">
               VT
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest">PORTAL CLIENTES</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              </div>
-              <span className="font-bold text-sm text-foreground tracking-tight block leading-tight mt-0.5">{config.name}</span>
+            <div className="hidden sm:block">
+              <p className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest leading-none">Portal de Clientes</p>
+              <p className="text-sm font-semibold text-foreground tracking-tight leading-tight mt-0.5">{config.name}</p>
+            </div>
+            <div className="flex items-center gap-1.5 pl-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              <span className="text-[9px] font-mono text-emerald-600 dark:text-emerald-400 hidden lg:block">ACTIVO</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-6">
-            <ThemeCustomizer storageKeyPrefix="portal" />
-            <div className="flex items-center gap-4 text-xs font-mono">
-              <div className="text-right hidden sm:block">
-                <span className="text-[10px] text-muted-foreground block leading-none">Cuenta Certificada</span>
-                <span className="text-foreground font-bold leading-normal">{clientName}</span>
-              </div>
+          {/* Right side controls */}
+          <div className="flex items-center gap-2">
+
+            {/* Client name chip */}
+            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-muted/40 text-xs shrink-0">
+              <Building className="w-3 h-3 text-muted-foreground shrink-0" />
+              <span className="font-semibold text-foreground truncate max-w-[180px]">{clientName}</span>
             </div>
 
-            {/* Test controls HUD (solo visible en desarrollo) */}
+            {/* Dev HUD (solo desarrollo) */}
             {process.env.NODE_ENV === 'development' && (
               <div className="flex items-center border border-border/80 bg-background/50 rounded-lg p-1 gap-1">
                 <button
@@ -594,6 +606,9 @@ export default function CustomerPortal({
               </div>
             )}
 
+            {/* Toggle tema */}
+            <ThemeToggle />
+
             {/* Perfil (solo clientes reales) */}
             {isClientContact && (
               <button
@@ -601,23 +616,23 @@ export default function CustomerPortal({
                 onClick={() => setIsProfileModalOpen(true)}
                 aria-label="Mi perfil"
                 title="Mi perfil"
-                className="inline-flex items-center gap-1.5 text-xs font-mono text-muted-foreground hover:text-foreground border border-border/80 bg-background/50 hover:bg-background/80 rounded-lg px-2.5 py-1.5 cursor-pointer transition-all"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-border/80 bg-background hover:bg-muted/50 rounded-lg px-2.5 py-1.5 cursor-pointer transition-all"
               >
                 <User className="w-3.5 h-3.5" strokeWidth={1.5} />
-                <span className="hidden sm:inline">Mi Perfil</span>
+                <span className="hidden sm:inline">Perfil</span>
               </button>
             )}
 
-            {/* Logout */}
+            {/* Cerrar sesión */}
             <button
               type="button"
               onClick={handleLogout}
               aria-label="Cerrar sesión"
               title="Cerrar sesión"
-              className="inline-flex items-center gap-1.5 text-xs font-mono text-muted-foreground hover:text-foreground border border-border/80 bg-background/50 hover:bg-background/80 rounded-lg px-2.5 py-1.5 cursor-pointer transition-all"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-border/80 bg-background hover:bg-muted/50 rounded-lg px-2.5 py-1.5 cursor-pointer transition-all"
             >
               <LogOut className="w-3.5 h-3.5" strokeWidth={1.5} />
-              <span className="hidden sm:inline">Cerrar sesión</span>
+              <span className="hidden sm:inline">Salir</span>
             </button>
           </div>
         </div>
@@ -627,81 +642,181 @@ export default function CustomerPortal({
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 relative z-10">
         
         {/* Welcome bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border/50">
-          <div>
-            <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-1">
-              Portal de clientes · {clientNit}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-8 border-b border-border/50">
+          <div className="space-y-1">
+            <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
+              Portal corporativo · NIT {clientNit}
             </p>
-            <h1 className="text-xl font-semibold text-foreground tracking-tight">
-              Bienvenido, {clientName}
+            <h1 className="text-2xl font-semibold text-foreground tracking-tight">
+              Bienvenido, <span className="text-primary">{clientName}</span>
             </h1>
+            <p className="text-sm text-muted-foreground">
+              Seguimiento de operaciones, facturación y soporte técnico B2B.
+            </p>
           </div>
-          <Button
-            ref={chatToggleRef}
-            onClick={() => { setIsChatOpen(prev => { capture("portal_chat_toggled", { open: !prev }); return !prev; }); }}
-            className="bg-primary hover:bg-primary/90 text-white text-xs font-medium flex items-center gap-2 px-4 py-2 rounded-lg shadow-sm transition-all cursor-pointer self-start sm:self-auto"
-          >
-            <MessageSquare className="w-3.5 h-3.5" />
-            {isChatOpen ? "Cerrar soporte" : "Soporte técnico"}
-          </Button>
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <Button
+              onClick={() => { setIsRequirementSheetOpen(true); capture("portal_requirement_sheet_opened", {}); }}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium flex items-center gap-2 px-4 py-2.5 rounded-lg shadow-sm transition-all cursor-pointer shrink-0"
+            >
+              <PlusCircle className="w-3.5 h-3.5" />
+              Solicitar servicio
+            </Button>
+            <Button
+              ref={chatToggleRef}
+              variant="outline"
+              onClick={() => { setIsChatOpen(prev => { capture("portal_chat_toggled", { open: !prev }); return !prev; }); }}
+              className="text-xs font-medium flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all cursor-pointer shrink-0"
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              {isChatOpen ? "Cerrar soporte" : "Soporte"}
+            </Button>
+          </div>
         </div>
 
-        {/* Metric cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="rounded-xl border border-border bg-card p-5">
-            <p className="text-xs text-muted-foreground mb-3">OTs en producción</p>
-            <p className="text-2xl font-semibold text-foreground font-mono tabular-nums">{activeOtsCount}</p>
-            <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" />
+        {/* Metric cards — 4 cols, todas navegables */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+
+          {/* OTs en producción */}
+          <div
+            onClick={() => setActiveSection("ots")}
+            className="rounded-xl border border-border bg-card p-5 relative overflow-hidden hover:border-primary/40 hover:shadow-sm transition-all cursor-pointer group"
+          >
+            <div className="flex items-start justify-between mb-4">
+              <p className="text-xs font-medium text-muted-foreground">OTs en producción</p>
+              <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
+                <Clock className="w-3.5 h-3.5 text-primary" />
+              </div>
+            </div>
+            <p className="text-3xl font-bold text-foreground font-mono tabular-nums leading-none">{activeOtsCount}</p>
+            <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block shrink-0" />
               {activeOtsCount === 1 ? "orden activa" : "órdenes activas"}
             </p>
           </div>
-          <div className="rounded-xl border border-border bg-card p-5">
-            <p className="text-xs text-muted-foreground mb-3">Saldo pendiente</p>
-            <p className={`text-2xl font-semibold font-mono tabular-nums ${unpaidTotal > 0 ? "text-destructive" : "text-emerald-500"}`}>
+
+          {/* Saldo pendiente */}
+          <div
+            onClick={() => setActiveSection("invoices")}
+            className={`rounded-xl border bg-card p-5 relative overflow-hidden hover:shadow-sm transition-all cursor-pointer group ${unpaidTotal > 0 ? "border-destructive/30 hover:border-destructive/50" : "border-border hover:border-emerald-500/40"}`}
+          >
+            <div className="flex items-start justify-between mb-4">
+              <p className="text-xs font-medium text-muted-foreground">Saldo pendiente</p>
+              <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors ${unpaidTotal > 0 ? "bg-destructive/10 group-hover:bg-destructive/20" : "bg-emerald-500/10 group-hover:bg-emerald-500/20"}`}>
+                <CreditCard className={`w-3.5 h-3.5 ${unpaidTotal > 0 ? "text-destructive" : "text-emerald-500"}`} />
+              </div>
+            </div>
+            <p className={`text-3xl font-bold font-mono tabular-nums leading-none ${unpaidTotal > 0 ? "text-destructive" : "text-emerald-500"}`}>
               {formatCurrency(unpaidTotal)}
             </p>
-            <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1.5">
-              <span className={`w-1.5 h-1.5 rounded-full inline-block ${unpaidTotal > 0 ? "bg-destructive" : "bg-emerald-500"}`} />
+            <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1.5">
+              <span className={`w-1.5 h-1.5 rounded-full inline-block shrink-0 ${unpaidTotal > 0 ? "bg-destructive" : "bg-emerald-500"}`} />
               {unpaidTotal > 0 ? "facturas por pagar" : "cuenta al día"}
             </p>
           </div>
-          <div className="rounded-xl border border-border bg-card p-5">
-            <p className="text-xs text-muted-foreground mb-3">Tickets de soporte</p>
-            <p className="text-2xl font-semibold text-foreground font-mono tabular-nums">{activeTicketsCount}</p>
-            <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1.5">
-              <span className={`w-1.5 h-1.5 rounded-full inline-block ${activeTicketsCount > 0 ? "bg-amber-500" : "bg-muted-foreground/40"}`} />
+
+          {/* Tickets de soporte */}
+          <div
+            onClick={() => setActiveSection("tickets")}
+            className={`rounded-xl border bg-card p-5 relative overflow-hidden hover:shadow-sm transition-all cursor-pointer group ${activeTicketsCount > 0 ? "border-amber-500/30 hover:border-amber-500/50" : "border-border hover:border-border/80"}`}
+          >
+            <div className="flex items-start justify-between mb-4">
+              <p className="text-xs font-medium text-muted-foreground">Tickets de soporte</p>
+              <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors ${activeTicketsCount > 0 ? "bg-amber-500/10 group-hover:bg-amber-500/20" : "bg-muted"}`}>
+                <MessageSquare className={`w-3.5 h-3.5 ${activeTicketsCount > 0 ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`} />
+              </div>
+            </div>
+            <p className="text-3xl font-bold text-foreground font-mono tabular-nums leading-none">{activeTicketsCount}</p>
+            <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1.5">
+              <span className={`w-1.5 h-1.5 rounded-full inline-block shrink-0 ${activeTicketsCount > 0 ? "bg-amber-500" : "bg-muted-foreground/40"}`} />
               {activeTicketsCount > 0 ? "casos abiertos" : "sin casos activos"}
             </p>
           </div>
+
+          {/* Requerimientos activos */}
+          <div
+            onClick={() => setActiveSection("requirements")}
+            className={`rounded-xl border bg-card p-5 relative overflow-hidden hover:shadow-sm transition-all cursor-pointer group ${openRequirementsCount > 0 ? "border-primary/30 hover:border-primary/50" : "border-border hover:border-border/80"}`}
+          >
+            <div className="flex items-start justify-between mb-4">
+              <p className="text-xs font-medium text-muted-foreground">Requerimientos</p>
+              <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors ${openRequirementsCount > 0 ? "bg-primary/10 group-hover:bg-primary/20" : "bg-muted"}`}>
+                <PlusCircle className={`w-3.5 h-3.5 ${openRequirementsCount > 0 ? "text-primary" : "text-muted-foreground"}`} />
+              </div>
+            </div>
+            <p className="text-3xl font-bold text-foreground font-mono tabular-nums leading-none">{openRequirementsCount}</p>
+            <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1.5">
+              <span className={`w-1.5 h-1.5 rounded-full inline-block shrink-0 ${openRequirementsCount > 0 ? "bg-primary" : "bg-muted-foreground/40"}`} />
+              {openRequirementsCount > 0 ? "solicitudes activas" : "sin solicitudes"}
+            </p>
+          </div>
+
         </div>
 
-        {/* Layout split with chat sidebar option */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
-          {/* LEFT/CENTER WORKSPACE (9 cols if chat is open, 12 if closed) */}
-          <div className={`space-y-6 transition-all duration-300 ${isChatOpen ? "lg:col-span-8" : "lg:col-span-12"}`}>
-            
+        {/* Activity feed — últimos eventos relevantes */}
+        {(ots.length > 0 || invoices.some(i => i.status === "PENDIENTE") || requirements.some(r => r.status === "NUEVO")) && (
+          <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
+            <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider shrink-0 hidden sm:block">Reciente:</span>
+            {ots[0] && (
+              <button onClick={() => setActiveSection("ots")} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border border-border bg-background hover:bg-muted/40 text-xs transition-colors shrink-0 cursor-pointer">
+                <Clock className="w-3 h-3 text-primary shrink-0" />
+                <span className="font-mono font-medium">{ots[0].code}</span>
+                <span className="text-muted-foreground text-[10px]">· {ots[0].status}</span>
+              </button>
+            )}
+            {invoices.find(i => i.status === "PENDIENTE") && (() => {
+              const inv = invoices.find(i => i.status === "PENDIENTE")!;
+              return (
+                <button onClick={() => setActiveSection("invoices")} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border border-destructive/30 bg-background hover:bg-destructive/5 text-xs transition-colors shrink-0 cursor-pointer">
+                  <CreditCard className="w-3 h-3 text-destructive shrink-0" />
+                  <span className="font-mono font-medium">{inv.code}</span>
+                  <span className="text-destructive text-[10px]">· Pendiente</span>
+                </button>
+              );
+            })()}
+            {requirements.find(r => r.status === "NUEVO") && (() => {
+              const req = requirements.find(r => r.status === "NUEVO")!;
+              return (
+                <button onClick={() => setActiveSection("requirements")} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border border-primary/20 bg-background hover:bg-primary/5 text-xs transition-colors shrink-0 cursor-pointer">
+                  <PlusCircle className="w-3 h-3 text-primary shrink-0" />
+                  <span className="font-mono font-medium">{req.code}</span>
+                  <span className="text-muted-foreground text-[10px]">· Recibido</span>
+                </button>
+              );
+            })()}
+          </div>
+        )}
+
+        {/* Main workspace */}
+        <div className="space-y-6">
+
             {/* Tabbed Navigation */}
-            <div role="tablist" className="flex border-b border-border pb-px text-xs font-mono overflow-x-auto gap-2">
+            <div role="tablist" className="flex border-b border-border pb-px overflow-x-auto gap-1">
               {[
-                { id: "ots", label: "Taller en Vivo (OTs)" },
-                { id: "invoices", label: "Facturas y Recibos" },
-                { id: "docs", label: "Planos y Archivos CAD" },
-                { id: "tickets", label: "Garantías y soporte técnico" }
-              ].map((tab) => (
+                { id: "ots",          label: "Taller en Vivo",       Icon: Clock },
+                { id: "requirements", label: "Requerimientos",        Icon: PlusCircle, badge: openRequirementsCount },
+                { id: "invoices",     label: "Facturas y Pagos",      Icon: CreditCard, badge: invoices.filter(i => i.status === "PENDIENTE").length },
+                { id: "docs",         label: "Documentos Técnicos",   Icon: FileText },
+                { id: "tickets",      label: "Soporte y Garantías",   Icon: ShieldCheck, badge: activeTicketsCount },
+              ].map(({ id, label, Icon, badge }) => (
                 <button
-                  key={tab.id}
+                  key={id}
                   role="tab"
-                  aria-selected={activeSection === tab.id}
-                  onClick={() => { setActiveSection(tab.id as any); capture("portal_tab_viewed", { tab: tab.id }); }}
-                  className={`pb-3 px-4 font-bold border-b-2 tracking-wide transition-all cursor-pointer whitespace-nowrap ${
-                    activeSection === tab.id 
-                      ? "border-primary text-primary" 
-                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  aria-selected={activeSection === id}
+                  onClick={() => { setActiveSection(id as any); capture("portal_tab_viewed", { tab: id }); }}
+                  className={`pb-3 px-4 text-sm font-medium border-b-2 tracking-normal transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${
+                    activeSection === id
+                      ? "border-primary text-foreground"
+                      : "border-transparent text-muted-foreground hover:text-foreground hover:border-border/60"
                   }`}
                 >
-                  {tab.label}
+                  <Icon className="w-3.5 h-3.5 shrink-0" />
+                  {label}
+                  {badge !== undefined && badge > 0 && (
+                    <span className="ml-0.5 min-w-[18px] h-[18px] rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center px-1">
+                      {badge}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -710,6 +825,109 @@ export default function CustomerPortal({
             <div className="rounded-2xl border border-border bg-card p-6 sm:p-8 min-h-[480px] shadow-sm">
               
               {/* ---------------------------------------------------- */}
+              {/* ---------------------------------------------------- */}
+              {/* SECTION: REQUERIMIENTOS */}
+              {/* ---------------------------------------------------- */}
+              {activeSection === "requirements" && (
+                <div className="space-y-6 animate-in fade-in duration-300">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border/60 pb-4">
+                    <div>
+                      <h3 className="text-lg font-bold text-foreground">Mis Requerimientos</h3>
+                      <p className="text-xs text-muted-foreground mt-1 font-sans">
+                        Solicitudes de servicio, compra o fabricación enviadas desde el portal.
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() => setIsRequirementSheetOpen(true)}
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer shrink-0"
+                    >
+                      <PlusCircle className="w-3.5 h-3.5" />
+                      Nuevo requerimiento
+                    </Button>
+                  </div>
+
+                  {requirements.length === 0 ? (
+                    <div className="border border-dashed border-border rounded-xl p-12 text-center space-y-4">
+                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                        <PlusCircle className="w-6 h-6 text-primary" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold text-foreground">Aún no tienes requerimientos</p>
+                        <p className="text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed">
+                          Usa el botón de arriba para solicitar la fabricación de un equipo, una compra, mantenimiento o cualquier otro servicio.
+                        </p>
+                      </div>
+                      <Button
+                        onClick={() => setIsRequirementSheetOpen(true)}
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium px-5 py-2 rounded-lg cursor-pointer"
+                      >
+                        Solicitar servicio ahora
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {requirements.map((req) => {
+                        const statusConfig: Record<string, { label: string; cls: string }> = {
+                          NUEVO:        { label: "Recibido",              cls: "bg-sky-500/10 text-sky-600 dark:text-sky-400" },
+                          EN_REVISION:  { label: "En revisión técnica",   cls: "bg-violet-500/10 text-violet-600 dark:text-violet-400" },
+                          DIAGNOSTICO:  { label: "En diagnóstico",        cls: "bg-amber-500/10 text-amber-600 dark:text-amber-400" },
+                          COTIZACION:   { label: "Cotización en proceso",  cls: "bg-orange-500/10 text-orange-600 dark:text-orange-400" },
+                          APROBACION:   { label: "Lista para aprobar",     cls: "bg-teal-500/10 text-teal-600 dark:text-teal-400" },
+                          OT_GENERADA:  { label: "Orden de trabajo creada",cls: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
+                          EJECUCION:    { label: "En ejecución",           cls: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
+                          CERRADO:      { label: "Completado",             cls: "bg-muted text-muted-foreground" },
+                          CANCELADO:    { label: "Cancelado",              cls: "bg-destructive/10 text-destructive" },
+                        };
+                        const priorityConfig: Record<string, string> = {
+                          LOW:      "text-muted-foreground bg-muted",
+                          MEDIUM:   "text-sky-600 dark:text-sky-400 bg-sky-500/10",
+                          HIGH:     "text-amber-600 dark:text-amber-400 bg-amber-500/10",
+                          CRITICAL: "text-destructive bg-destructive/10",
+                        };
+                        const categoryLabel: Record<string, string> = {
+                          FABRICACION:  "Fabricación",
+                          VENTA:        "Compra",
+                          MANTENIMIENTO:"Mantenimiento",
+                          REPARACION:   "Reparación",
+                          OTRO:         "Otro",
+                        };
+                        const st = statusConfig[req.status] ?? { label: req.status, cls: "bg-muted text-muted-foreground" };
+                        const pc = priorityConfig[req.priority] ?? "bg-muted text-muted-foreground";
+                        return (
+                          <div key={req.id} className="border border-border/80 bg-background/40 rounded-xl p-5 space-y-3 hover:border-primary/30 transition-colors">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="space-y-1 min-w-0">
+                                <span className="text-xs font-mono font-bold text-primary">{req.code}</span>
+                                <p className="text-sm font-semibold text-foreground leading-tight">{req.title}</p>
+                              </div>
+                              <span className={`shrink-0 text-[10px] font-semibold px-2.5 py-1 rounded-full ${st.cls}`}>
+                                {st.label}
+                              </span>
+                            </div>
+                            {req.description && (
+                              <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                                {req.description}
+                              </p>
+                            )}
+                            <div className="flex items-center gap-2 flex-wrap pt-1 border-t border-border/40">
+                              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${pc}`}>
+                                {req.priority}
+                              </span>
+                              <span className="text-[10px] font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                                {categoryLabel[req.category] ?? req.category}
+                              </span>
+                              <span className="text-[10px] font-mono text-muted-foreground ml-auto">
+                                {new Date(req.createdAt).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" })}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* SECTION: TALLER EN VIVO OTs */}
               {/* ---------------------------------------------------- */}
               {activeSection === "ots" && (
@@ -725,41 +943,67 @@ export default function CustomerPortal({
               {/* ---------------------------------------------------- */}
               {/* SECTION: BILLING & PAYMENTS */}
               {/* ---------------------------------------------------- */}
-              {activeSection === "invoices" && (
-                <div className="space-y-8 animate-in fade-in duration-300">
+              {activeSection === "invoices" && (() => {
+                const filteredInvoices = invoices.filter(inv =>
+                  invoiceFilter === "ALL" ? true : inv.status === invoiceFilter
+                );
+                const pendingTotal = filteredInvoices.reduce((s, i) => s + (i.status === "PENDIENTE" ? i.total - i.paid : 0), 0);
+                return (
+                <div className="space-y-6 animate-in fade-in duration-300">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border/60 pb-4">
                     <div>
-                      <span className="text-[10px] font-mono tracking-widest text-primary uppercase font-bold">// FACTURACION</span>
-                      <h3 className="text-lg font-bold text-foreground mt-0.5">Cartera de Facturación Industrial</h3>
-                      <p className="text-xs text-muted-foreground mt-1 font-sans">
-                        Consulte los vencimientos, descargue las facturas y realice abonos a través del gateway bancario.
+                      <p className="text-base font-semibold text-foreground">Facturas y Pagos</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Descargue facturas y coordine abonos con su ejecutivo.
                       </p>
+                    </div>
+                    {/* Filtros */}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {(["ALL", "PENDIENTE", "PAGADA"] as const).map((f) => (
+                        <button
+                          key={f}
+                          onClick={() => setInvoiceFilter(f)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer border ${
+                            invoiceFilter === f
+                              ? "bg-primary text-primary-foreground border-primary"
+                              : "bg-background text-muted-foreground border-border hover:border-primary/40"
+                          }`}
+                        >
+                          {f === "ALL" ? "Todas" : f === "PENDIENTE" ? "Pendientes" : "Pagadas"}
+                        </button>
+                      ))}
                     </div>
                   </div>
 
-                  {/* Invoices List */}
+                  {filteredInvoices.length === 0 ? (
+                    <div className="border border-dashed border-border rounded-xl p-12 text-center space-y-3">
+                      <CreditCard className="w-8 h-8 mx-auto text-muted-foreground" />
+                      <p className="text-sm font-semibold text-foreground">
+                        {invoiceFilter === "ALL" ? "No hay facturas registradas" : `No hay facturas ${invoiceFilter === "PENDIENTE" ? "pendientes" : "pagadas"}`}
+                      </p>
+                    </div>
+                  ) : (
                   <div className="rounded-xl border border-border bg-background/20 overflow-hidden">
+                    <div className="overflow-x-auto">
                     <table className="w-full border-collapse text-left text-xs font-mono">
                       <caption className="sr-only">Lista de facturas del cliente</caption>
                       <thead className="bg-muted/55 border-b border-border text-[9px] uppercase tracking-wider text-muted-foreground font-bold">
                         <tr>
                           <th scope="col" className="p-4">Nro. Factura</th>
-                          <th scope="col" className="p-4">Fecha Emisión</th>
-                          <th scope="col" className="p-4">Detalle del Concepto</th>
-                          <th scope="col" className="p-4 text-right">Monto Total</th>
-                          <th scope="col" className="p-4 text-right">Saldo pendiente</th>
+                          <th scope="col" className="p-4">Fecha</th>
+                          <th scope="col" className="p-4 text-right">Total</th>
+                          <th scope="col" className="p-4 text-right">Saldo</th>
                           <th scope="col" className="p-4 text-center">Estado</th>
                           <th scope="col" className="p-4 text-center">Acciones</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border text-foreground">
-                        {invoices.map((inv) => {
+                        {filteredInvoices.map((inv) => {
                           const balance = inv.total - inv.paid;
                           return (
                             <tr key={inv.code} className="hover:bg-muted/20 transition-colors">
                               <td className="p-4 font-bold text-primary">{inv.code}</td>
                               <td className="p-4 text-muted-foreground">{inv.date}</td>
-                              <td className="p-4 font-sans text-foreground max-w-xs">{inv.concept}</td>
                               <td className="p-4 text-right font-mono">{formatCurrency(inv.total)}</td>
                               <td className={`p-4 text-right font-mono font-bold ${balance > 0 ? "text-destructive" : "text-muted-foreground"}`}>
                                 {formatCurrency(balance)}
@@ -792,10 +1036,9 @@ export default function CustomerPortal({
                                       <SheetContent className="bg-card border-l border-border max-w-[85vw] sm:max-w-[480px]">
                                         <div className="space-y-6 pt-6 font-sans">
                                           <div className="space-y-1">
-                                            <span className="text-[10px] font-mono text-primary font-bold uppercase tracking-wider">// DETALLE_FACTURA</span>
-                                            <h3 className="text-lg font-bold text-foreground">Detalle de factura</h3>
+                                            <p className="text-base font-semibold text-foreground">Detalle de factura</p>
                                             <p className="text-xs text-muted-foreground font-sans">
-                                              {companyName} está habilitando el pago en línea. Por ahora, coordina el pago de esta factura directamente con tu ejecutivo.
+                                              Coordina el pago directamente con tu ejecutivo. El pago en línea estará disponible pronto.
                                             </p>
                                           </div>
 
@@ -834,14 +1077,25 @@ export default function CustomerPortal({
                           );
                         })}
                       </tbody>
+                      {pendingTotal > 0 && (
+                        <tfoot>
+                          <tr className="bg-destructive/5 border-t border-destructive/20">
+                            <td colSpan={3} className="p-4 text-xs font-bold text-muted-foreground font-sans">Total pendiente de pago</td>
+                            <td className="p-4 text-right font-mono font-bold text-destructive">{formatCurrency(pendingTotal)}</td>
+                            <td colSpan={2} />
+                          </tr>
+                        </tfoot>
+                      )}
                     </table>
+                    </div>
                   </div>
+                  )}
 
                   {/* Payment history receipts list */}
-                  <div className="space-y-4">
-                      <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest block font-bold">// HISTORIAL_PAGOS</span>
-                    <h4 className="text-sm font-bold text-foreground">Historial de Recibos y Transferencias</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {receipts.length > 0 && (
+                  <div className="space-y-3">
+                    <p className="text-xs font-semibold text-foreground">Historial de pagos</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {receipts.map((rec) => (
                         <div key={rec.id} className="border border-border/80 bg-background/40 p-4 rounded-xl flex items-center justify-between font-mono text-xs">
                           <div className="space-y-1">
@@ -849,37 +1103,37 @@ export default function CustomerPortal({
                               <span className="font-bold text-primary">{rec.id}</span>
                               <Badge className="bg-emerald-500/10 text-emerald-500 border-none hover:bg-emerald-500/10 text-[8px]">{rec.status}</Badge>
                             </div>
-                            <span className="text-muted-foreground block text-[10px]">Factura Relacionada: {rec.code}</span>
-                            <span className="text-muted-foreground block text-[10px]">Fecha: {rec.date} • {rec.method}</span>
+                            <span className="text-muted-foreground block text-[10px]">Factura: {rec.code} · {rec.date} · {rec.method}</span>
                           </div>
                           <div className="text-right">
                             <span className="font-bold text-foreground block">{formatCurrency(rec.amount)}</span>
-                            <a 
+                            <button
                               onClick={() => downloadInvoicePdf(rec.code)}
                               className="text-primary hover:text-primary/80 text-[10px] flex items-center gap-1 justify-end cursor-pointer mt-1 font-sans"
                             >
                               <Download className="w-3 h-3" /> Recibo PDF
-                            </a>
+                            </button>
                           </div>
                         </div>
                       ))}
                     </div>
                   </div>
+                  )}
 
                 </div>
-              )}
+                );
+              })()}
 
               {/* ---------------------------------------------------- */}
               {/* SECTION: TECHNICAL DOCUMENTS */}
               {/* ---------------------------------------------------- */}
               {activeSection === "docs" && (
-                <div className="space-y-8 animate-in fade-in duration-300">
+                <div className="space-y-6 animate-in fade-in duration-300">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border/60 pb-4">
                     <div>
-                      <span className="text-[10px] font-mono tracking-widest text-primary uppercase font-bold">// DOCUMENTOS_TECNICOS</span>
-                      <h3 className="text-lg font-bold text-foreground mt-0.5">Planos Técnicos y Hojas de Datos</h3>
-                      <p className="text-xs text-muted-foreground mt-1 font-sans">
-                        Manuales, planos, certificados y documentos técnicos de tus equipos.
+                      <p className="text-base font-semibold text-foreground">Documentos Técnicos</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Planos, manuales, certificados y hojas de datos de tus equipos.
                       </p>
                     </div>
                   </div>
@@ -931,221 +1185,303 @@ export default function CustomerPortal({
               {/* SECTION: WARRANTIES & SUPPORT TICKETS */}
               {/* ---------------------------------------------------- */}
               {activeSection === "tickets" && (
-                <div className="space-y-8 animate-in fade-in duration-300">
+                <div className="space-y-6 animate-in fade-in duration-300">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border/60 pb-4">
                     <div>
-                      <span className="text-[10px] font-mono tracking-widest text-primary uppercase font-bold">// GARANTIAS_SOPORTE</span>
-                      <h3 className="text-lg font-bold text-foreground mt-0.5">Garantías y Casos de Soporte</h3>
-                      <p className="text-xs text-muted-foreground mt-1 font-sans">
-                        Reporte incidentes en taller o ensamble, adjunte evidencias y supervise la respuesta técnica.
+                      <p className="text-base font-semibold text-foreground">Soporte y Garantías</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Reporta incidentes, fallas o dudas técnicas. Tu ejecutivo responde directamente.
                       </p>
                     </div>
+                    <Button
+                      onClick={() => setIsTicketSheetOpen(true)}
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer shrink-0"
+                    >
+                      <PlusCircle className="w-3.5 h-3.5" />
+                      Nuevo ticket
+                    </Button>
                   </div>
 
-                  {/* Split structure: open ticket form + list */}
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-                    
-                    {/* Ticket Form */}
-                    <div className="md:col-span-5 space-y-4 border border-border p-5 rounded-xl bg-background/30">
-                      <h4 className="text-xs font-mono text-primary font-bold uppercase tracking-wider flex items-center gap-1.5">
-                        <PlusCircle className="w-4 h-4" /> Abrir Nuevo Caso
-                      </h4>
-                      <form onSubmit={handleSubmitTicket} className="space-y-4">
-                        <div className="space-y-1.5">
-                          <label htmlFor="ticket-ot" className="text-[10px] font-mono text-muted-foreground uppercase font-bold">Orden de Trabajo Relacionada:</label>
-                          <select
-                            id="ticket-ot"
-                            value={newTicketOt}
-                            onChange={(e) => setNewTicketOt(e.target.value)}
-                            className="w-full bg-background border border-border text-foreground text-xs rounded-lg p-2.5 focus:ring-1 focus:ring-primary focus:outline-none"
-                          >
-                            {ots.map(ot => (
-                              <option key={ot.code} value={ot.code}>{ot.code} - {ot.title.substring(0, 20)}...</option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="space-y-1.5">
-                          <label htmlFor="ticket-severity" className="text-[10px] font-mono text-muted-foreground uppercase font-bold">Criticidad del Reporte:</label>
-                          <select
-                            id="ticket-severity"
-                            value={newTicketSeverity}
-                            onChange={(e) => setNewTicketSeverity(e.target.value)}
-                            className="w-full bg-background border border-border text-foreground text-xs rounded-lg p-2.5 focus:ring-1 focus:ring-primary focus:outline-none"
-                          >
-                            <option value="BAJO">BAJO (Dudas técnicas, planos)</option>
-                            <option value="MEDIO">MEDIO (Ajustes menores de anclaje)</option>
-                            <option value="ALTO">ALTO (Vibración excesiva, fallo de motor)</option>
-                          </select>
-                        </div>
-                        <div className="space-y-1.5">
-                          <label htmlFor="ticket-subject" className="text-[10px] font-mono text-muted-foreground uppercase font-bold">Título / Asunto:</label>
-                          <Input
-                            id="ticket-subject"
-                            placeholder="Asunto breve..."
-                            value={newTicketSubject}
-                            onChange={(e) => setNewTicketSubject(e.target.value)}
-                            className="text-xs border-border bg-background"
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <label htmlFor="ticket-desc" className="text-[10px] font-mono text-muted-foreground uppercase font-bold">Descripción Detallada del Suceso:</label>
-                          <textarea
-                            id="ticket-desc"
-                            rows={3}
-                            placeholder="Describa el requerimiento de soporte o incidente físico del ventilador..."
-                            value={newTicketDesc}
-                            onChange={(e) => setNewTicketDesc(e.target.value)}
-                            className="w-full bg-background border border-border text-foreground text-xs rounded-lg p-2.5 focus:ring-1 focus:ring-primary focus:outline-none font-sans"
-                          />
-                        </div>
-                        <Button
-                          type="submit"
-                          disabled={isCreatingTicket}
-                          className="w-full bg-primary hover:bg-primary/95 text-white font-mono text-xs py-3.5 flex items-center justify-center gap-1.5 rounded-lg cursor-pointer disabled:opacity-50"
-                        >
-                          {isCreatingTicket ? "Registrando..." : "Registrar Ticket Técnico"}
-                        </Button>
-                      </form>
-                    </div>
-
-                    {/* Tickets List */}
-                    <div className="md:col-span-7 space-y-4">
-                      <h4 className="text-xs font-mono text-muted-foreground font-bold uppercase tracking-wider">Historial de Tickets Abiertos</h4>
-                      <div className="space-y-4 max-h-[380px] overflow-y-auto pr-2">
-                        {tickets.map((tck) => (
-                          <div key={tck.code} className="border border-border/80 bg-background/55 p-4 rounded-xl space-y-2">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="font-mono text-xs font-bold text-primary">{tck.code}</span>
-                              <div className="flex gap-1.5">
-                                <Badge className={`text-[8px] font-mono border-none ${
-                                  tck.severity === "ALTO" || tck.severity === "CRÍTICO" ? "bg-destructive/15 text-destructive" : tck.severity === "MEDIO" ? "bg-amber-500/15 text-amber-600" : "bg-primary/15 text-primary"
-                                }`}>
-                                  {tck.severity}
-                                </Badge>
-                                <Badge className={`text-[8px] font-mono border-none ${
-                                  tck.status === "RESUELTO" ? "bg-emerald-500/15 text-emerald-500" : "bg-sky-500/15 text-sky-500"
-                                }`}>
-                                  {tck.status}
-                                </Badge>
-                              </div>
-                            </div>
-                            <h5 className="text-xs font-bold text-foreground font-sans">{tck.subject}</h5>
-                            <p className="text-[11px] text-muted-foreground font-sans leading-normal">{tck.desc}</p>
-                            <span className="text-[9px] font-mono text-muted-foreground block border-t border-border/40 pt-1.5 mt-2">
-                              OT Relacionada: {tck.otCode} • Fecha Reporte: {tck.date}
-                            </span>
-                          </div>
-                        ))}
+                  {tickets.length === 0 ? (
+                    <div className="border border-dashed border-border rounded-xl p-12 text-center space-y-4">
+                      <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto">
+                        <ShieldCheck className="w-6 h-6 text-muted-foreground" />
                       </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold text-foreground">Sin tickets de soporte</p>
+                        <p className="text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed">
+                          Si tienes una duda técnica, incidente o necesitas soporte de garantía, abre un ticket y tu ejecutivo lo atenderá.
+                        </p>
+                      </div>
+                      <Button
+                        onClick={() => setIsTicketSheetOpen(true)}
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium px-5 py-2 rounded-lg cursor-pointer"
+                      >
+                        Abrir primer ticket
+                      </Button>
                     </div>
-
-                  </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {tickets.map((tck) => (
+                        <div key={tck.code} className="border border-border/80 bg-background/55 p-4 rounded-xl space-y-2 hover:border-primary/30 transition-colors">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-mono text-xs font-bold text-primary">{tck.code}</span>
+                            <div className="flex gap-1.5">
+                              <Badge className={`text-[8px] font-mono border-none ${
+                                tck.severity === "ALTO" || tck.severity === "CRÍTICO" ? "bg-destructive/15 text-destructive" : tck.severity === "MEDIO" ? "bg-amber-500/15 text-amber-600" : "bg-primary/15 text-primary"
+                              }`}>
+                                {tck.severity}
+                              </Badge>
+                              <Badge className={`text-[8px] font-mono border-none ${
+                                tck.status === "RESUELTO" ? "bg-emerald-500/15 text-emerald-500" : "bg-sky-500/15 text-sky-500"
+                              }`}>
+                                {tck.status}
+                              </Badge>
+                            </div>
+                          </div>
+                          <p className="text-xs font-semibold text-foreground">{tck.subject}</p>
+                          <p className="text-[11px] text-muted-foreground leading-relaxed">{tck.desc}</p>
+                          <span className="text-[9px] font-mono text-muted-foreground block border-t border-border/40 pt-1.5 mt-1">
+                            {tck.otCode && `OT: ${tck.otCode} · `}Reportado: {tck.date}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
             </div>
-          </div>
-
-          {/* ---------------------------------------------------- */}
-          {/* RIGHT COLUMN: CHAT IN LIVE SUPORT (Toggleable sidebar) */}
-          {/* ---------------------------------------------------- */}
-          {isChatOpen && (
-            <div className="lg:col-span-4 border border-border bg-card rounded-2xl p-5 shadow-lg flex flex-col h-[540px] animate-in slide-in-from-right duration-350 relative overflow-hidden">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-primary" />
-              
-              {/* Chat Header */}
-              <div className="flex items-center justify-between border-b border-border/80 pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center shadow-inner relative">
-                    <User className="w-4.5 h-4.5" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-foreground">Bitácora de Soporte</h4>
-                    <span className="text-[9px] font-mono text-muted-foreground block leading-none">Tu ejecutivo responde aquí — no es un chat en tiempo real</span>
-                  </div>
-                </div>
-                <button
-                  ref={chatCloseRef}
-                  onClick={() => setIsChatOpen(false)}
-                  className="text-muted-foreground hover:text-foreground p-1 cursor-pointer"
-                  aria-label="Cerrar chat de soporte"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Chat Message Box */}
-              <div role="log" aria-live="polite" className="flex-1 overflow-y-auto py-4 space-y-4 pr-1 text-xs">
-                {chatMessages.length === 0 && (
-                  <p className="text-muted-foreground text-center py-8">Todavía no hay mensajes en este caso.</p>
-                )}
-                {chatMessages.map((msg) => {
-                  const isAgent = msg.sender === "agent";
-                  return (
-                    <div 
-                      key={msg.id} 
-                      className={`flex flex-col max-w-[85%] space-y-1 ${isAgent ? "self-start" : "self-end ml-auto"}`}
-                    >
-                      <span className="text-[8px] font-mono text-muted-foreground block px-1">
-                        {msg.name} • {msg.time}
-                      </span>
-                      <div className={`p-3 rounded-2xl leading-normal ${
-                        isAgent 
-                          ? "bg-muted text-foreground rounded-tl-none border border-border" 
-                          : "bg-primary text-white rounded-tr-none shadow-md shadow-primary/5"
-                      }`}>
-                        {msg.text}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Chat Form */}
-              <div className="border-t border-border/80 pt-3 flex items-center gap-2">
-                <Input
-                  placeholder="Escribe una nota sobre este caso..."
-                  value={newMessageText}
-                  disabled={isSendingMessage}
-                  onChange={(e) => setNewMessageText(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleSendMessage();
-                  }}
-                  className="text-xs border-border bg-background h-10"
-                />
-                <Button
-                  onClick={handleSendMessage}
-                  disabled={isSendingMessage}
-                  className="bg-primary hover:bg-primary/95 text-white p-2.5 h-10 w-10 shrink-0 flex items-center justify-center rounded-lg shadow-md cursor-pointer disabled:opacity-50"
-                >
-                  <Send className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          )}
 
         </div>
 
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-border bg-card py-6 text-center text-[10px] font-mono text-muted-foreground mt-12 relative z-10">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <Building className="w-4 h-4 text-primary" />
-            <span>Soporte Técnico Especializado B2B: {telefono} | {razonSocial}</span>
+      {/* Chat como Sheet overlay — no comprime el layout */}
+      <Sheet open={isChatOpen} onOpenChange={setIsChatOpen}>
+        <SheetContent className="sm:max-w-[400px] flex flex-col p-0 gap-0">
+          {/* Accent line */}
+          <div className="h-1 bg-primary shrink-0" />
+
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                <User className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground leading-tight">Bitácora de Soporte</p>
+                <span className="text-[9px] font-mono text-muted-foreground leading-none">Tu ejecutivo responde aquí — no es tiempo real</span>
+              </div>
+            </div>
+            <SheetClose asChild>
+              <button
+                ref={chatCloseRef}
+                className="text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                aria-label="Cerrar chat de soporte"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </SheetClose>
           </div>
-          <div className="flex items-center gap-4">
-            <a
-              href="/privacidad"
-              className="text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+
+          {/* Mensajes */}
+          <div role="log" aria-live="polite" className="flex-1 overflow-y-auto px-5 py-4 space-y-4 text-xs flex flex-col">
+            {chatMessages.length === 0 && (
+              <div className="flex-1 flex items-center justify-center">
+                <p className="text-muted-foreground text-center text-sm">Todavía no hay mensajes en este caso.</p>
+              </div>
+            )}
+            {chatMessages.map((msg) => {
+              const isAgent = msg.sender === "agent";
+              return (
+                <div
+                  key={msg.id}
+                  className={`flex flex-col max-w-[88%] space-y-1 ${isAgent ? "self-start" : "self-end ml-auto"}`}
+                >
+                  <span className="text-[9px] font-mono text-muted-foreground px-1">
+                    {msg.name} · {msg.time}
+                  </span>
+                  <div className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
+                    isAgent
+                      ? "bg-muted text-foreground rounded-tl-none border border-border"
+                      : "bg-primary text-primary-foreground rounded-tr-none"
+                  }`}>
+                    {msg.text}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Input */}
+          <div className="border-t border-border px-5 py-4 flex items-center gap-2 shrink-0">
+            <Input
+              placeholder="Escribe una nota sobre este caso…"
+              value={newMessageText}
+              disabled={isSendingMessage}
+              onChange={(e) => setNewMessageText(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleSendMessage(); }}
+              className="text-sm border-border bg-background h-10"
+            />
+            <Button
+              onClick={handleSendMessage}
+              disabled={isSendingMessage}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground h-10 w-10 shrink-0 flex items-center justify-center rounded-lg cursor-pointer disabled:opacity-50 p-0"
             >
-              Política de Privacidad
-            </a>
-            <span>Conexión segura — {companyName}: <span className="text-emerald-500 font-bold">// VERIFICADO</span></span>
+              <Send className="w-4 h-4" />
+            </Button>
           </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Footer */}
+      <footer className="border-t border-border bg-card py-4 relative z-10 mt-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-[10px] font-mono text-muted-foreground">
+          <span>© {companyName} · Soporte: {supportEmail}</span>
+          <a href="/privacidad" className="hover:text-foreground underline underline-offset-2 transition-colors">
+            Privacidad
+          </a>
         </div>
       </footer>
+
+      {/* Sheet de Nuevo Ticket */}
+      <Sheet open={isTicketSheetOpen} onOpenChange={setIsTicketSheetOpen}>
+        <SheetContent className="sm:max-w-[440px] flex flex-col p-0 gap-0">
+          <div className="h-1 bg-primary shrink-0" />
+          <div className="px-6 py-5 border-b border-border shrink-0">
+            <p className="text-base font-semibold text-foreground">Nuevo ticket de soporte</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Tu ejecutivo técnico recibirá el caso al instante.
+            </p>
+          </div>
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              if (!newTicketSubject.trim() || !newTicketDesc.trim() || isCreatingTicket) return;
+              setIsCreatingTicket(true);
+              try {
+                const created = await createClientTicket(previewClientId, {
+                  subject: newTicketSubject,
+                  description: newTicketDesc,
+                  severity: newTicketSeverity,
+                });
+                setTickets(prev => [{
+                  code: created.code,
+                  otCode: created.jobId || newTicketOt,
+                  date: created.createdAt.substring(0, 10),
+                  subject: created.subject,
+                  severity: created.severity,
+                  status: created.status,
+                  desc: created.description,
+                }, ...prev]);
+                setNewTicketSubject("");
+                setNewTicketDesc("");
+                capture("portal_ticket_created", { severity: newTicketSeverity, code: created.code });
+                toast.success(`Ticket ${created.code} registrado con éxito.`);
+                setIsTicketSheetOpen(false);
+              } catch (err) {
+                console.error("Error creando ticket:", err);
+                toast.error("No se pudo registrar el ticket.");
+              } finally {
+                setIsCreatingTicket(false);
+              }
+            }}
+            className="flex-1 flex flex-col overflow-y-auto px-6 py-6 space-y-5"
+          >
+            {ots.length > 0 && (
+              <div className="space-y-1.5">
+                <label htmlFor="tks-ot" className="text-xs font-semibold text-foreground block">OT relacionada <span className="text-muted-foreground font-normal">(opcional)</span></label>
+                <select
+                  id="tks-ot"
+                  value={newTicketOt}
+                  onChange={(e) => setNewTicketOt(e.target.value)}
+                  className="w-full bg-background border border-border text-foreground text-sm rounded-lg p-2.5 focus:ring-1 focus:ring-primary focus:outline-none"
+                >
+                  <option value="">Sin OT asociada</option>
+                  {ots.map(ot => (
+                    <option key={ot.code} value={ot.code}>{ot.code} — {ot.title.substring(0, 35)}{ot.title.length > 35 ? "…" : ""}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-foreground block">Criticidad</label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { v: "BAJO",  label: "Baja",  sub: "Duda o consulta" },
+                  { v: "MEDIO", label: "Media", sub: "Ajuste menor" },
+                  { v: "ALTO",  label: "Alta",  sub: "Falla o vibración" },
+                ].map((s) => (
+                  <button
+                    key={s.v}
+                    type="button"
+                    onClick={() => setNewTicketSeverity(s.v)}
+                    className={`flex flex-col items-start gap-0.5 p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                      newTicketSeverity === s.v
+                        ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                        : "border-border hover:border-primary/30"
+                    }`}
+                  >
+                    <span className={`text-xs font-semibold ${newTicketSeverity === s.v ? "text-primary" : "text-foreground"}`}>{s.label}</span>
+                    <span className="text-[10px] text-muted-foreground leading-tight">{s.sub}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor="tks-subject" className="text-xs font-semibold text-foreground block">Asunto <span className="text-destructive">*</span></label>
+              <Input
+                id="tks-subject"
+                placeholder="Ej: Vibración excesiva en motor del extractor"
+                value={newTicketSubject}
+                onChange={(e) => setNewTicketSubject(e.target.value)}
+                className="text-sm border-border bg-background"
+                maxLength={250}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor="tks-desc" className="text-xs font-semibold text-foreground block">Descripción <span className="text-destructive">*</span></label>
+              <textarea
+                id="tks-desc"
+                rows={5}
+                placeholder="Describe el incidente, cuándo ocurrió y qué has observado…"
+                value={newTicketDesc}
+                onChange={(e) => setNewTicketDesc(e.target.value)}
+                className="w-full bg-background border border-border text-foreground text-sm rounded-lg p-3 focus:ring-1 focus:ring-primary focus:outline-none font-sans leading-relaxed resize-none transition-colors"
+                maxLength={5000}
+              />
+            </div>
+
+            <div className="flex gap-3 pt-2 border-t border-border mt-auto">
+              <SheetClose asChild>
+                <Button type="button" variant="outline" className="flex-1 text-sm cursor-pointer">
+                  Cancelar
+                </Button>
+              </SheetClose>
+              <Button
+                type="submit"
+                disabled={isCreatingTicket}
+                className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium cursor-pointer disabled:opacity-60"
+              >
+                {isCreatingTicket ? "Registrando…" : "Enviar ticket"}
+              </Button>
+            </div>
+          </form>
+        </SheetContent>
+      </Sheet>
+
+      {/* Sheet de Nuevo Requerimiento */}
+      <NewRequirementSheet
+        open={isRequirementSheetOpen}
+        onOpenChange={setIsRequirementSheetOpen}
+        previewClientId={previewClientId}
+        jobs={ots.map(o => ({ code: o.code, title: o.title }))}
+        onCreated={(req) => setRequirements(prev => [req, ...prev])}
+      />
 
       {/* Modal de Perfil (solo clientes reales) */}
       {isClientContact && (

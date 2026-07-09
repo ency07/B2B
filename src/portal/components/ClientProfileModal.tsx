@@ -1,12 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { User, Lock, Mail, LogOut, X } from "lucide-react";
+import { User, Lock, Mail, LogOut, Sun, Moon, Monitor } from "lucide-react";
+import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import { updateClientPassword } from "@/portal/actions/profile";
 import { Button } from "@/platform/ui/button";
 import { Input } from "@/platform/ui/input";
 import { Spinner } from "@/platform/ui/spinner";
+import { cn } from "@/platform/utils/cn";
 import {
   Dialog,
   DialogContent,
@@ -29,7 +31,8 @@ export function ClientProfileModal({
   clientName,
   clientNit,
 }: ClientProfileModalProps) {
-  const [tab, setTab] = React.useState<"info" | "password">("info");
+  const [tab, setTab] = React.useState<"info" | "password" | "appearance">("info");
+  const { theme, setTheme } = useTheme();
   const [currentPassword, setCurrentPassword] = React.useState("");
   const [newPassword, setNewPassword] = React.useState("");
   const [confirmPassword, setConfirmPassword] = React.useState("");
@@ -81,26 +84,19 @@ export function ClientProfileModal({
         </DialogHeader>
 
         <div className="flex gap-1 border-b border-border mb-6">
-          <button
-            onClick={() => setTab("info")}
-            className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
-              tab === "info"
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Información
-          </button>
-          <button
-            onClick={() => setTab("password")}
-            className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
-              tab === "password"
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Seguridad
-          </button>
+          {(["info", "password", "appearance"] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
+                tab === t
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {t === "info" ? "Información" : t === "password" ? "Seguridad" : "Apariencia"}
+            </button>
+          ))}
         </div>
 
         {tab === "info" && (
@@ -210,6 +206,38 @@ export function ClientProfileModal({
               )}
             </Button>
           </form>
+        )}
+
+        {tab === "appearance" && (
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Modo de pantalla</p>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { value: "light", label: "Claro", Icon: Sun },
+                  { value: "dark",  label: "Oscuro", Icon: Moon },
+                  { value: "system", label: "Sistema", Icon: Monitor },
+                ] as const).map(({ value, label, Icon }) => (
+                  <button
+                    key={value}
+                    onClick={() => setTheme(value)}
+                    className={cn(
+                      "flex flex-col items-center justify-center gap-2 h-20 rounded-xl border-2 text-xs font-medium transition-all cursor-pointer",
+                      theme === value
+                        ? "border-primary bg-primary/5 text-primary"
+                        : "border-border bg-muted/30 text-muted-foreground hover:text-foreground hover:border-border/80"
+                    )}
+                  >
+                    <Icon className="h-5 w-5" />
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              La preferencia se guarda en este dispositivo y se aplica automáticamente al ingresar.
+            </p>
+          </div>
         )}
 
         <div className="flex justify-end gap-2 pt-4 border-t border-border">

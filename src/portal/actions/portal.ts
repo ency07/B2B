@@ -1,20 +1,9 @@
-/**
- * Acciones de portal (P8 - portal).
- *
- * El Portal hoy es una herramienta de soporte: solo SUPER_ADMIN/ADMIN_DEV
- * puede entrar en modo "vista como cliente" para diagnosticar un cliente
- * puntual (ver getCurrentClient en @/lib/portal-auth). Las lecturas usan un
- * cliente autenticado con la sesión real del admin (no service_role) e
- * invocan funciones RPC SECURITY DEFINER (portal_get_client_*) que
- * re-validan el rol y el tenant en la base de datos — así, si el chequeo de
- * rol en TypeScript tuviera un bug, la función SQL igual bloquea el acceso.
- */
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use server";
 
 import { getCurrentClient, getPortalAuthenticatedClient } from "@/lib/portal-auth";
 import { notifyClientMessageFromStaff, notifyStaffClientUpdate } from "./notifications";
-import { createTicketSchema, sendMessageSchema } from "@/lib/validations/portal";
+import { createTicketSchema, sendMessageSchema, createRequirementSchema } from "@/lib/validations/portal";
 import { checkRateLimit } from "@/lib/utils/rate-limiter";
 
 export interface ClientJob {
@@ -90,7 +79,6 @@ export async function getClientJobs(
     return [];
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any — Supabase RPC result: columnas exactas (job_code, title, etc.) pero TS requiere any para acceso dinámico
   return (data || []).map((j: any) => ({
     id: j.id,
     code: j.job_code,
@@ -129,7 +117,6 @@ export async function getClientInvoices(
     return [];
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any — Supabase RPC result: same reason as above
   return (data || []).map((i: any) => ({
     id: i.id,
     code: i.invoice_code,
@@ -201,7 +188,7 @@ export async function getClientTickets(
     return [];
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   return (data || []).map((t: any) => ({
     id: t.id,
     code: t.ticket_code,
@@ -301,7 +288,7 @@ export async function getClientMessages(
     return [];
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   return (data || []).map((m: any) => ({
     id: m.id,
     senderType: m.sender_type,
@@ -309,6 +296,105 @@ export async function getClientMessages(
     body: m.body,
     createdAt: m.created_at,
   }));
+}
+
+// =============================================================================
+// REQUERIMIENTOS — flujo de compra/solicitud desde el portal
+// =============================================================================
+
+export interface ClientRequirement {
+  id: string;
+  code: string;
+  title: string;
+  description: string | null;
+  category: string;
+  priority: string;
+  status: string;
+  createdAt: string;
+}
+
+export async function getClientRequirements(
+  previewClientId?: string | null
+): Promise<ClientRequirement[]> {
+  const client = await getCurrentClient(previewClientId);
+  if (!client) throw new Error("No autorizado: Sesión de cliente inválida.");
+  const authClient = await getPortalAuthenticatedClient();
+  if (!authClient) throw new Error("No autorizado: Sesión de cliente inválida.");
+
+  const { data, error } = await authClient.rpc("portal_get_client_requirements", {
+    p_client_id: client.clientId,
+  });
+
+  if (error) {
+    console.error("getClientRequirements error:", error.message);
+    return [];
+  }
+
+   
+  return (data || []).map((r: any) => ({
+    id: r.id,
+    code: r.requirement_code,
+    title: r.title,
+    description: r.description ?? null,
+    category: r.category,
+    priority: r.priority,
+    status: r.status,
+    createdAt: r.created_at,
+  }));
+}
+
+export async function createClientRequirement(
+  previewClientId: string | null | undefined,
+  input: { title: string; description: string; category: string; priority: string }
+): Promise<ClientRequirement> {
+  const client = await getCurrentClient(previewClientId);
+  if (!client) throw new Error("No autorizado: Sesión de cliente inválida.");
+  const authClient = await getPortalAuthenticatedClient();
+  if (!authClient) throw new Error("No autorizado: Sesión de cliente inválida.");
+
+  const { allowed } = await checkRateLimit(`portal:requirement:${client.clientId}`, 3, 60_000);
+  if (!allowed) {
+    throw new Error("Has excedido el límite de solicitudes. Intenta de nuevo en un minuto.");
+  }
+
+  const parsed = createRequirementSchema.safeParse(input);
+  if (!parsed.success) {
+    const firstError = parsed.error.issues[0];
+    throw new Error(`Validación fallida: ${firstError.path.join(".")} — ${firstError.message}`);
+  }
+
+  const { data, error } = await authClient.rpc("portal_create_client_requirement", {
+    p_client_id: client.clientId,
+    p_title: parsed.data.title,
+    p_description: parsed.data.description,
+    p_category: parsed.data.category,
+    p_priority: parsed.data.priority,
+  });
+
+  if (error) {
+    throw new Error(`No se pudo registrar el requerimiento: ${error.message}`);
+  }
+
+  const req: ClientRequirement = {
+    id: data.id,
+    code: data.requirement_code,
+    title: data.title,
+    description: data.description ?? null,
+    category: data.category,
+    priority: data.priority,
+    status: data.status,
+    createdAt: data.created_at,
+  };
+
+  // Notificar al staff vía Slack/Discord/email (fire-and-forget)
+  notifyStaffClientUpdate("ticket", {
+    clientName: client.legalName,
+    tenantId: client.tenantId || "",
+    ticketCode: req.code,
+    subject: `[PORTAL] Nuevo requerimiento: ${req.title}`,
+  }).catch((err) => console.error("Error notificando staff por requerimiento:", err));
+
+  return req;
 }
 
 export async function sendClientMessage(
