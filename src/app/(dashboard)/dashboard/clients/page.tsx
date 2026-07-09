@@ -242,17 +242,17 @@ export default function ClientsPage() {
 
       {/* === Create Sheet (preservado del flujo original) === */}
       <Sheet open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <SheetContent className="flex flex-col bg-card border-l border-border p-0 w-full sm:max-w-xl backdrop-blur-md h-full">
+        <SheetContent className="flex flex-col bg-bg-elevated-1 border-l border-line p-0 w-full sm:max-w-xl backdrop-blur-md h-full">
           {/* Header Fijo */}
-          <div className="flex-none p-6 md:p-8 border-b border-border bg-card/80 backdrop-blur-sm z-10">
+          <div className="flex-none p-6 md:p-8 border-b border-line bg-bg-elevated-1/80 backdrop-blur-sm z-layer-content">
             <div>
               <span className="text-[10px] font-mono tracking-widest text-primary uppercase font-bold">
                 // Nueva Cuenta
               </span>
-              <h3 className="text-base font-mono uppercase tracking-wider font-bold text-foreground mt-0.5">
+              <h3 className="text-base font-mono uppercase tracking-wider font-bold text-ink mt-0.5">
                 Registrar Cliente B2B
               </h3>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-ink-muted">
                 Ingrese la identificacion tributaria y la razon social legal de la planta.
               </p>
             </div>
@@ -261,7 +261,7 @@ export default function ClientsPage() {
           {/* Body Scrolleable */}
           <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
             {submitError && (
-              <div className="p-3.5 rounded-md bg-destructive/10 border border-destructive/20 text-xs text-destructive font-mono">
+              <div className="p-3.5 rounded-md bg-state-danger/10 border border-state-danger/20 text-xs text-state-danger font-mono">
                 {submitError}
               </div>
             )}
