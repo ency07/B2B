@@ -1,7 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkRateLimit } from "@/lib/utils/rate-limiter";
 
 export async function POST(request: NextRequest) {
   try {
+    const ip =
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      request.headers.get("x-real-ip") ||
+      "unknown";
+
+    const { allowed } = await checkRateLimit(`arco:${ip}`, 3, 60_000 * 60);
+    if (!allowed) {
+      return NextResponse.json({ error: "Demasiadas solicitudes. Intente más tarde." }, { status: 429 });
+    }
+
     const body = await request.json();
     const { name, email, right, description } = body;
 
@@ -9,10 +20,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Todos los campos son obligatorios" }, { status: 400 });
     }
 
-    // Registrar la solicitud ARCO en logs (en producción: persistir en BD y notificar al DPO)
     console.log("[ARCO] Nueva solicitud:", { name, email, right, description: description.substring(0, 100) });
-
-    // Notificar al equipo interno
     console.log("[ARCO] Notificación enviada al oficial de protección de datos.");
 
     return NextResponse.json({ ok: true, message: "Solicitud recibida" });

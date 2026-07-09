@@ -127,14 +127,13 @@ export async function getCurrentClient(
         if (assignedClient) clientRow = assignedClient;
       }
 
-      // Fallback para platform admins: mostrar el primer cliente disponible
-      if (!clientRow && isPlatformAdmin) {
-        const query = admin
+      // Fallback para platform admins con tenant asignado (nunca cross-tenant)
+      if (!clientRow && isPlatformAdmin && userRow.tenant_id) {
+        const { data: fallbackClient } = await admin
           .from("clients")
           .select("id, legal_name, tax_id, email, status, tenant_id, tenants(tenant_code)")
-          .is("deleted_at", null);
-        if (userRow.tenant_id) query.eq("tenant_id", userRow.tenant_id);
-        const { data: fallbackClient } = await query
+          .eq("tenant_id", userRow.tenant_id)
+          .is("deleted_at", null)
           .order("created_at", { ascending: true })
           .limit(1)
           .maybeSingle();

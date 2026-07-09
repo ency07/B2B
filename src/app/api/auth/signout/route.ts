@@ -42,8 +42,8 @@ export async function POST(request: Request) {
           global: { headers: { Authorization: `Bearer ${token}` } },
         });
         await supabase.auth.signOut();
-      } catch {
-        // Continue cleaning cookies even if revocation fails
+      } catch (err) {
+        console.error(`[signout] Error al revocar sesión (${name}):`, err);
       }
     }
   }

@@ -1,14 +1,15 @@
 "use server";
 
 import { z } from "zod";
-import { getPublicServerClient } from "@/platform/auth/clients";
+import { getSupabaseAdmin } from "@/platform/auth/clients";
 import { getTenantId } from "@/erp/actions/core";
 import { resolveTenantOwnerUserIdAsync } from "@/platform/tenant/tenant-resolver";
 import { sanitizeObject } from "@/lib/utils/sanitize";
 import { checkRateLimit } from "@/lib/utils/rate-limiter";
 import { PUBLIC_EMAIL_DOMAINS, KNOWN_DISPOSABLE_DOMAINS } from "@/lib/constants";
 
-const db = getPublicServerClient();
+// Admin client: Server Action corre en el servidor, service_role nunca llega al cliente
+const db = getSupabaseAdmin();
 
 export interface LeadScoreResult {
   score: number;

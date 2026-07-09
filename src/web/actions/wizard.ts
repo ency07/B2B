@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { headers } from "next/headers";
-import { getPublicServerClient } from "@/platform/auth/clients";
+import { getSupabaseAdmin } from "@/platform/auth/clients";
 import { getTenantId } from "@/erp/actions/core";
 import { sanitizeObject } from "@/lib/utils/sanitize";
 import { checkRateLimit } from "@/lib/utils/rate-limiter";
@@ -10,8 +10,8 @@ import { calculateRequiredCfm } from "@/utils/engineering";
 import { estimatePrice } from "@/utils/pricing";
 import { createLeadWithScore } from "./leads";
 
-// Cliente público (anon key + RLS) para operaciones del wizard
-const db = getPublicServerClient();
+// Admin client: Server Action corre en el servidor, service_role nunca llega al cliente
+const db = getSupabaseAdmin();
 
 export interface WizardSubmission {
   servicio: "fabricacion" | "venta" | "mantenimiento" | "reparacion" | "otro";
