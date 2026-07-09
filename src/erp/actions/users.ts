@@ -11,11 +11,12 @@
  * lo define.
  */
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use server";
 
 import { supabaseAdmin } from "@/platform/auth/clients";
 import { getTenantId } from "@/erp/actions/core";
-import { requireAction } from "@/platform/auth/server-guards";
+import { requireAction, validateTenantAccess } from "@/platform/auth/server-guards";
 
 export interface UserListItem {
   id: string;
@@ -40,7 +41,9 @@ export interface RoleListItem {
 export async function listUsers(
   tenantCode: string | null
 ): Promise<UserListItem[]> {
+  const ctx = await requireAction("users.edit");
   const tenantId = await getTenantId(tenantCode);
+  await validateTenantAccess(ctx.userId, ctx.role, tenantId);
 
   const { data: usersData, error: usersErr } = await supabaseAdmin
     .from("users")
@@ -105,7 +108,9 @@ export async function listUsers(
 export async function listRoles(
   tenantCode: string | null
 ): Promise<RoleListItem[]> {
+  const ctx = await requireAction("users.permissions");
   const tenantId = await getTenantId(tenantCode);
+  await validateTenantAccess(ctx.userId, ctx.role, tenantId);
 
   const { data, error } = await supabaseAdmin
     .from("roles")
