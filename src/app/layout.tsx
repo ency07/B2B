@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Inter, Fraunces, IBM_Plex_Mono } from "next/font/google";
-import { ThemeProvider } from "@/platform/providers/theme-provider";
 import { DesignSystemProvider } from "@/design-system";
 import { PostHogProvider } from "@/platform/providers/posthog-provider";
 import { Toaster } from "@/platform/ui/toaster";
@@ -42,50 +41,42 @@ export default function RootLayout({
       className={`${inter.variable} ${fraunces.variable} ${ibmPlexMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans bg-base text-fg-primary">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem={false}
-          disableTransitionOnChange
-        >
-          {/* Synchronous inline script placed inside ThemeProvider to execute immediately after next-themes' script and override theme/colors for tenants */}
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `
-                try {
-                  const params = new URLSearchParams(window.location.search);
-                  const tenant = params.get('tenant');
-                  if (tenant) {
-                    const cached = localStorage.getItem('tenant_config_' + tenant);
-                    if (cached) {
-                      const config = JSON.parse(cached);
-                      if (config.theme === 'dark') {
-                        document.documentElement.classList.add('dark');
-                      } else {
-                        document.documentElement.classList.remove('dark');
-                      }
-                      if (config.primaryColor) {
-                        document.documentElement.style.setProperty('--primary', config.primaryColor);
-                        document.documentElement.style.setProperty('--ring', config.primaryColor);
-                      }
-                    } else {
-                      // Fallback: sin tenant_config en localStorage, no aplicamos
-                      // tema ni color. El tenant debe configurar el branding desde
-                      // el CMS. Para evitar un flash feo, no forzamos nada.
+        {/* Inline script para evitar flash de tema antes de la hidratación */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                var dsThemeId = localStorage.getItem('ds-theme-id');
+                if (dsThemeId) {
+                  var isDark = dsThemeId === 'carbon' || dsThemeId === 'graphite' || dsThemeId === 'midnightBlue' || dsThemeId === 'neoEmerald';
+                  if (isDark) document.documentElement.classList.add('dark');
+                  else document.documentElement.classList.remove('dark');
+                }
+                var params = new URLSearchParams(window.location.search);
+                var tenant = params.get('tenant');
+                if (tenant) {
+                  var cached = localStorage.getItem('tenant_config_' + tenant);
+                  if (cached) {
+                    var config = JSON.parse(cached);
+                    if (config.theme === 'dark') document.documentElement.classList.add('dark');
+                    else if (config.theme === 'light') document.documentElement.classList.remove('dark');
+                    if (config.primaryColor) {
+                      document.documentElement.style.setProperty('--primary', config.primaryColor);
+                      document.documentElement.style.setProperty('--ring', config.primaryColor);
                     }
                   }
-                } catch (e) {}
-              `,
-            }}
-          />
-          <DesignSystemProvider>
-            <PostHogProvider>
-              {children}
-              <Toaster />
-              <SessionVersionListener />
-            </PostHogProvider>
-          </DesignSystemProvider>
-        </ThemeProvider>
+                }
+              } catch (e) {}
+            `,
+          }}
+        />
+        <DesignSystemProvider>
+          <PostHogProvider>
+            {children}
+            <Toaster />
+            <SessionVersionListener />
+          </PostHogProvider>
+        </DesignSystemProvider>
       </body>
     </html>
   );
