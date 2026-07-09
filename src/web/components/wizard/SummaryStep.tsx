@@ -91,7 +91,7 @@ export function SummaryStep({
 
           <div className="bg-paper-warm p-8">
             <p className="editorial-mono text-fg-muted mb-3">Caudal requerido</p>
-            <p className="font-display text-4xl font-light tabular-nums" style={{ color: "#3F8F5F" }}>
+            <p className="font-display text-4xl font-light tabular-nums" style={{ color: "var(--text-success)" }}>
               {realtimeCfm.cfm.toLocaleString()}{" "}
               <span className="text-base text-fg-muted">CFM</span>
             </p>

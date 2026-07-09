@@ -20,6 +20,8 @@ export interface ThemeContextValue {
   themes: Theme[]
   setTheme: (id: string) => void
   setMode: (mode: 'light' | 'dark') => void
+  setOverrides: (vars: Record<string, string>) => void
+  clearOverrides: () => void
   resolved: (path: TokenPath) => string
   resolve: (category: keyof Theme, key: string) => string
   componentToken: (component: string, token: string) => string
@@ -54,6 +56,7 @@ export function DesignSystemProvider({
     }
     return getInitialTheme()
   })
+  const [overrides, setOverridesState] = useState<Record<string, string>>({})
 
   const setTheme = useCallback((id: string) => {
     const next = getThemeById(id)
@@ -74,11 +77,24 @@ export function DesignSystemProvider({
     setThemeState(sameFamily ?? candidates[0])
   }, [theme])
 
+  const setOverrides = useCallback((vars: Record<string, string>) => {
+    setOverridesState(vars)
+  }, [])
+
+  const clearOverrides = useCallback(() => {
+    setOverridesState({})
+  }, [])
+
   const cssVars = useMemo(() => flattenAllThemeToCSS(theme), [theme])
+
+  const mergedCssVars = useMemo(() => {
+    if (Object.keys(overrides).length === 0) return cssVars
+    return { ...cssVars, ...overrides }
+  }, [cssVars, overrides])
 
   useEffect(() => {
     const root = document.documentElement
-    for (const [name, value] of Object.entries(cssVars)) {
+    for (const [name, value] of Object.entries(mergedCssVars)) {
       root.style.setProperty(name, value)
     }
 
@@ -89,11 +105,11 @@ export function DesignSystemProvider({
     }
 
     return () => {
-      for (const name of Object.keys(cssVars)) {
+      for (const name of Object.keys(mergedCssVars)) {
         root.style.removeProperty(name)
       }
     }
-  }, [cssVars, theme.mode])
+  }, [mergedCssVars, theme.mode])
 
   const resolved = useCallback(
     (path: TokenPath) => resolveToken(theme, path),
@@ -129,12 +145,14 @@ export function DesignSystemProvider({
       themes: [...themes],
       setTheme,
       setMode,
+      setOverrides,
+      clearOverrides,
       resolved,
       resolve,
       componentToken,
-      cssVars,
+      cssVars: mergedCssVars,
     }),
-    [theme, setTheme, setMode, resolved, resolve, componentToken, cssVars],
+    [theme, setTheme, setMode, setOverrides, clearOverrides, resolved, resolve, componentToken, mergedCssVars],
   )
 
   return (

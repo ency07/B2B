@@ -51,8 +51,8 @@ export function TrustMarquee({ content }: TrustMarqueeProps = {}) {
       </div>
 
       <div className="relative h-16">
-        <div className="absolute left-0 top-0 bottom-0 w-32 z-10 bg-gradient-to-r from-[#E4E9EA] to-transparent pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-0 w-32 z-10 bg-gradient-to-l from-[#E4E9EA] to-transparent pointer-events-none" />
+        <div className="absolute left-0 top-0 bottom-0 w-32 z-10 bg-gradient-to-r from-[var(--surface-background)] to-transparent pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-32 z-10 bg-gradient-to-l from-[var(--surface-background)] to-transparent pointer-events-none" />
 
         <div className="marquee-track h-full flex items-center">
           {items.map((client, idx) => (

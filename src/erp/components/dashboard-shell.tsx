@@ -5,8 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { LayoutProvider } from "@/platform/providers/layout-context";
 import { DashboardSidebar } from "@/erp/components/dashboard-sidebar";
 import { DashboardHeader } from "@/erp/components/dashboard-header";
-import { useDesignSystem } from "@/design-system";
-import { parseToHslChannels } from "@/platform/tenant/tenant";
+import { useDesignSystem, brandingToCssVars } from "@/design-system";
 import { BrandingConfig, getBrandingDefaults } from "@/platform/branding/branding-defaults";
 import { getTenantBranding } from "@/web/actions/branding";
 import { getUserTenant } from "@/platform/users/users";
@@ -31,7 +30,7 @@ interface DashboardShellProps {
 export function DashboardShell({ role, userId, children }: DashboardShellProps) {
   const searchParams = useSearchParams();
   const tenantParam = searchParams.get("tenant");
-  const { theme } = useDesignSystem();
+  const { theme, setOverrides, clearOverrides } = useDesignSystem();
   const pathname = usePathname();
 
   // ── Notificaciones (lazy, no bloquean el render inicial) ──────────────────
@@ -116,22 +115,13 @@ export function DashboardShell({ role, userId, children }: DashboardShellProps) 
     syncBranding();
   }, [tenantParam]);
 
-  // ── Aplicar CSS vars de white-label ───────────────────────────────────────
+  // ── Aplicar CSS vars de white-label via design system bridge ──────────────
   React.useEffect(() => {
     if (!activeConfig) return;
-    const root = document.documentElement;
-    if (activeConfig.theme === "dark") {
-      root.classList.add("dark");
-    } else if (activeConfig.theme === "light") {
-      root.classList.remove("dark");
-    } else {
-      if (theme.mode === "dark") {
-        root.classList.add("dark");
-      } else {
-        root.classList.remove("dark");
-      }
-    }
-  }, [activeConfig, theme.mode]);
+    const vars = brandingToCssVars(activeConfig);
+    setOverrides(vars);
+    return () => clearOverrides();
+  }, [activeConfig, setOverrides, clearOverrides]);
 
   // ── RBAC: autorización para la ruta actual ────────────────────────────────
   const isAuthorized = React.useMemo(() => hasAccess(role, pathname), [role, pathname]);
@@ -195,32 +185,6 @@ export function DashboardShell({ role, userId, children }: DashboardShellProps) 
         <link
           rel="stylesheet"
           href={`https://fonts.googleapis.com/css2?family=${activeConfig.tipografia_principal.replace(/\s+/g, "+")}:wght@300;400;500;600;700&display=swap`}
-        />
-      )}
-
-      {/* CSS vars de white-label */}
-      {activeConfig && (
-        <style
-          dangerouslySetInnerHTML={{
-            __html: `
-              :root {
-                --primary: ${parseToHslChannels(activeConfig.color_primario)} !important;
-                --ring: ${parseToHslChannels(activeConfig.color_primario)} !important;
-                --secondary: ${parseToHslChannels(activeConfig.color_secundario)} !important;
-                --success: ${parseToHslChannels(activeConfig.color_exito)} !important;
-                --warning: ${parseToHslChannels(activeConfig.color_warning)} !important;
-                --destructive: ${parseToHslChannels(activeConfig.color_danger)} !important;
-                --info: ${parseToHslChannels(activeConfig.color_info)} !important;
-                --radius: ${
-                  activeConfig.border_radius === "ninguno" ? "0px"
-                  : activeConfig.border_radius === "sutil" ? "4px"
-                  : activeConfig.border_radius === "redondeado" ? "12px"
-                  : activeConfig.border_radius
-                } !important;
-                --font-sans: '${activeConfig.tipografia_principal}', var(--font-sans) !important;
-              }
-            `,
-          }}
         />
       )}
 

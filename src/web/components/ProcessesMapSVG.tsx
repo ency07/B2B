@@ -102,14 +102,14 @@ export default function ProcessesMapSVG() {
               <path 
                 d="M 500,240 L 650,240 L 650,180" 
                 fill="none" 
-                stroke="#0284c7" 
+                stroke="var(--action-primary)" 
                 strokeWidth="12" 
                 strokeLinecap="square"
                 opacity="0.3"
               />
 
               {/* Flechas de flujo de aire (Inyección en Azul) */}
-              <g stroke="#0284c7" strokeWidth="2.5" fill="none" strokeLinecap="round">
+              <g stroke="var(--action-primary)" strokeWidth="2.5" fill="none" strokeLinecap="round">
                 {/* Flujo inyector muro izquierdo */}
                 <path 
                   d="M 50,260 Q 150,260 250,240" 
@@ -126,7 +126,7 @@ export default function ProcessesMapSVG() {
               </g>
 
               {/* Flechas de flujo de aire (Extracción en Rojo/Naranja en Cubierta) */}
-              <g stroke="#f97316" strokeWidth="2.5" fill="none" strokeLinecap="round">
+              <g stroke="var(--status-warning)" strokeWidth="2.5" fill="none" strokeLinecap="round">
                 <path 
                   d="M 300,180 Q 350,130 350,110" 
                   strokeDasharray="8,12" 
@@ -144,11 +144,11 @@ export default function ProcessesMapSVG() {
               {/* Dibujo de Equipos Esquemáticos en SVG */}
               {/* Extractor de techo */}
               <rect x="330" y="85" width="40" height="15" className="fill-zinc-200 dark:fill-zinc-900 stroke-zinc-400 dark:stroke-zinc-650" strokeWidth="1.5" rx="2" />
-              <circle cx="350" cy="92.5" r="5" fill="#f97316" className="animate-pulse" />
+              <circle cx="350" cy="92.5" r="5" fill="var(--status-warning)" className="animate-pulse" />
 
               {/* Inyector lateral izquierdo */}
               <rect x="70" y="245" width="20" height="30" className="fill-zinc-200 dark:fill-zinc-900 stroke-zinc-400 dark:stroke-zinc-650" strokeWidth="1.5" rx="2" />
-              <line x1="80" y1="245" x2="80" y2="275" stroke="#0284c7" strokeWidth="2" />
+              <line x1="80" y1="245" x2="80" y2="275" stroke="var(--action-primary)" strokeWidth="2" />
 
               {/* Ciclón extractor de proceso */}
               <rect x="635" y="160" width="30" height="30" className="fill-zinc-200 dark:fill-zinc-900 stroke-zinc-400 dark:stroke-zinc-650" strokeWidth="1.5" rx="2" />
