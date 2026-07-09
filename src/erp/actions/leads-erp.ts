@@ -1,7 +1,7 @@
 "use server";
 
 import { supabaseAdmin } from "@/platform/auth/clients";
-import { getTenantId } from "@/erp/actions/core";
+import { getTenantId, getCallerTenantId } from "@/erp/actions/core";
 import { requireAction } from "@/platform/auth/server-guards";
 
 export interface LeadRow {
@@ -56,6 +56,7 @@ export async function getLeads(tenantCode?: string | null): Promise<LeadRow[]> {
   }
 
   // Normalizar: Supabase devuelve arrays para relaciones 1:many via FK inversa
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (data ?? []).map((row: any) => ({
     ...row,
     client: Array.isArray(row.client) ? row.client[0] ?? null : row.client,
@@ -71,12 +72,14 @@ export async function updateLeadStatus(
   leadId: string,
   newStatus: "NUEVO" | "EN_SEGUIMIENTO" | "CALIFICADO" | "RECHAZADO" | "CONVERTIDO"
 ): Promise<void> {
-  // P8: Validacion backend. Accion: leads.
   await requireAction("leads");
+  const tenantId = await getCallerTenantId();
+
   const { error } = await supabaseAdmin
     .from("leads")
     .update({ status: newStatus, updated_at: new Date().toISOString() })
-    .eq("id", leadId);
+    .eq("id", leadId)
+    .eq("tenant_id", tenantId);
 
   if (error) {
     console.error("Error updating lead status:", error);

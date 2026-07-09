@@ -90,10 +90,15 @@ export async function getClientContactInfo(): Promise<{
   const client = await getCurrentClient();
   if (!client || !client.isClientContact) return null;
 
+  const portalClient = await getPortalAuthenticatedClient();
+  if (!portalClient) return null;
+  const { data: { user } } = await portalClient.auth.getUser();
+  if (!user?.id) return null;
+
   const { data } = await supabaseAdmin
     .from("client_contacts")
     .select("first_name, last_name, email")
-    .eq("auth_user_id", (await getPortalAuthenticatedClient())?.auth.getUser().then(u => u.data?.user?.id))
+    .eq("auth_user_id", user.id)
     .maybeSingle();
 
   if (!data) return null;

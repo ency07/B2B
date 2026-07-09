@@ -1,3 +1,5 @@
+"use server";
+
 /**
  * Acciones para gestion de usuarios y roles (P5).
  *

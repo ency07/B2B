@@ -24,7 +24,6 @@ RETURNS boolean AS $$
     SELECT 1 FROM public.tenants
     WHERE id = p_tenant_id
       AND status = 'Activo'
-      AND deleted_at IS NULL
   );
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
 

@@ -2,6 +2,7 @@
 
 import { supabaseAdmin } from "@/platform/auth/clients";
 import { getAuthContext } from "@/platform/auth/server-guards";
+import { getCallerTenantId } from "@/erp/actions/core";
 
 export interface ClientContact {
   id: string;
@@ -16,16 +17,28 @@ export interface ClientContact {
 export async function getClientContacts(clientId: string): Promise<ClientContact[]> {
   const ctx = await getAuthContext();
   if (!ctx) throw new Error("No autenticado");
+  const tenantId = await getCallerTenantId();
+
+  // Verify clientId belongs to the caller's tenant before listing contacts.
+  const { data: clientCheck } = await supabaseAdmin
+    .from("clients")
+    .select("id")
+    .eq("id", clientId)
+    .eq("tenant_id", tenantId)
+    .maybeSingle();
+
+  if (!clientCheck) throw new Error("Cliente no encontrado en este tenant");
 
   const { data, error } = await supabaseAdmin
     .from("client_contacts")
     .select("id, first_name, last_name, email, portal_invited_at, portal_registered_at, auth_user_id")
     .eq("client_id", clientId)
+    .eq("tenant_id", tenantId)
     .order("first_name");
 
   if (error) throw new Error(error.message);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any — client_contacts select: TS necesita any para acceso dinámico a propiedades
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (data || []).map((c: any) => ({
     id: c.id,
     firstName: c.first_name,
@@ -42,6 +55,7 @@ export async function inviteContactToPortal(
 ): Promise<{ ok: boolean; error?: string }> {
   const ctx = await getAuthContext();
   if (!ctx) return { ok: false, error: "No autenticado" };
+  const tenantId = await getCallerTenantId();
 
   const { data: contact, error: contactErr } = await supabaseAdmin
     .from("client_contacts")
@@ -53,12 +67,13 @@ export async function inviteContactToPortal(
       )
     `)
     .eq("id", contactId)
+    .eq("tenant_id", tenantId)
     .maybeSingle();
 
   if (contactErr || !contact) return { ok: false, error: "Contacto no encontrado" };
   if (!contact.email) return { ok: false, error: "El contacto no tiene email registrado" };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any — clients.tenants join: cast necesario para acceso seguro
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const tenantCode = (contact.clients as any)?.tenants?.code as string | undefined;
   const appUrl =
     process.env.NEXT_PUBLIC_APP_URL ||
@@ -96,14 +111,17 @@ export async function revokeContactPortalAccess(
 ): Promise<{ ok: boolean; error?: string }> {
   const ctx = await getAuthContext();
   if (!ctx) return { ok: false, error: "No autenticado" };
+  const tenantId = await getCallerTenantId();
 
   const { data: contact } = await supabaseAdmin
     .from("client_contacts")
     .select("auth_user_id")
     .eq("id", contactId)
+    .eq("tenant_id", tenantId)
     .maybeSingle();
 
-  if (!contact?.auth_user_id) return { ok: false, error: "Este contacto no tiene acceso al portal" };
+  if (!contact) return { ok: false, error: "Contacto no encontrado" };
+  if (!contact.auth_user_id) return { ok: false, error: "Este contacto no tiene acceso al portal" };
 
   const { error: deleteErr } = await supabaseAdmin.auth.admin.deleteUser(contact.auth_user_id);
   if (deleteErr) return { ok: false, error: deleteErr.message };

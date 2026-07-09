@@ -2,7 +2,7 @@
 "use server";
 
 import { supabaseAdmin } from "@/platform/auth/clients";
-import { getTenantId } from "@/erp/actions/core";
+import { getTenantId, getCallerTenantId } from "@/erp/actions/core";
 import { requireAction, getAuthContext } from "@/platform/auth/server-guards";
 
 export interface QuoteRow {
@@ -78,11 +78,13 @@ export async function createQuote(
 export async function getQuoteItems(quoteId: string) {
   const ctx = await getAuthContext();
   if (!ctx) throw new Error("No autenticado");
+  const tenantId = await getCallerTenantId();
 
   const { data, error } = await supabaseAdmin
     .from("quote_items")
     .select("*")
     .eq("quote_id", quoteId)
+    .eq("tenant_id", tenantId)
     .order("item_order", { ascending: true });
 
   if (error) {
@@ -108,6 +110,16 @@ export async function addQuoteItem(
 ) {
   const ctx = await requireAction("quotes.create");
   const tenantId = await getTenantId(tenantCode);
+
+  // Verify the target quote belongs to this tenant before inserting items.
+  const { data: quoteCheck } = await supabaseAdmin
+    .from("quotes")
+    .select("id")
+    .eq("id", itemData.quoteId)
+    .eq("tenant_id", tenantId)
+    .maybeSingle();
+
+  if (!quoteCheck) throw new Error("Cotización no encontrada en este tenant");
 
   const { data, error } = await supabaseAdmin
     .from("quote_items")
@@ -136,17 +148,16 @@ export async function addQuoteItem(
 }
 
 export async function updateQuoteStatus(quoteId: string, status: string) {
-  // Aprobar una cotización requiere permiso explícito quotes.approve.
-  // Cualquier otra transición requiere quotes.create (el creador puede moverla
-  // a EN_REVISION o ENVIADA, pero no puede auto-aprobarla).
   const ctx = status === "APROBADA"
     ? await requireAction("quotes.approve")
     : await requireAction("quotes.create");
+  const tenantId = await getCallerTenantId();
 
   const { data, error } = await supabaseAdmin
     .from("quotes")
     .update({ status, status_changed_by: ctx.userId, status_changed_at: new Date().toISOString() })
     .eq("id", quoteId)
+    .eq("tenant_id", tenantId)
     .select()
     .single();
 

@@ -12,7 +12,7 @@ import {
   getClientRequirements,
 } from "@/portal/actions/portal";
 import { buildLoginUrl } from "@/utils/auth-redirect";
-import CustomerPortalClient from "./client-page";
+import CustomerPortalClient from "./client/page";
 
 import { supabaseAdmin } from "@/platform/auth/clients";
 

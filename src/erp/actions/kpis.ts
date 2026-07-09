@@ -1,3 +1,6 @@
+"use server";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 /**
  * KPIs y "Pending" especificos por rol (P8 - dashboard role-adaptive).
  *

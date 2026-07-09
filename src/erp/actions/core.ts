@@ -9,6 +9,25 @@ export async function getTenantId(tenantCode?: string | null): Promise<string> {
   return resolveTenantIdAsync(tenantCode);
 }
 
+/**
+ * Devuelve el tenant_id del usuario autenticado leyendo su registro en la
+ * tabla `users`. Usar en mutations que no reciben tenantCode como parámetro
+ * para garantizar que el recurso modificado pertenece al tenant del llamador.
+ */
+export async function getCallerTenantId(): Promise<string> {
+  const ctx = await getAuthContext();
+  if (!ctx) throw new Error("No autenticado");
+
+  const { data } = await supabaseAdmin
+    .from("users")
+    .select("tenant_id")
+    .eq("auth_user_id", ctx.userId)
+    .maybeSingle();
+
+  if (!data?.tenant_id) throw new Error("Usuario sin tenant asignado");
+  return data.tenant_id as string;
+}
+
 // ==========================================
 // CLIENTS ACTIONS
 // ==========================================

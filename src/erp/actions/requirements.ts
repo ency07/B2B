@@ -2,7 +2,7 @@
 "use server";
 
 import { supabaseAdmin } from "@/platform/auth/clients";
-import { getTenantId } from "@/erp/actions/core";
+import { getTenantId, getCallerTenantId } from "@/erp/actions/core";
 import { requireAction, getAuthContext } from "@/platform/auth/server-guards";
 
 export interface RequirementRow {
@@ -99,6 +99,7 @@ export async function updateRequirementStatus(
   extra?: Record<string, any>
 ) {
   const ctx = await requireAction("requirements");
+  const tenantId = await getCallerTenantId();
 
   const payload: any = {
     status: newStatus,
@@ -110,6 +111,7 @@ export async function updateRequirementStatus(
     .from("requirements")
     .update(payload)
     .eq("id", reqId)
+    .eq("tenant_id", tenantId)
     .select()
     .single();
 
