@@ -6,7 +6,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ArrowLeft, 
@@ -35,6 +34,7 @@ import { Input } from "@/platform/ui/input";
 import { Label } from "@/platform/ui/label";
 import { Textarea } from "@/platform/ui/textarea";
 import { submitWizardData, WizardResult } from "@/web/actions/wizard";
+import { TenantLogo } from "@/design-system/components/TenantLogo";
 import { generateEngineeringReport, ENVIRONMENT_OPTIONS } from "@/utils/engineering";
 import { estimatePrice } from "@/utils/pricing";
 import { getTenantConfig } from "@/platform/tenant/tenant";
@@ -582,19 +582,14 @@ Solicito una cotización formal y confirmación de disponibilidad técnica. Grac
       <header className="border-b border-line bg-paper">
         <div className="max-w-[1600px] mx-auto px-6 sm:px-10 lg:px-14 h-20 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3 group">
-            {siteLogo ? (
-              <Image
-                src={siteLogo}
-                alt={siteName}
-                width={120}
-                height={32}
-                className="h-7 w-auto object-contain"
-              />
-            ) : (
-              <span className="font-display text-lg font-light text-ink tracking-[-0.02em]">
-                {siteName}
-              </span>
-            )}
+            <TenantLogo
+              variant="claro"
+              logoClaroUrl={siteLogo}
+              companyName={siteName}
+              width={120}
+              height={32}
+              className="h-7 w-auto object-contain"
+            />
           </Link>
 
           <Link

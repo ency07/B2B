@@ -18,6 +18,7 @@ import { Download, Printer } from "lucide-react";
 import { StatusPill } from "@/erp/components/data-list/status-pill";
 import type { StatusVariant } from "@/erp/components/data-list/status-dot";
 import { cn } from "@/platform/utils/cn";
+import { TenantLogo } from "@/design-system/components/TenantLogo";
 
 export interface ReceiptItem {
   id: string;
@@ -148,18 +149,15 @@ export function Receipt({
     >
       {/* === Header: logo + tenant === */}
       <div className="text-center mb-8">
-        {logoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={logoUrl}
-            alt={tenantName}
+        <TenantLogo
+            variant="pdf"
+            logoPdfUrl={logoUrl}
+            companyName={tenantName}
+            width={120}
+            height={28}
+            native
             className="h-7 w-auto mx-auto object-contain"
           />
-        ) : (
-          <h1 className="text-[14px] font-semibold text-ink tracking-tight">
-            {tenantName}
-          </h1>
-        )}
         {tenantTaxId && (
           <p className="font-mono text-[10px] text-ink-muted mt-1">
             NIT {tenantTaxId}

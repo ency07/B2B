@@ -2,9 +2,9 @@
 "use client";
 
 import * as React from "react";
-import Image from "next/image";
 import { Menu, X, Command } from "lucide-react";
 import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion";
+import { TenantLogo } from "@/design-system/components/TenantLogo";
 
 interface TopBarProps {
   siteName: string;
@@ -104,61 +104,35 @@ export function TopBar({ siteName, logoUrl, tenantCode }: TopBarProps) {
             className="flex items-center gap-3 group"
             aria-label={siteName}
           >
-            {logoUrl ? (
-              <Image
-                src={logoUrl}
-                alt={siteName}
-                width={120}
-                height={28}
-                className={`h-6 w-auto transition-all duration-500 ${
-                  onHero ? "brightness-0 invert" : "brightness-0"
-                }`}
-              />
-            ) : (
-              <>
-                {/* Logo mark: cuadrado con iniciales + wordmark */}
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            <TenantLogo
+              variant="claro"
+              logoClaroUrl={logoUrl}
+              companyName={siteName}
+              width={120}
+              height={28}
+              invertOnDark
+              onDark={onHero}
+              className="h-6 w-auto transition-all duration-500"
+            />
+            {!logoUrl && (
+              <div className="flex flex-col items-start leading-none ml-1.5">
+                <span
                   className={`
-                    relative w-9 h-9 flex items-center justify-center
-                    font-display font-medium text-[15px] tracking-[-0.02em]
-                    transition-colors duration-500
-                    ${onHero
-                      ? "bg-white text-ink"
-                      : "bg-ink text-paper"
-                    }
+                    font-display text-[18px] font-normal tracking-[-0.02em] transition-colors duration-500
+                    ${onHero ? "text-white" : "text-ink"}
                   `}
                 >
-                  A
-                  {/* Dot pulsante en la esquina */}
-                  <span
-                    className={`
-                      absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full
-                      bg-[var(--ds-c-marketing-top-bar-dot)]
-                      animate-pulse
-                    `}
-                  />
-                </motion.div>
-                <div className="flex flex-col items-start leading-none">
-                  <span
-                    className={`
-                      font-display text-[18px] font-normal tracking-[-0.02em] transition-colors duration-500
-                      ${onHero ? "text-white" : "text-ink"}
-                    `}
-                  >
-                    {siteName}
-                  </span>
-                  <span
-                    className={`
-                      font-mono text-[8px] tracking-[0.2em] uppercase mt-0.5 transition-colors duration-500
-                      ${onHero ? "text-white/50" : "text-ink-muted"}
-                    `}
-                  >
-                    Industrial OS
-                  </span>
-                </div>
-              </>
+                  {siteName}
+                </span>
+                <span
+                  className={`
+                    font-mono text-[8px] tracking-[0.2em] uppercase mt-0.5 transition-colors duration-500
+                    ${onHero ? "text-white/50" : "text-ink-muted"}
+                  `}
+                >
+                  Industrial OS
+                </span>
+              </div>
             )}
           </button>
 

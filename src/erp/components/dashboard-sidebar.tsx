@@ -18,7 +18,6 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
-import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
@@ -51,6 +50,7 @@ const supabase = getErpBrowserClient();
 import { getUserRole } from "@/platform/users/users";;
 import { getPermissionsForRole } from "@/lib/role-permissions";
 import { useBranding } from "@/hooks/use-branding";
+import { TenantLogo } from "@/design-system/components/TenantLogo";
 
 type NavItem = {
   href: string;
@@ -262,23 +262,18 @@ function SidebarHeader({
     <div className="flex items-center justify-between h-14 px-4 border-b border-line shrink-0">
       {!collapsed ? (
         <div className="flex items-center gap-2 min-w-0">
-          {logoUrl ? (
-            <Image
-              src={logoUrl}
-              alt={companyName}
-              width={150}
-              height={28}
-              className="h-6 w-auto max-w-[150px] object-contain"
-            />
-          ) : (
-            <span className="text-[14px] font-semibold text-ink truncate">
-              {companyName}
-            </span>
-          )}
+          <TenantLogo
+            variant="claro"
+            logoClaroUrl={logoUrl}
+            companyName={companyName}
+            width={150}
+            height={28}
+            className="max-w-[150px]"
+          />
         </div>
       ) : (
         <span className="font-mono text-[10px] uppercase tracking-widest font-bold text-primary mx-auto">
-          {companyName.substring(0, 2).toUpperCase()}
+          {(companyName || "EM").substring(0, 2).toUpperCase()}
         </span>
       )}
 
