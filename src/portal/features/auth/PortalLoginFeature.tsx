@@ -11,6 +11,7 @@ import { Eye, EyeOff, Lock, Mail, ArrowLeft, ShieldCheck } from "lucide-react";
 import { getBrandingDefaults } from "@/platform/branding/branding-defaults";
 import { loginPortal } from "@/portal/actions/auth";
 import { isSafeRedirect } from "@/utils/auth-redirect";
+import { getPortalBrowserClient } from "@/platform/auth/clients";
 
 const loginSchema = z.object({
   email: z.string().email("Correo no válido"),
@@ -58,8 +59,18 @@ export function PortalLoginFeature() {
       return;
     }
 
+    // Hidratar la sesión en el cliente (localStorage) para que autoRefreshToken
+    // mantenga la sesión viva y llame a /api/auth/sync-token antes de que
+    // el cookie HttpOnly de 1h expire. Las cookies ya fueron fijadas server-side.
+    if (result.session) {
+      const supabase = getPortalBrowserClient();
+      await supabase.auth.setSession({
+        access_token: result.session.access_token,
+        refresh_token: result.session.refresh_token,
+      });
+    }
+
     router.push(result.redirectTo!);
-    router.refresh();
   };
 
   const siteUrl = tenantParam ? `/?tenant=${tenantParam}` : "/";

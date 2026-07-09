@@ -13,7 +13,7 @@ export async function loginPortal(
   password: string,
   tenant?: string | null,
   redirect?: string
-): Promise<{ success: boolean; redirectTo?: string; error?: string }> {
+): Promise<{ success: boolean; redirectTo?: string; error?: string; session?: { access_token: string; refresh_token: string; expires_in: number } }> {
   if (!email || !password) {
     return { success: false, error: "Email y contraseña requeridos" };
   }
@@ -32,6 +32,16 @@ export async function loginPortal(
     return { success: false, error: "Credenciales incorrectas" };
   }
 
+  if (!authData.session) {
+    await logAuthEvent("LOGIN_FAILED", null, { email, error: "no_session" });
+    return { success: false, error: "Tu cuenta aún no está activada. Revisa tu correo de confirmación." };
+  }
+
+  const session = authData.session;
+  if (!session.access_token || !session.refresh_token) {
+    return { success: false, error: "Error al obtener tokens de sesión" };
+  }
+
   await logAuthEvent("LOGIN_SUCCESS", authData.user.id, { email });
 
   const cookieStore = await cookies();
@@ -39,23 +49,20 @@ export async function loginPortal(
   const safeRedirect: string = isSafeRedirect(redirectStr) ? redirectStr : "/portal";
   const destination = applyTenantToPath(safeRedirect, tenant);
 
-  const session = authData.session;
-  if (session) {
-    cookieStore.set("sb-portal-access-token", session.access_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60,
-    });
-    cookieStore.set("sb-portal-refresh-token", session.refresh_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7,
-    });
-  }
+  cookieStore.set("sb-portal-access-token", session.access_token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60,
+  });
+  cookieStore.set("sb-portal-refresh-token", session.refresh_token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 7,
+  });
 
   const sessionVersion = Number(cookieStore.get("sb-session-version")?.value || "0") + 1;
   // httpOnly: false es intencional — el SessionVersionListener necesita leer esta cookie
@@ -68,5 +75,13 @@ export async function loginPortal(
     maxAge: 60 * 60 * 24 * 2,
   });
 
-  return { success: true, redirectTo: destination };
+  return {
+    success: true,
+    redirectTo: destination,
+    session: {
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
+      expires_in: session.expires_in ?? 3600,
+    },
+  };
 }

@@ -17,7 +17,10 @@ export async function authMiddlewareGuard(request: NextRequest) {
   }
 
   if (pathname === '/recovery' && isAuthenticated) {
-    const url = new URL('/dashboard', request.url);
+    // Redirigir al dominio correcto según qué cookie existe
+    const erpToken = request.cookies.get('sb-erp-access-token')?.value;
+    const redirectPath = erpToken ? '/dashboard' : '/portal';
+    const url = new URL(redirectPath, request.url);
     if (tenantParam) url.searchParams.set('tenant', tenantParam);
     return NextResponse.redirect(url);
   }
