@@ -172,7 +172,7 @@ function SplitViewDetail({
           className={cn(
             "absolute top-0 bottom-0 w-1.5 -translate-x-1/2 cursor-col-resize",
             "hover:bg-primary/20 transition-colors",
-            "z-10"
+            "z-layer-content"
           )}
           style={{ left: 0 }}
         />
@@ -200,7 +200,7 @@ function SplitViewDetailHeader({
   return (
     <header
       className={cn(
-        "sticky top-0 z-10",
+        "sticky top-0 z-layer-content",
         "flex items-center justify-between gap-3",
         "h-14 px-5",
         "border-b border-line",
@@ -262,7 +262,7 @@ function SplitViewDetailFooter({
   return (
     <footer
       className={cn(
-        "sticky bottom-0 z-10",
+        "sticky bottom-0 z-layer-content",
         "flex items-center justify-between gap-3",
         "h-12 px-5",
         "border-t border-line",

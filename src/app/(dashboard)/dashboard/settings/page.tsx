@@ -1448,7 +1448,7 @@ function UserRow({
               + Asignar rol
             </Button>
             {showRoleSelect && (
-              <div className="absolute z-20 top-full mt-1 right-0 min-w-[180px] p-1 rounded-md border border-border bg-popover shadow-lg">
+              <div className="absolute z-layer-dropdown top-full mt-1 right-0 min-w-[180px] p-1 rounded-md border border-border bg-popover shadow-lg">
                 {availableRoles.map((r) => (
                   <button
                     key={r.id}

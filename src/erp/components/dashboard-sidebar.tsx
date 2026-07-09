@@ -173,7 +173,7 @@ export function DashboardSidebar({ role: initialRole = null }: DashboardSidebarP
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={closeMobile}
-            className="fixed inset-0 z-50 bg-foreground/40 backdrop-blur-xs lg:hidden"
+            className="fixed inset-0 z-layer-modal bg-foreground/40 backdrop-blur-xs lg:hidden"
           />
         )}
       </AnimatePresence>
@@ -186,7 +186,7 @@ export function DashboardSidebar({ role: initialRole = null }: DashboardSidebarP
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
             transition={{ type: "tween", duration: 0.18, ease: [0.2, 0, 0, 1] }}
-            className="fixed inset-y-0 left-0 z-50 flex flex-col w-72 bg-bg-elevated-1 border-r border-line depth-3 lg:hidden"
+            className="fixed inset-y-0 left-0 z-layer-modal flex flex-col w-72 bg-bg-elevated-1 border-r border-line depth-3 lg:hidden"
           >
             <SidebarHeader
               logoUrl={logoUrl}
@@ -210,7 +210,7 @@ export function DashboardSidebar({ role: initialRole = null }: DashboardSidebarP
           "hidden lg:flex flex-col h-screen sticky top-0",
           "bg-bg-elevated-1 border-r border-line shrink-0",
           "transition-[width] duration-[var(--motion-base)] ease-erp",
-          "z-30",
+          "z-layer-sidebar",
           sidebarWidth
         )}
       >

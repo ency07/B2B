@@ -110,7 +110,7 @@ export function ClientDetail({
         className
       )}
     >
-      <header className="sticky top-0 z-10 border-b border-line bg-bg-elevated-1">
+      <header className="sticky top-0 z-layer-content border-b border-line bg-bg-elevated-1">
         <div className="flex items-start gap-3 p-5">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">

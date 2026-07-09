@@ -165,7 +165,7 @@ export function DashboardHeader({
 
   return (
     <>
-      <Headroom className="z-40">
+      <Headroom className="z-layer-sticky">
         <header
           className={cn(
             "flex items-center justify-between h-14 px-4 md:px-6",
@@ -278,13 +278,13 @@ export function DashboardHeader({
               {showNotificationsMenu && (
                 <>
                   <div
-                    className="fixed inset-0 z-40"
+                    className="fixed inset-0 z-layer-sticky"
                     onClick={() => setShowNotificationsMenu(false)}
                     aria-hidden
                   />
                   <div
                     role="menu"
-                    className="absolute right-0 top-full mt-1 w-80 max-h-96 z-50 rounded-lg border border-line bg-bg-elevated-1 depth-3 overflow-y-auto flex flex-col"
+                    className="absolute right-0 top-full mt-1 w-80 max-h-96 z-layer-modal rounded-lg border border-line bg-bg-elevated-1 depth-3 overflow-y-auto flex flex-col"
                   >
                     <div className="px-4 py-2.5 border-b border-line flex justify-between items-center bg-bg-elevated-1/90 backdrop-blur sticky top-0">
                       <span className="text-[11px] font-mono font-bold text-ink uppercase tracking-wider">
@@ -365,13 +365,13 @@ export function DashboardHeader({
               {showAccountMenu && (
                 <>
                   <div
-                    className="fixed inset-0 z-40"
+                    className="fixed inset-0 z-layer-sticky"
                     onClick={() => setShowAccountMenu(false)}
                     aria-hidden
                   />
                   <div
                     role="menu"
-                    className="absolute right-0 top-full mt-1 w-56 z-50 rounded-lg border border-line bg-bg-elevated-1 depth-2 overflow-hidden"
+                    className="absolute right-0 top-full mt-1 w-56 z-layer-modal rounded-lg border border-line bg-bg-elevated-1 depth-2 overflow-hidden"
                   >
                     <div className="px-3 py-2 border-b border-line">
                       <p className="text-[12px] font-semibold text-ink truncate">

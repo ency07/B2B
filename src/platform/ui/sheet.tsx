@@ -16,7 +16,7 @@ const SheetOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "fixed inset-0 z-50 bg-[var(--ds-c-sheet-overlay-background)] backdrop-blur-md transition-opacity duration-300 data-[state=open]:animate-fade-in data-[state=closed]:animate-fade-out",
+      "fixed inset-0 z-layer-modal bg-[var(--ds-c-sheet-overlay-background)] backdrop-blur-md transition-opacity duration-300 data-[state=open]:animate-fade-in data-[state=closed]:animate-fade-out",
       className
     )}
     {...props}
@@ -33,7 +33,7 @@ const SheetContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed right-0 top-0 bottom-0 z-50 h-full w-full max-w-[80vw] sm:max-w-[700px] md:max-w-[800px] border-l border-[var(--ds-c-sheet-border)] bg-[var(--ds-c-sheet-content-background)] text-[var(--ds-c-sheet-content-foreground)] p-6 shadow-2xl transition-transform duration-300 data-[state=open]:translate-x-0 data-[state=closed]:translate-x-full ease-in-out",
+        "fixed right-0 top-0 bottom-0 z-layer-modal h-full w-full max-w-[80vw] sm:max-w-[700px] md:max-w-[800px] border-l border-[var(--ds-c-sheet-border)] bg-[var(--ds-c-sheet-content-background)] text-[var(--ds-c-sheet-content-foreground)] p-6 shadow-2xl transition-transform duration-300 data-[state=open]:translate-x-0 data-[state=closed]:translate-x-full ease-in-out",
         className
       )}
       {...props}

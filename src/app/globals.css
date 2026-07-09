@@ -142,6 +142,16 @@
   --motion-slow: 240ms;
   --motion-portal-slow: 320ms;
   --ease-erp: cubic-bezier(0.2, 0, 0, 1);
+
+  /* === Z-index layers (sistema de capas semántico) === */
+  --layer-toast: 999999999;
+  --layer-modal: 50;
+  --layer-sticky: 40;
+  --layer-sidebar: 30;
+  --layer-dropdown: 20;
+  --layer-content: 10;
+  --layer-base: 0;
+  --layer-negative: -1;
 }
 
 /* ============================================================
@@ -502,6 +512,15 @@
   from { transform: scaleX(0); }
   to { transform: scaleX(1); }
 }
+
+/* === Z-index utility layers === */
+.z-layer-negative { z-index: var(--layer-negative); }
+.z-layer-content { z-index: var(--layer-content); }
+.z-layer-dropdown { z-index: var(--layer-dropdown); }
+.z-layer-sidebar { z-index: var(--layer-sidebar); }
+.z-layer-sticky { z-index: var(--layer-sticky); }
+.z-layer-modal { z-index: var(--layer-modal); }
+.z-layer-toast { z-index: var(--layer-toast); }
 
 /* === GLOBAL STYLES === */
 * {

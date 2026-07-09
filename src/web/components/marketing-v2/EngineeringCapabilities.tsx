@@ -500,17 +500,17 @@ function TechnicalDetailModal({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
             onClick={onClose}
-            className="fixed inset-0 z-40 bg-ink/60 backdrop-blur-md"
+            className="fixed inset-0 z-layer-sticky bg-ink/60 backdrop-blur-md"
           />
           <motion.aside
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed top-0 right-0 bottom-0 z-50 w-full md:w-[85%] lg:w-[60%] xl:w-[55%] bg-paper border-l border-line flex flex-col overflow-hidden"
+            className="fixed top-0 right-0 bottom-0 z-layer-modal w-full md:w-[85%] lg:w-[60%] xl:w-[55%] bg-paper border-l border-line flex flex-col overflow-hidden"
           >
             {/* === HEADER === */}
-            <header className="sticky top-0 z-10 bg-paper border-b border-line px-8 lg:px-10 py-6 flex items-start justify-between gap-6">
+            <header className="sticky top-0 z-layer-content bg-paper border-b border-line px-8 lg:px-10 py-6 flex items-start justify-between gap-6">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-3 mb-3 flex-wrap">
                   <span className="font-mono text-[10px] tracking-widest text-fg-muted uppercase">
@@ -659,7 +659,7 @@ function TechnicalDetailModal({
             </div>
 
             {/* === FOOTER CON CTAs === */}
-            <footer className="sticky bottom-0 z-10 bg-paper border-t border-line px-8 lg:px-10 py-5">
+            <footer className="sticky bottom-0 z-layer-content bg-paper border-t border-line px-8 lg:px-10 py-5">
               <div className="flex flex-col sm:flex-row items-stretch gap-3">
                 <a
                   href={`/wizard?tenant=${tenantCode}&product=${item.code}`}

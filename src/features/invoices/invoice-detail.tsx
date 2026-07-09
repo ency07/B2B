@@ -96,7 +96,7 @@ export function InvoiceDetail({
       )}
     >
       {/* === Header === */}
-      <header className="sticky top-0 z-10 border-b border-line bg-bg-elevated-1 px-5 py-4">
+      <header className="sticky top-0 z-layer-content border-b border-line bg-bg-elevated-1 px-5 py-4">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">

@@ -72,7 +72,7 @@ export default function ChatbotWidget({ primaryColor = "#ED254E", branding, curr
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
+    <div className="fixed bottom-6 right-6 z-layer-modal">
       {open && (
         <div className="mb-3 w-[320px] max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-background shadow-xl overflow-hidden flex flex-col">
           <div

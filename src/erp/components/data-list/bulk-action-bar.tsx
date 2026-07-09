@@ -49,7 +49,7 @@ export function BulkActionBar({
       role="toolbar"
       aria-label={`${count} ${count === 1 ? "item seleccionado" : "items seleccionados"}`}
       className={cn(
-        "sticky top-0 z-20",
+        "sticky top-0 z-layer-dropdown",
         "flex items-center justify-between gap-3",
         "h-12 px-4",
         "rounded-lg border border-line",

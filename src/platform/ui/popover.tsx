@@ -216,7 +216,7 @@ export function Popover({
               visibility: position ? "visible" : "hidden",
             }}
             className={cn(
-              "z-50",
+              "z-layer-modal",
               "rounded-lg border border-[var(--ds-c-popover-border)] bg-[var(--ds-c-popover-background)] text-[var(--ds-c-popover-foreground)]",
               "shadow-lg",
               contentClassName
