@@ -293,14 +293,14 @@ export function TopBar({ siteName, logoUrl, tenantCode }: TopBarProps) {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25 }}
               onClick={() => setOpen(false)}
-              className="fixed inset-0 z-[60] bg-ink/60 backdrop-blur-sm"
+              className="fixed inset-0 z-40 bg-ink/60 backdrop-blur-sm"
             />
             <motion.aside
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-              className="fixed top-0 right-0 bottom-0 z-[70] w-full sm:w-[88%] sm:max-w-md bg-paper border-l border-line flex flex-col"
+              className="fixed top-0 right-0 bottom-0 z-50 w-full sm:w-[88%] sm:max-w-md bg-paper border-l border-line flex flex-col"
             >
               <div className="h-20 px-7 flex items-center justify-between border-b border-line">
                 <div className="flex items-center gap-3">

@@ -76,7 +76,7 @@ export default function WizardStepper({
   const preselectedProduct = searchParams.get("product") || "";
 
   // Colores dinámicos del Tenant
-  const primaryColor = branding.color_primario || "#0284c7";
+  const primaryColor = branding.color_primario || "#ED254E";
   const config = getTenantConfig(tenantCode);
   const siteName = branding.nombre_comercial || config.name;
   const siteLogo = branding.logo_claro_url || "";

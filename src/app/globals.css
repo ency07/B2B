@@ -686,7 +686,7 @@ html, body {
   font-size: 14px;
   font-weight: 500;
   letter-spacing: 0.01em;
-  border-radius: 2px;
+  border-radius: 6px;
   border: 1px solid var(--color-ink);
   transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
@@ -694,8 +694,9 @@ html, body {
 }
 
 .btn-primary:hover {
-  background: #2A2E36;
-  border-color: #2A2E36;
+  background: var(--color-ink);
+  opacity: 0.9;
+  border-color: var(--color-ink);
 }
 
 .btn-primary svg {
@@ -718,7 +719,7 @@ html, body {
   font-size: 14px;
   font-weight: 500;
   letter-spacing: 0.01em;
-  border-radius: 2px;
+  border-radius: 6px;
   border: 1px solid var(--color-ink);
   transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;

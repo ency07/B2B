@@ -31,7 +31,7 @@ function pickEntryStepId(steps: ChatbotStep[], currentWizardStep?: number): stri
   return steps[0]?.id;
 }
 
-export default function ChatbotWidget({ primaryColor = "#0284c7", branding, currentWizardStep }: ChatbotWidgetProps) {
+export default function ChatbotWidget({ primaryColor = "#ED254E", branding, currentWizardStep }: ChatbotWidgetProps) {
   const steps = branding?.chatbot_steps || [];
   const [open, setOpen] = React.useState(false);
   const [history, setHistory] = React.useState<string[]>(() => {
@@ -72,7 +72,7 @@ export default function ChatbotWidget({ primaryColor = "#0284c7", branding, curr
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[80]">
+    <div className="fixed bottom-6 right-6 z-50">
       {open && (
         <div className="mb-3 w-[320px] max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-background shadow-xl overflow-hidden flex flex-col">
           <div

@@ -217,17 +217,17 @@ export default function LandingCfmCalculator() {
           <div className="grid grid-cols-2 gap-4">
             {/* Volumen */}
             <div className="bg-white dark:bg-zinc-900/10 border border-zinc-200 dark:border-zinc-800/80 rounded-md p-4 flex flex-col justify-between shadow-2xs">
-              <span className="text-xs text-zinc-500 dark:text-zinc-550 uppercase tracking-widest font-mono">Volumen a Tratar</span>
+              <span className="text-xs text-zinc-500 dark:text-zinc-400 uppercase tracking-widest font-mono">Volumen a Tratar</span>
               <div className="text-lg font-bold text-zinc-900 dark:text-white mt-1 font-mono">
-                {volume.toLocaleString()} <span className="text-xs text-zinc-500 dark:text-zinc-550 font-normal">m³</span>
+                {volume.toLocaleString()} <span className="text-xs text-zinc-500 dark:text-zinc-400 font-normal">m³</span>
               </div>
             </div>
 
             {/* ACH */}
             <div className="bg-white dark:bg-zinc-900/10 border border-zinc-200 dark:border-zinc-800/80 rounded-md p-4 flex flex-col justify-between shadow-2xs">
-              <span className="text-xs text-zinc-500 dark:text-zinc-550 uppercase tracking-widest font-mono">Renovaciones (ACH)</span>
+              <span className="text-xs text-zinc-500 dark:text-zinc-400 uppercase tracking-widest font-mono">Renovaciones (ACH)</span>
               <div className="text-lg font-bold text-[var(--brand-primary)] mt-1 font-mono">
-                {ach} <span className="text-xs text-zinc-500 dark:text-zinc-550 font-normal">renov/h</span>
+                {ach} <span className="text-xs text-zinc-500 dark:text-zinc-400 font-normal">renov/h</span>
               </div>
             </div>
 
@@ -244,26 +244,26 @@ export default function LandingCfmCalculator() {
 
             {/* Consumo y Potencia */}
             <div className="bg-white dark:bg-zinc-900/10 border border-zinc-200 dark:border-zinc-800/80 rounded-md p-4 flex flex-col justify-between shadow-2xs">
-              <span className="text-xs text-zinc-500 dark:text-zinc-550 uppercase tracking-widest font-mono">Potencia del Motor</span>
+              <span className="text-xs text-zinc-500 dark:text-zinc-400 uppercase tracking-widest font-mono">Potencia del Motor</span>
               <div className="text-base font-bold text-zinc-900 dark:text-white mt-1 font-mono">
-                {powerHp} <span className="text-xs text-zinc-500 dark:text-zinc-550 font-normal">HP</span>
-                <span className="text-xs text-zinc-500 dark:text-zinc-550 block font-normal mt-0.5">({powerKw} kW/h consumo)</span>
+                {powerHp} <span className="text-xs text-zinc-500 dark:text-zinc-400 font-normal">HP</span>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400 block font-normal mt-0.5">({powerKw} kW/h consumo)</span>
               </div>
             </div>
 
             {/* Ruido y Presión */}
             <div className="bg-white dark:bg-zinc-900/10 border border-zinc-200 dark:border-zinc-800/80 rounded-md p-4 flex flex-col justify-between shadow-2xs">
-              <span className="text-xs text-zinc-500 dark:text-zinc-550 uppercase tracking-widest font-mono">Ruido y Presión</span>
+              <span className="text-xs text-zinc-500 dark:text-zinc-400 uppercase tracking-widest font-mono">Ruido y Presión</span>
               <div className="text-base font-bold text-zinc-900 dark:text-white mt-1 font-mono">
-                {noiseDba} <span className="text-xs text-zinc-500 dark:text-zinc-550 font-normal">dBA</span>
-                <span className="text-xs text-zinc-500 dark:text-zinc-550 block font-normal mt-0.5">({staticPressure} inWG Presión)</span>
+                {noiseDba} <span className="text-xs text-zinc-500 dark:text-zinc-400 font-normal">dBA</span>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400 block font-normal mt-0.5">({staticPressure} inWG Presión)</span>
               </div>
             </div>
 
             {/* Equipos sugeridos */}
             <div className="bg-white dark:bg-zinc-900/10 border border-zinc-200 dark:border-zinc-800/80 rounded-md p-4 col-span-2 space-y-2 shadow-2xs">
               <div className="flex justify-between items-center border-b border-zinc-100 dark:border-zinc-800 pb-2">
-                <span className="text-xs text-zinc-500 dark:text-zinc-550 uppercase tracking-widest font-mono">Cantidad de Equipos:</span>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400 uppercase tracking-widest font-mono">Cantidad de Equipos:</span>
                 <span className="text-xs font-bold text-zinc-900 dark:text-white font-mono">{qtyEquip} Unidades</span>
               </div>
               <div className="flex justify-between items-center text-xs">
