@@ -91,6 +91,21 @@ export function generateBridgeCSS(theme: Theme): CSSVariables {
     ['--border', 'border.default'],
     ['--input', 'border.default'],
     ['--ring', 'special.focusRing'],
+    ['--state-success-fg', 'status.success'],
+    ['--state-success-bg', 'status.successBg'],
+    ['--state-success-border', 'status.successBorder'],
+    ['--state-warning-fg', 'status.warning'],
+    ['--state-warning-bg', 'status.warningBg'],
+    ['--state-warning-border', 'status.warningBorder'],
+    ['--state-danger-fg', 'status.error'],
+    ['--state-danger-bg', 'status.errorBg'],
+    ['--state-danger-border', 'status.errorBorder'],
+    ['--state-info-fg', 'status.info'],
+    ['--state-info-bg', 'status.infoBg'],
+    ['--state-info-border', 'status.infoBorder'],
+    ['--state-neutral-fg', 'status.neutralFg'],
+    ['--state-neutral-bg', 'status.neutralBg'],
+    ['--state-neutral-border', 'status.neutralBorder'],
   ]
 
   const vars: CSSVariables = {}

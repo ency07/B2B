@@ -50,6 +50,17 @@ export interface StatusTokens {
   warning: string
   error: string
   info: string
+  successBg: string
+  warningBg: string
+  errorBg: string
+  infoBg: string
+  successBorder: string
+  warningBorder: string
+  errorBorder: string
+  infoBorder: string
+  neutralFg: string
+  neutralBg: string
+  neutralBorder: string
 }
 
 export interface ActionTokens {
