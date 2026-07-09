@@ -32,33 +32,37 @@ export async function getClients(tenantCode?: string | null) {
     throw new Error(error.message);
   }
 
-  // Calculate sum of total invoiced for each client
-  const clientsWithInvoiced = await Promise.all(
-    (data || []).map(async (client: any) => {
-      const { data: invoices } = await supabaseAdmin
+  const clients = data || [];
+
+  // Una sola query batch para todas las facturas del tenant — elimina N+1.
+  const clientIds = clients.map((c: any) => c.id);
+  const { data: invoiceRows } = clientIds.length > 0
+    ? await supabaseAdmin
         .from("invoices")
-        .select("total_amount")
-        .eq("client_id", client.id)
+        .select("client_id, total_amount")
+        .eq("tenant_id", tenantId)
+        .in("client_id", clientIds)
         .is("deleted_at", null)
-        .in("status", ["EMITIDA", "PARCIALMENTE_PAGADA", "PAGADA"]);
+        .in("status", ["EMITIDA", "PARCIALMENTE_PAGADA", "PAGADA"])
+    : { data: [] };
 
-      const totalInvoiced = (invoices || []).reduce(
-        (sum: number, inv: any) => sum + Number(inv.total_amount || 0),
-        0
-      );
+  // Agregación en memoria por client_id.
+  const invoicedByClient = new Map<string, number>();
+  for (const inv of invoiceRows || []) {
+    invoicedByClient.set(
+      inv.client_id,
+      (invoicedByClient.get(inv.client_id) ?? 0) + Number(inv.total_amount || 0)
+    );
+  }
 
-      return {
-        id: client.id,
-        taxId: client.tax_id,
-        name: client.legal_name,
-        segment: client.industry || "General",
-        totalInvoiced,
-        status: (client.status === "ACTIVO" ? "ACTIVO" : client.status === "INACTIVO" ? "SUSPENDIDO" : "PENDIENTE") as "ACTIVO" | "SUSPENDIDO" | "PENDIENTE",
-      };
-    })
-  );
-
-  return clientsWithInvoiced;
+  return clients.map((client: any) => ({
+    id: client.id,
+    taxId: client.tax_id,
+    name: client.legal_name,
+    segment: client.industry || "General",
+    totalInvoiced: invoicedByClient.get(client.id) ?? 0,
+    status: (client.status === "ACTIVO" ? "ACTIVO" : client.status === "INACTIVO" ? "SUSPENDIDO" : "PENDIENTE") as "ACTIVO" | "SUSPENDIDO" | "PENDIENTE",
+  }));
 }
 
 export async function createClient(
