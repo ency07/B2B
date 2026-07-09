@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { LayoutProvider } from "@/platform/providers/layout-context";
 import { DashboardSidebar } from "@/erp/components/dashboard-sidebar";
 import { DashboardHeader } from "@/erp/components/dashboard-header";
-import { useTheme } from "next-themes";
+import { useDesignSystem } from "@/design-system";
 import { parseToHslChannels } from "@/platform/tenant/tenant";
 import { BrandingConfig, getBrandingDefaults } from "@/platform/branding/branding-defaults";
 import { getTenantBranding } from "@/web/actions/branding";
@@ -31,7 +31,7 @@ interface DashboardShellProps {
 export function DashboardShell({ role, userId, children }: DashboardShellProps) {
   const searchParams = useSearchParams();
   const tenantParam = searchParams.get("tenant");
-  const { resolvedTheme } = useTheme();
+  const { theme } = useDesignSystem();
   const pathname = usePathname();
 
   // ── Notificaciones (lazy, no bloquean el render inicial) ──────────────────
@@ -125,13 +125,13 @@ export function DashboardShell({ role, userId, children }: DashboardShellProps) 
     } else if (activeConfig.theme === "light") {
       root.classList.remove("dark");
     } else {
-      if (resolvedTheme === "dark") {
+      if (theme.mode === "dark") {
         root.classList.add("dark");
       } else {
         root.classList.remove("dark");
       }
     }
-  }, [activeConfig, resolvedTheme]);
+  }, [activeConfig, theme.mode]);
 
   // ── RBAC: autorización para la ruta actual ────────────────────────────────
   const isAuthorized = React.useMemo(() => hasAccess(role, pathname), [role, pathname]);

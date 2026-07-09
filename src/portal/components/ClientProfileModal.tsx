@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { User, Lock, Mail, LogOut, Sun, Moon, Monitor } from "lucide-react";
-import { useTheme } from "next-themes";
+import { User, Lock, Mail, LogOut, Sun, Moon } from "lucide-react";
+import { useDesignSystem } from "@/design-system";
 import { toast } from "sonner";
 import { updateClientPassword } from "@/portal/actions/profile";
 import { Button } from "@/platform/ui/button";
@@ -32,7 +32,7 @@ export function ClientProfileModal({
   clientNit,
 }: ClientProfileModalProps) {
   const [tab, setTab] = React.useState<"info" | "password" | "appearance">("info");
-  const { theme, setTheme } = useTheme();
+  const { theme, setMode } = useDesignSystem();
   const [currentPassword, setCurrentPassword] = React.useState("");
   const [newPassword, setNewPassword] = React.useState("");
   const [confirmPassword, setConfirmPassword] = React.useState("");
@@ -212,18 +212,17 @@ export function ClientProfileModal({
           <div className="space-y-6">
             <div className="space-y-3">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Modo de pantalla</p>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 {([
                   { value: "light", label: "Claro", Icon: Sun },
                   { value: "dark",  label: "Oscuro", Icon: Moon },
-                  { value: "system", label: "Sistema", Icon: Monitor },
                 ] as const).map(({ value, label, Icon }) => (
                   <button
                     key={value}
-                    onClick={() => setTheme(value)}
+                    onClick={() => setMode(value)}
                     className={cn(
                       "flex flex-col items-center justify-center gap-2 h-20 rounded-xl border-2 text-xs font-medium transition-all cursor-pointer",
-                      theme === value
+                      theme.mode === value
                         ? "border-primary bg-primary/5 text-primary"
                         : "border-border bg-muted/30 text-muted-foreground hover:text-foreground hover:border-border/80"
                     )}
