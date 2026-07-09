@@ -119,10 +119,7 @@ export function DashboardSidebar({ role: initialRole = null }: DashboardSidebarP
   const [role, setRole] = React.useState<string | null>(initialRole);
 
   React.useEffect(() => {
-    if (initialRole) {
-      setRole(initialRole);
-      return;
-    }
+    if (initialRole) return;
     async function loadRole() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -138,7 +135,7 @@ export function DashboardSidebar({ role: initialRole = null }: DashboardSidebarP
   // === Global Keyboard Shortcuts ===
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.metaKey || e.ctrlKey) {
+      if (e.altKey) {
         NAV_SECTIONS.forEach((section) => {
           section.items.forEach((item) => {
             if (item.shortcut && e.key === item.shortcut) {
@@ -390,7 +387,7 @@ function SidebarItem({
   const Icon = item.icon;
 
   if (collapsed) {
-    const tooltipText = item.label + (item.shortcut ? ` (⌘${item.shortcut})` : "");
+    const tooltipText = item.label + (item.shortcut ? ` (Alt+${item.shortcut})` : "");
     return (
       <TooltipProvider delayDuration={200}>
         <Tooltip>

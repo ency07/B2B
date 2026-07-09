@@ -10,13 +10,13 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov", "html"],
-      include: ["src/web/actions/**", "src/lib/**", "src/utils/**"],
+      include: ["src/web/actions/**", "src/lib/**", "src/utils/**", "src/erp/actions/**"],
       exclude: ["src/tests/**", "node_modules"],
       thresholds: {
-        statements: 20,
-        branches: 15,
-        functions: 20,
-        lines: 20,
+        statements: 40,
+        branches: 30,
+        functions: 40,
+        lines: 40,
       },
     },
     env: {

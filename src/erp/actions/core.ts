@@ -2,7 +2,6 @@
 "use server";
 
 import { supabaseAdmin } from "@/platform/auth/clients";
-import { getBrandingDefaults } from "@/platform/branding/branding-defaults";
 import { requireAction, getAuthContext, validateTenantAccess } from "@/platform/auth/server-guards";
 import { resolveTenantIdAsync } from "@/platform/tenant/tenant-resolver";
 
@@ -61,7 +60,7 @@ export async function getClients(tenantCode?: string | null) {
     name: client.legal_name,
     segment: client.industry || "General",
     totalInvoiced: invoicedByClient.get(client.id) ?? 0,
-    status: (client.status === "ACTIVO" ? "ACTIVO" : client.status === "INACTIVO" ? "SUSPENDIDO" : "PENDIENTE") as "ACTIVO" | "SUSPENDIDO" | "PENDIENTE",
+    status: client.status as "ACTIVO" | "SUSPENDIDO" | "PENDIENTE" | "INACTIVO",
   }));
 }
 
@@ -96,7 +95,7 @@ export async function createClient(
       industry: clientData.segment,
       email: clientData.email,
       client_type: "Empresa",
-      country: "México",
+      country: "Colombia",
       assigned_user_id: ctx.userId,
       status: "ACTIVO",
     })
@@ -123,7 +122,7 @@ export async function getJobs(tenantCode?: string | null) {
 
   const { data, error } = await supabaseAdmin
     .from("jobs")
-    .select("id, job_code, title, description, priority, status, planned_start_date, planned_end_date")
+    .select("id, job_code, title, priority, status, planned_start_date, planned_end_date, assigned_user_id")
     .eq("tenant_id", tenantId)
     .order("created_at", { ascending: false });
 
@@ -132,14 +131,27 @@ export async function getJobs(tenantCode?: string | null) {
     throw new Error(error.message);
   }
 
-  const defaults = getBrandingDefaults(tenantCode);
-  const companyShortName = defaults.nombre_comercial.split(" ")[0];
+  const jobs = data || [];
 
-  return (data || []).map((job: any) => ({
+  // Batch query para nombres de técnicos asignados — evita datos inventados.
+  const assignedIds = [...new Set(jobs.map((j: any) => j.assigned_user_id).filter(Boolean))];
+  const { data: usersData } = assignedIds.length > 0
+    ? await supabaseAdmin
+        .from("users")
+        .select("id, first_name, last_name")
+        .in("id", assignedIds)
+    : { data: [] };
+
+  const usersById = new Map<string, string>();
+  for (const u of usersData || []) {
+    usersById.set(u.id, `${u.first_name} ${u.last_name}`);
+  }
+
+  return jobs.map((job: any) => ({
     id: job.id,
     code: job.job_code,
     description: job.title,
-    assignedTech: `Ing. Administrador ${companyShortName}`,
+    assignedTech: job.assigned_user_id ? (usersById.get(job.assigned_user_id) ?? "Sin asignar") : "Sin asignar",
     priority: (job.priority === "HIGH" ? "ALTA" : job.priority === "LOW" ? "BAJA" : "MEDIA") as "BAJA" | "MEDIA" | "ALTA",
     startDate: job.planned_start_date ? job.planned_start_date.substring(0, 10) : "",
     endDate: job.planned_end_date ? job.planned_end_date.substring(0, 10) : "",
