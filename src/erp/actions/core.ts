@@ -171,20 +171,12 @@ export async function createJob(
   const siteId = siteResult.data.id;
   const areaId = areaResult.data.id;
 
-  // Calculate next sequential code
-  const { count } = await supabaseAdmin
-    .from("jobs")
-    .select("id", { count: "exact", head: true })
-    .eq("tenant_id", tenantId);
-
-  const seq = (count || 0) + 1;
-  const code = `JOB-${new Date().getFullYear()}-${String(seq).padStart(3, "0")}`;
-
+  // job_code se omite intencionalmente: el trigger handle_job_sequences()
+  // lo genera con get_next_tenant_sequence() de forma atómica y sin race conditions.
   const { data, error } = await supabaseAdmin
     .from("jobs")
     .insert({
       tenant_id: tenantId,
-      job_code: code,
       client_id: clientResult.data.id,
       requirement_id: reqResult.data.id,
       site_id: siteId,
