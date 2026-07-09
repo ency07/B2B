@@ -1,40 +1,26 @@
 "use server";
 
+import { cache } from "react";
 import { supabaseAdmin } from "@/platform/auth/clients";
 
-export async function getUserRole(authUserId: string): Promise<string | null> {
-  const { data: user, error: userErr } = await supabaseAdmin
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export const getUserRole = cache(async (authUserId: string): Promise<string | null> => {
+  // JOIN en una sola query en lugar de dos sequenciales
+  const { data, error } = await supabaseAdmin
     .from("users")
-    .select("id")
+    .select("user_roles(roles(role_code))")
     .eq("auth_user_id", authUserId)
     .eq("status", "Activo")
     .limit(1)
     .maybeSingle();
 
-  if (userErr || !user) {
-    // Si no se encuentra en la tabla users, retornamos null
-    return null;
-  }
+  if (error || !data) return null;
 
-  const { data: userRole, error: roleErr } = await supabaseAdmin
-    .from("user_roles")
-    .select(`
-      roles (
-        role_code
-      )
-    `)
-    .eq("user_id", user.id)
-    .limit(1)
-    .maybeSingle();
-
-  if (roleErr || !userRole) {
-    return null;
-  }
-
-  // userRole.roles es un objeto o array dependiendo del tipado generado
-  const rolesObj = userRole.roles as any;
-  return rolesObj?.role_code || null;
-}
+  const userRoles = data.user_roles as any;
+  const first = Array.isArray(userRoles) ? userRoles[0] : userRoles;
+  return (first?.roles as any)?.role_code ?? null;
+});
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 export async function getUserTenant(authUserId: string): Promise<{ id: string; code: string } | null> {
   const { data: user, error: userErr } = await supabaseAdmin
@@ -54,6 +40,7 @@ export async function getUserTenant(authUserId: string): Promise<{ id: string; c
     return null;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const tenantsObj = user.tenants as any;
   if (!tenantsObj) return null;
   return {

@@ -9,6 +9,7 @@
  * sb-portal-access-token. Nunca mezclar contextos (C-04).
  */
 
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 import { canPerform, type Action, type RoleName } from "@/lib/role-permissions";
@@ -26,7 +27,7 @@ export interface AuthContext {
  * Devuelve el contexto de autenticacion del usuario que invoca la
  * Server Action, o null si no esta autenticado.
  */
-export async function getAuthContext(): Promise<AuthContext | null> {
+export const getAuthContext = cache(async (): Promise<AuthContext | null> => {
   try {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get("sb-erp-access-token")?.value;
@@ -46,7 +47,7 @@ export async function getAuthContext(): Promise<AuthContext | null> {
   } catch {
     return null;
   }
-}
+});
 
 /**
  * Verifica que el invocador tenga la accion requerida por la matriz RBAC.
