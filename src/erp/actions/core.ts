@@ -151,29 +151,21 @@ export async function createJob(
   const ctx = await requireAction("jobs.create");
   const tenantId = await getTenantId(tenantCode);
 
-  // Retrieve default references to satisfy constraints
-  const { data: client } = await supabaseAdmin
-    .from("clients")
-    .select("id")
-    .eq("tenant_id", tenantId)
-    .is("deleted_at", null)
-    .limit(1)
-    .single();
+  // Resolver referencias en paralelo; fallar con error descriptivo si no existen
+  const [clientResult, reqResult, siteResult, areaResult] = await Promise.all([
+    supabaseAdmin.from("clients").select("id").eq("tenant_id", tenantId).is("deleted_at", null).limit(1).maybeSingle(),
+    supabaseAdmin.from("requirements").select("id").eq("tenant_id", tenantId).limit(1).maybeSingle(),
+    supabaseAdmin.from("sites").select("id").eq("tenant_id", tenantId).limit(1).maybeSingle(),
+    supabaseAdmin.from("areas").select("id").eq("tenant_id", tenantId).limit(1).maybeSingle(),
+  ]);
 
-  const { data: req } = await supabaseAdmin
-    .from("requirements")
-    .select("id")
-    .eq("tenant_id", tenantId)
-    .limit(1)
-    .single();
+  if (!clientResult.data) throw new Error("El tenant no tiene clientes registrados. Crea un cliente antes de generar una orden de trabajo.");
+  if (!reqResult.data) throw new Error("El tenant no tiene requerimientos registrados. Crea un requerimiento antes de generar una orden de trabajo.");
+  if (!siteResult.data) throw new Error("El tenant no tiene sitios configurados. Contacta al administrador.");
+  if (!areaResult.data) throw new Error("El tenant no tiene áreas configuradas. Contacta al administrador.");
 
-  const siteId = tenantId === "b0000000-0000-0000-0000-000000000000"
-    ? "b1000000-0000-0000-0000-000000000000"
-    : "a1000000-0000-0000-0000-000000000000";
-
-  const areaId = tenantId === "b0000000-0000-0000-0000-000000000000"
-    ? "b7000000-0000-0000-0000-000000000000"
-    : "a7000000-0000-0000-0000-000000000000";
+  const siteId = siteResult.data.id;
+  const areaId = areaResult.data.id;
 
   // Calculate next sequential code
   const { count } = await supabaseAdmin
@@ -189,8 +181,8 @@ export async function createJob(
     .insert({
       tenant_id: tenantId,
       job_code: code,
-      client_id: client?.id || "a3000000-0000-0000-0000-000000000000",
-      requirement_id: req?.id || "a8000000-0000-0000-0000-000000000000",
+      client_id: clientResult.data.id,
+      requirement_id: reqResult.data.id,
       site_id: siteId,
       area_id: areaId,
       title: jobData.description.substring(0, 100),
@@ -447,7 +439,8 @@ export async function createInvoice(
     client = firstClient;
   }
 
-  const clientId = client?.id || "a3000000-0000-0000-0000-000000000000";
+  if (!client) throw new Error("No se encontró ningún cliente para este tenant. Crea un cliente antes de emitir una factura.");
+  const clientId = client.id;
 
   // Calculate invoice code
   const { count } = await supabaseAdmin
@@ -523,26 +516,33 @@ export async function getTenantSettings(tenantCode?: string | null) {
     throw new Error(error.message);
   }
 
-  // Reduce to record object, decrypting encrypted fields on the fly
-  const settings: Record<string, any> = {};
-  for (const row of (data || [])) {
-    if (row.is_encrypted) {
-      const { data: decryptedVal, error: decErr } = await supabaseAdmin
+  // Separar campos encriptados y planos para desencriptar en batch (evitar N+1)
+  const rows = data || [];
+  const plain = rows.filter((r) => !r.is_encrypted);
+  const encrypted = rows.filter((r) => r.is_encrypted);
+
+  // Lanzar todas las RPCs de desencriptación en paralelo
+  const decryptedResults = await Promise.all(
+    encrypted.map((row) =>
+      supabaseAdmin
         .rpc("get_tenant_setting", {
           p_tenant_id: tenantId,
           p_module: row.module,
-          p_key: row.config_key
-        });
-      
-      if (decErr) {
-        console.error(`Error decrypting key ${row.config_key}:`, decErr);
-        settings[row.config_key] = row.config_value;
-      } else {
-        settings[row.config_key] = decryptedVal;
-      }
-    } else {
-      settings[row.config_key] = row.config_value;
-    }
+          p_key: row.config_key,
+        })
+        .then(({ data: val, error: decErr }) => ({
+          key: row.config_key,
+          value: decErr ? row.config_value : val,
+        }))
+    )
+  );
+
+  const settings: Record<string, any> = {};
+  for (const row of plain) {
+    settings[row.config_key] = row.config_value;
+  }
+  for (const { key, value } of decryptedResults) {
+    settings[key] = value;
   }
 
   return settings;
