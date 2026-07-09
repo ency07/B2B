@@ -1,12 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use server";
 
 import { supabaseAdmin } from "@/platform/auth/clients";
 import { getBrandingDefaults } from "@/platform/branding/branding-defaults";
 import { requireAction, getAuthContext, validateTenantAccess } from "@/platform/auth/server-guards";
-import {
-  resolveTenantIdAsync,
-  resolveTenantOwnerUserIdAsync,
-} from "@/platform/tenant/tenant-resolver";
+import { resolveTenantIdAsync } from "@/platform/tenant/tenant-resolver";
 
 export async function getTenantId(tenantCode?: string | null): Promise<string> {
   return resolveTenantIdAsync(tenantCode);
@@ -68,9 +66,8 @@ export async function createClient(
   clientData: { taxId: string; name: string; segment: string; email: string }
 ) {
   // P8: Validacion backend. Accion: clients.create.
-  await requireAction("clients.create");
+  const ctx = await requireAction("clients.create");
   const tenantId = await getTenantId(tenantCode);
-  const userId = await resolveTenantOwnerUserIdAsync(tenantId);
   
   // First, verify if client already exists (to prevent duplicate constraint error)
   const { data: existing } = await supabaseAdmin
@@ -96,7 +93,7 @@ export async function createClient(
       email: clientData.email,
       client_type: "Empresa",
       country: "México",
-      assigned_user_id: userId,
+      assigned_user_id: ctx.userId,
       status: "ACTIVO",
     })
     .select()
@@ -151,7 +148,7 @@ export async function createJob(
   jobData: { description: string; assignedTech: string; priority: string; startDate: string; endDate: string }
 ) {
   // P8: Validacion backend. Accion: jobs.create.
-  await requireAction("jobs.create");
+  const ctx = await requireAction("jobs.create");
   const tenantId = await getTenantId(tenantCode);
 
   // Retrieve default references to satisfy constraints
@@ -178,8 +175,6 @@ export async function createJob(
     ? "b7000000-0000-0000-0000-000000000000"
     : "a7000000-0000-0000-0000-000000000000";
 
-  const userId = await resolveTenantOwnerUserIdAsync(tenantId);
-
   // Calculate next sequential code
   const { count } = await supabaseAdmin
     .from("jobs")
@@ -200,12 +195,12 @@ export async function createJob(
       area_id: areaId,
       title: jobData.description.substring(0, 100),
       description: jobData.description,
-      assigned_user_id: userId,
+      assigned_user_id: ctx.userId,
       planned_start_date: new Date(jobData.startDate).toISOString(),
       planned_end_date: new Date(jobData.endDate).toISOString(),
       priority: jobData.priority === "ALTA" ? "HIGH" : jobData.priority === "BAJA" ? "LOW" : "MEDIUM",
       status: "PENDIENTE",
-      created_by: userId,
+      created_by: ctx.userId,
     })
     .select()
     .single();
@@ -339,8 +334,6 @@ export async function createInventoryMovement(
     }
   }
 
-  const userId = await resolveTenantOwnerUserIdAsync(tenantId);
-
   // Calculate sequence code
   const { count } = await supabaseAdmin
     .from("inventory_movements")
@@ -359,7 +352,7 @@ export async function createInventoryMovement(
     unit_cost: item.purchase_price || 0,
     notes: movement.notes,
     status: "Aplicado", // Auto apply in this demo
-    created_by: userId,
+    created_by: ctx.userId,
   };
 
   if (movement.type === "Transferencia") {
@@ -455,7 +448,6 @@ export async function createInvoice(
   }
 
   const clientId = client?.id || "a3000000-0000-0000-0000-000000000000";
-  const userId = await resolveTenantOwnerUserIdAsync(tenantId);
 
   // Calculate invoice code
   const { count } = await supabaseAdmin
@@ -483,7 +475,7 @@ export async function createInvoice(
       total_amount: invoiceData.amount,
       paid_amount: 0,
       status: "EMITIDA",
-      created_by: userId,
+      created_by: ctx.userId,
     })
     .select()
     .single();
@@ -504,7 +496,7 @@ export async function createInvoice(
     discount_amount: 0,
     tax_amount: 0,
     line_total: invoiceData.amount,
-    created_by: userId,
+    created_by: ctx.userId,
   });
 
   return invoice;
@@ -619,7 +611,6 @@ export async function updateTenantSettings(
   const ctx = await requireAction("settings.manage");
   const tenantId = await getTenantId(tenantCode);
   await validateTenantAccess(ctx.userId, ctx.role, tenantId);
-  const userId = await resolveTenantOwnerUserIdAsync(tenantId);
 
   const { data, error } = await supabaseAdmin
     .from("tenant_settings")
@@ -629,7 +620,7 @@ export async function updateTenantSettings(
       config_key: key,
       config_value: value,
       is_encrypted: isEncrypted,
-      updated_by: userId,
+      updated_by: ctx.userId,
       updated_at: new Date().toISOString()
     }, {
       onConflict: "tenant_id,module,config_key"
@@ -692,7 +683,6 @@ export async function createInventoryItem(
   const ctx = await requireAction("items.manage");
   const tenantId = await getTenantId(tenantCode);
   await validateTenantAccess(ctx.userId, ctx.role, tenantId);
-  const userId = await resolveTenantOwnerUserIdAsync(tenantId);
 
   // 1. Insert item record
   const { data: item, error: itemErr } = await supabaseAdmin
@@ -711,7 +701,7 @@ export async function createInventoryItem(
       average_cost: 0,
       last_cost: 0,
       status: "Activo",
-      created_by: userId,
+      created_by: ctx.userId,
     })
     .select()
     .single();
@@ -731,7 +721,7 @@ export async function createInventoryItem(
         item_id: item.id,
         quantity: itemData.initialQuantity,
         reserved_quantity: 0,
-        created_by: userId,
+        created_by: ctx.userId,
       }, {
         onConflict: "tenant_id,warehouse_id,item_id",
       });
@@ -757,7 +747,7 @@ export async function createInventoryItem(
         unit_cost: 0,
         notes: "Carga inicial de inventario",
         status: "Aplicado",
-        created_by: userId,
+        created_by: ctx.userId,
       });
     }
   }
