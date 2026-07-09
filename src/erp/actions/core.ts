@@ -174,7 +174,7 @@ export async function createJob(
     .eq("tenant_id", tenantId);
 
   const seq = (count || 0) + 1;
-  const code = `JOB-2026-${String(seq).padStart(3, "0")}`;
+  const code = `JOB-${new Date().getFullYear()}-${String(seq).padStart(3, "0")}`;
 
   const { data, error } = await supabaseAdmin
     .from("jobs")
@@ -222,7 +222,7 @@ export async function getInventoryStock(tenantCode?: string | null) {
       reserved_quantity,
       available_quantity,
       warehouses (id, name, warehouse_code),
-      inventory_items (id, name, item_code, category, unit_type)
+      inventory_items (id, name, item_code, category, unit)
     `)
     .eq("tenant_id", tenantId);
 
@@ -239,7 +239,7 @@ export async function getInventoryStock(tenantCode?: string | null) {
     itemName: row.inventory_items?.name || "",
     sku: row.inventory_items?.item_code || "",
     category: row.inventory_items?.category || "",
-    unit: row.inventory_items?.unit_type || "Unidad",
+    unit: row.inventory_items?.unit || "Unidad",
     quantity: Number(row.quantity),
     reserved: Number(row.reserved_quantity),
     available: Number(row.available_quantity),

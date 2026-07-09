@@ -2,6 +2,31 @@ import { z } from "zod";
 
 export const ticketSeverityEnum = z.enum(["BAJO", "MEDIO", "ALTO"]);
 
+export const requirementCategoryEnum = z.enum([
+  "FABRICACION",
+  "VENTA",
+  "MANTENIMIENTO",
+  "REPARACION",
+  "OTRO",
+]);
+
+export const requirementPriorityEnum = z.enum(["LOW", "MEDIUM", "HIGH"]);
+
+export const createRequirementSchema = z.object({
+  title: z
+    .string()
+    .min(5, "El título debe tener al menos 5 caracteres")
+    .max(250, "El título no puede exceder 250 caracteres"),
+  description: z
+    .string()
+    .min(15, "La descripción debe tener al menos 15 caracteres")
+    .max(5000, "La descripción no puede exceder 5000 caracteres"),
+  category: requirementCategoryEnum,
+  priority: requirementPriorityEnum,
+});
+
+export type ValidatedCreateRequirement = z.infer<typeof createRequirementSchema>;
+
 export const createTicketSchema = z.object({
   subject: z.string().min(1, "El asunto es obligatorio").max(250, "El asunto no puede exceder 250 caracteres"),
   description: z.string().min(1, "La descripción es obligatoria").max(5000, "La descripción no puede exceder 5000 caracteres"),

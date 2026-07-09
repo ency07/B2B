@@ -1,9 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use server";
 
 import { supabaseAdmin } from "@/platform/auth/clients";
 import { getTenantId } from "@/erp/actions/core";
-import { resolveTenantOwnerUserId } from "@/platform/tenant/tenant-resolver";
-import { requireAction } from "@/platform/auth/server-guards";
+import { requireAction, getAuthContext } from "@/platform/auth/server-guards";
 
 export interface QuoteRow {
   id: string;
@@ -20,6 +20,8 @@ export interface QuoteRow {
 }
 
 export async function getQuotes(tenantCode?: string | null): Promise<QuoteRow[]> {
+  const ctx = await getAuthContext();
+  if (!ctx) throw new Error("No autenticado");
   const tenantId = await getTenantId(tenantCode ?? null);
 
   const { data, error } = await supabaseAdmin
@@ -48,10 +50,8 @@ export async function createQuote(
   tenantCode: string | null,
   quoteData: { clientId: string; requirementId?: string; validUntil: string }
 ) {
-  // P8: Validacion backend. Accion: quotes.create.
-  await requireAction("quotes.create");
+  const ctx = await requireAction("quotes.create");
   const tenantId = await getTenantId(tenantCode);
-  const userId = resolveTenantOwnerUserId(tenantId);
 
   const { data, error } = await supabaseAdmin
     .from("quotes")
@@ -59,10 +59,10 @@ export async function createQuote(
       tenant_id: tenantId,
       client_id: quoteData.clientId,
       requirement_id: quoteData.requirementId || null,
-      assigned_user_id: userId,
+      assigned_user_id: ctx.userId,
       valid_until: quoteData.validUntil,
       status: "BORRADOR",
-      created_by: userId
+      created_by: ctx.userId,
     })
     .select()
     .single();
@@ -76,6 +76,9 @@ export async function createQuote(
 }
 
 export async function getQuoteItems(quoteId: string) {
+  const ctx = await getAuthContext();
+  if (!ctx) throw new Error("No autenticado");
+
   const { data, error } = await supabaseAdmin
     .from("quote_items")
     .select("*")
@@ -103,6 +106,7 @@ export async function addQuoteItem(
     itemOrder: number;
   }
 ) {
+  const ctx = await requireAction("quotes.create");
   const tenantId = await getTenantId(tenantCode);
 
   const { data, error } = await supabaseAdmin
@@ -117,7 +121,8 @@ export async function addQuoteItem(
       unit: "UNIDAD",
       unit_price: itemData.unitPrice,
       discount_amount: itemData.discountAmount,
-      tax_percent: itemData.taxPercent
+      tax_percent: itemData.taxPercent,
+      created_by: ctx.userId,
     })
     .select()
     .single();
@@ -131,9 +136,16 @@ export async function addQuoteItem(
 }
 
 export async function updateQuoteStatus(quoteId: string, status: string) {
+  // Aprobar una cotización requiere permiso explícito quotes.approve.
+  // Cualquier otra transición requiere quotes.create (el creador puede moverla
+  // a EN_REVISION o ENVIADA, pero no puede auto-aprobarla).
+  const ctx = status === "APROBADA"
+    ? await requireAction("quotes.approve")
+    : await requireAction("quotes.create");
+
   const { data, error } = await supabaseAdmin
     .from("quotes")
-    .update({ status })
+    .update({ status, status_changed_by: ctx.userId, status_changed_at: new Date().toISOString() })
     .eq("id", quoteId)
     .select()
     .single();

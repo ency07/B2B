@@ -1,9 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use server";
 
 import { supabaseAdmin } from "@/platform/auth/clients";
 import { getTenantId } from "@/erp/actions/core";
-import { resolveTenantOwnerUserId } from "@/platform/tenant/tenant-resolver";
-import { requireAction } from "@/platform/auth/server-guards";
+import { requireAction, getAuthContext } from "@/platform/auth/server-guards";
 
 export interface RequirementRow {
   id: string;
@@ -21,6 +21,8 @@ export interface RequirementRow {
 }
 
 export async function getRequirements(tenantCode?: string | null): Promise<RequirementRow[]> {
+  const ctx = await getAuthContext();
+  if (!ctx) throw new Error("No autenticado");
   const tenantId = await getTenantId(tenantCode ?? null);
 
   const { data, error } = await supabaseAdmin
@@ -50,10 +52,8 @@ export async function createRequirement(
   tenantCode: string | null,
   reqData: { title: string; clientId: string; category: string; priority: string }
 ) {
-  // P8: Validacion backend. Accion: requirements.
-  await requireAction("requirements");
+  const ctx = await requireAction("requirements");
   const tenantId = await getTenantId(tenantCode);
-  const userId = resolveTenantOwnerUserId(tenantId);
 
   const { data, error } = await supabaseAdmin
     .from("requirements")
@@ -64,7 +64,7 @@ export async function createRequirement(
       category: reqData.category,
       priority: reqData.priority,
       status: "BORRADOR",
-      created_by: userId
+      created_by: ctx.userId,
     })
     .select()
     .single();
@@ -82,7 +82,14 @@ export async function updateRequirementStatus(
   newStatus: string,
   extra?: Record<string, any>
 ) {
-  const payload: any = { status: newStatus, ...extra };
+  const ctx = await requireAction("requirements");
+
+  const payload: any = {
+    status: newStatus,
+    updated_by: ctx.userId,
+    ...extra,
+  };
+
   const { data, error } = await supabaseAdmin
     .from("requirements")
     .update(payload)
