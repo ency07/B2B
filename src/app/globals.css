@@ -671,7 +671,7 @@ html, body {
   font-size: 14px;
   font-weight: 500;
   letter-spacing: 0.01em;
-  border-radius: 6px;
+  border-radius: var(--radius);
   border: 1px solid var(--color-ink);
   transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
@@ -704,7 +704,7 @@ html, body {
   font-size: 14px;
   font-weight: 500;
   letter-spacing: 0.01em;
-  border-radius: 6px;
+  border-radius: var(--radius);
   border: 1px solid var(--color-ink);
   transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
