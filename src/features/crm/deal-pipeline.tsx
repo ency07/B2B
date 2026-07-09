@@ -229,9 +229,11 @@ function Column({
 
 function DealCard({ deal, onClick }: { deal: Deal; onClick: () => void }) {
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onClick}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
       className={cn(
         "group w-full text-left",
         "rounded-md border border-line bg-bg-elevated-1 p-3",
@@ -277,6 +279,6 @@ function DealCard({ deal, onClick }: { deal: Deal; onClick: () => void }) {
           </span>
         )}
       </div>
-    </button>
+    </div>
   );
 }

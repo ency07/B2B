@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Eye, EyeOff, Lock, Mail, ArrowLeft, ShieldCheck } from "lucide-react";
+import Image from "next/image";
 import { getBrandingDefaults } from "@/platform/branding/branding-defaults";
 import { loginPortal } from "@/portal/actions/auth";
 import { isSafeRedirect } from "@/utils/auth-redirect";
@@ -75,6 +76,7 @@ export function PortalLoginFeature() {
 
   const siteUrl = tenantParam ? `/?tenant=${tenantParam}` : "/";
   const companyName = defaults.nombre_comercial;
+  const logoLoginUrl = defaults.logo_login_url;
 
   return (
     <div className="min-h-screen bg-[var(--ds-c-marketing-cfm-background)] flex flex-col items-center justify-center p-4 relative overflow-hidden">
@@ -93,9 +95,19 @@ export function PortalLoginFeature() {
       <div className="relative z-10 w-full max-w-sm">
         {/* Logo / company */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/20 border border-primary/30 mb-4">
-            <ShieldCheck className="w-6 h-6 text-primary" strokeWidth={1.5} />
-          </div>
+          {logoLoginUrl ? (
+            <Image
+              src={logoLoginUrl}
+              alt={companyName}
+              width={160}
+              height={40}
+              className="h-10 w-auto mx-auto object-contain brightness-0 invert mb-4"
+            />
+          ) : (
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/20 border border-primary/30 mb-4">
+              <ShieldCheck className="w-6 h-6 text-primary" strokeWidth={1.5} />
+            </div>
+          )}
           <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-primary mb-1">
             Portal de Clientes
           </p>

@@ -59,7 +59,7 @@ export async function verifyErpToken(accessToken: string | undefined): Promise<b
 
     const { data: userRow, error: userError } = await adminClient
       .from('users')
-      .select('id, user_roles(roles(role_code))')
+      .select('id, user_roles!user_roles_user_id_fkey(roles(role_code))')
       .eq('auth_user_id', user.id)
       .eq('status', 'Activo')
       .limit(1)

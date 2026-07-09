@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Eye, EyeOff, Lock, Mail, LayoutGrid } from "lucide-react";
+import Image from "next/image";
 import { getBrandingDefaults } from "@/platform/branding/branding-defaults";
 import { loginErp } from "@/erp/actions/auth";
 import { isSafeRedirect } from "@/utils/auth-redirect";
@@ -76,6 +77,7 @@ export function ErpLoginFeature() {
 
   const companyName = defaults.nombre_comercial;
   const companyRazon = defaults.razon_social;
+  const logoLoginUrl = defaults.logo_login_url;
   const initials = companyName
     .split(" ")
     .slice(0, 2)
@@ -95,14 +97,26 @@ export function ErpLoginFeature() {
             backgroundSize: "24px 24px",
           }}
         />
-        <div className="relative z-10">
-          {/* Logo */}
-          <div className="flex items-center gap-3 mb-12">
-            <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/10 text-white font-bold text-sm font-mono">
-              {initials}
+<div className="relative z-10">
+            {/* Logo */}
+            <div className="flex items-center gap-3 mb-12">
+              {logoLoginUrl ? (
+                <Image
+                  src={logoLoginUrl}
+                  alt={companyName}
+                  width={140}
+                  height={36}
+                  className="h-8 w-auto object-contain brightness-0 invert"
+                />
+              ) : (
+                <>
+                  <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/10 text-white font-bold text-sm font-mono">
+                    {initials}
+                  </div>
+                  <span className="text-white/80 text-sm font-medium">{companyName}</span>
+                </>
+              )}
             </div>
-            <span className="text-white/80 text-sm font-medium">{companyName}</span>
-          </div>
 
           <div className="space-y-3">
             <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-slate-400">
@@ -140,9 +154,19 @@ export function ErpLoginFeature() {
       <div className="flex-1 flex flex-col items-center justify-center p-6 lg:p-12">
         {/* Mobile logo */}
         <div className="lg:hidden mb-8 text-center">
-          <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-slate-900 text-white font-bold text-sm font-mono mb-2">
-            {initials}
-          </div>
+          {logoLoginUrl ? (
+            <Image
+              src={logoLoginUrl}
+              alt={companyName}
+              width={120}
+              height={30}
+              className="h-7 w-auto mx-auto object-contain brightness-0 mb-2"
+            />
+          ) : (
+            <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-slate-900 text-white font-bold text-sm font-mono mb-2">
+              {initials}
+            </div>
+          )}
           <p className="text-xs text-slate-500 font-mono uppercase tracking-wider">
             Sistema Interno
           </p>

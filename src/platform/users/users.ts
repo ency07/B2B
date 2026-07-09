@@ -8,7 +8,7 @@ export const getUserRole = cache(async (authUserId: string): Promise<string | nu
   // JOIN en una sola query en lugar de dos sequenciales
   const { data, error } = await supabaseAdmin
     .from("users")
-    .select("user_roles(roles(role_code))")
+    .select("user_roles!user_roles_user_id_fkey(roles(role_code))")
     .eq("auth_user_id", authUserId)
     .eq("status", "Activo")
     .limit(1)
@@ -29,7 +29,7 @@ export async function getUserTenant(authUserId: string): Promise<{ id: string; c
       tenant_id,
       tenants (
         id,
-        code
+        tenant_code
       )
     `)
     .eq("auth_user_id", authUserId)
@@ -45,6 +45,6 @@ export async function getUserTenant(authUserId: string): Promise<{ id: string; c
   if (!tenantsObj) return null;
   return {
     id: tenantsObj.id,
-    code: tenantsObj.code,
+    code: tenantsObj.tenant_code,
   };
 }
