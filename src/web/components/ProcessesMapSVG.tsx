@@ -48,18 +48,18 @@ export default function ProcessesMapSVG() {
   ];
 
   return (
-    <div className="w-full bg-zinc-100/50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-zinc-900 rounded-2xl p-6 md:p-8 transition-colors duration-300">
+    <div className="w-full bg-paper-warm/50 dark:bg-zinc-950/40 border border-line dark:border-zinc-900 rounded-2xl p-6 md:p-8 transition-colors duration-300">
       <div className="flex flex-col lg:flex-row gap-8">
         
         {/* Lado SVG Plano SCADA */}
         <div className="flex-1">
           <div className="flex justify-between items-center mb-6">
             <div>
-              <span className="text-[10px] font-mono tracking-widest text-sky-600 dark:text-sky-400 uppercase font-bold">Plano de Planta SCADA</span>
-              <h3 className="text-xl font-bold text-zinc-900 dark:text-white font-display mt-1">Simulación Neumática de Nave Industrial</h3>
+              <span className="text-[10px] font-mono tracking-widest text-ink-soft uppercase font-bold">Plano de Planta SCADA</span>
+              <h3 className="text-xl font-bold text-ink dark:text-white font-display mt-1">Simulación Neumática de Nave Industrial</h3>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-zinc-650 dark:text-zinc-500 font-mono">Velocidad del Flujo:</span>
+              <span className="text-xs text-ink-muted dark:text-zinc-500 font-mono">Velocidad del Flujo:</span>
               <input 
                 type="range" 
                 min="10" 
@@ -71,7 +71,7 @@ export default function ProcessesMapSVG() {
             </div>
           </div>
 
-          <div className="relative aspect-[800/400] w-full bg-zinc-50 dark:bg-zinc-950/80 rounded-xl border border-zinc-200 dark:border-zinc-900 overflow-hidden">
+          <div className="relative aspect-[800/400] w-full bg-paper-warm dark:bg-zinc-950/80 rounded-xl border border-line dark:border-zinc-900 overflow-hidden">
             {/* Grid SCADA */}
             <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(100,116,139,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(100,116,139,0.08)_1px,transparent_1px)] bg-[size:2rem_2rem]" />
             
@@ -190,51 +190,51 @@ export default function ProcessesMapSVG() {
               ))}
             </svg>
 
-            <div className="absolute bottom-3 left-3 bg-white/90 dark:bg-zinc-950/80 backdrop-blur-xs border border-zinc-200 dark:border-zinc-900 rounded-lg p-2 flex gap-4 text-[9px] font-mono text-zinc-600 dark:text-zinc-550 transition-colors">
-              <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded bg-sky-500" /> Inyección Limpia</div>
-              <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded bg-orange-500" /> Extracción / Calor</div>
+            <div className="absolute bottom-3 left-3 bg-paper-cool/90 dark:bg-zinc-950/80 backdrop-blur-xs border border-line dark:border-zinc-900 rounded-lg p-2 flex gap-4 text-[9px] font-mono text-ink-muted dark:text-zinc-500 transition-colors">
+              <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded bg-ink-muted" /> Inyección Limpia</div>
+              <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded bg-ink" /> Extracción / Calor</div>
             </div>
           </div>
         </div>
 
         {/* Lado Detalle de Inspección */}
         <div className="w-full lg:w-80 flex flex-col justify-between">
-          <div className="border border-zinc-200 dark:border-zinc-900 bg-white dark:bg-zinc-950/30 rounded-xl p-5 h-full flex flex-col justify-between min-h-[300px] transition-colors duration-300">
+          <div className="border border-line dark:border-zinc-900 bg-paper-cool dark:bg-zinc-950/30 rounded-xl p-5 h-full flex flex-col justify-between min-h-[300px] transition-colors duration-300">
             {selectedHotspot ? (
               <div className="space-y-4">
-                <div className="flex items-center gap-2 text-sky-600 dark:text-sky-400">
+                <div className="flex items-center gap-2 text-ink-soft">
                   <Info className="w-4 h-4" />
                   <span className="text-[10px] font-bold uppercase tracking-widest font-mono">Punto Inspeccionado</span>
                 </div>
-                <h4 className="text-base font-bold text-zinc-900 dark:text-white font-display leading-tight">{selectedHotspot.name}</h4>
-                <p className="text-xs text-zinc-650 dark:text-zinc-400 leading-relaxed font-light">{selectedHotspot.description}</p>
+                <h4 className="text-base font-bold text-ink dark:text-white font-display leading-tight">{selectedHotspot.name}</h4>
+                <p className="text-xs text-ink-muted dark:text-zinc-400 leading-relaxed font-light">{selectedHotspot.description}</p>
                 
-                <div className="border-t border-zinc-200 dark:border-zinc-900/60 pt-3 space-y-3">
+                <div className="border-t border-line dark:border-zinc-900/60 pt-3 space-y-3">
                   <div>
-                    <span className="text-[9px] uppercase font-mono text-zinc-500 block mb-1">Recomendación Industrial:</span>
-                    <div className="text-xs text-zinc-800 dark:text-zinc-200 bg-zinc-50 dark:bg-zinc-900/50 p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-900 font-light">
+                    <span className="text-[9px] uppercase font-mono text-ink-muted block mb-1">Recomendación Industrial:</span>
+                    <div className="text-xs text-ink dark:text-zinc-200 bg-paper-warm dark:bg-zinc-900/50 p-2.5 rounded-lg border border-line dark:border-zinc-900 font-light">
                       {selectedHotspot.recommendation}
                     </div>
                   </div>
                   <div>
-                    <span className="text-[9px] uppercase font-mono text-zinc-500 block mb-1">Eficiencia OPEX:</span>
-                    <div className="text-xs text-emerald-600 dark:text-emerald-400 font-mono font-semibold">
+                    <span className="text-[9px] uppercase font-mono text-ink-muted block mb-1">Eficiencia OPEX:</span>
+                    <div className="text-xs text-state-success font-mono font-semibold">
                       &rsaquo; {selectedHotspot.efficiencyTip}
                     </div>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center text-center h-full text-zinc-400 dark:text-zinc-500 py-10">
-                <HelpCircle className="w-8 h-8 text-zinc-300 dark:text-zinc-800 mb-3 animate-bounce" />
-                <p className="text-xs font-semibold px-4 text-zinc-600 dark:text-zinc-400">Seleccione un hotspot interactivo en el plano de planta para auditar el flujo de aire.</p>
+              <div className="flex flex-col items-center justify-center text-center h-full text-ink-muted dark:text-zinc-500 py-10">
+                <HelpCircle className="w-8 h-8 text-line-strong dark:text-zinc-800 mb-3 animate-bounce" />
+                <p className="text-xs font-semibold px-4 text-ink-soft dark:text-zinc-400">Seleccione un hotspot interactivo en el plano de planta para auditar el flujo de aire.</p>
               </div>
             )}
             
             {selectedHotspot && (
               <button 
                 onClick={() => setSelectedHotspot(null)}
-                className="w-full mt-6 text-center text-[10px] uppercase tracking-wider font-bold text-zinc-500 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
+                className="w-full mt-6 text-center text-[10px] uppercase tracking-wider font-bold text-ink-muted hover:text-ink dark:hover:text-white transition-colors cursor-pointer"
               >
                 Limpiar Selección
               </button>
