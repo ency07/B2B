@@ -88,15 +88,15 @@ export function PortalLoginFeature() {
         }}
       />
       {/* Glow top-center */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full bg-blue-600/10 blur-[80px] pointer-events-none" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full bg-primary/10 blur-[80px] pointer-events-none" />
 
       <div className="relative z-10 w-full max-w-sm">
         {/* Logo / company */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-600/20 border border-blue-500/30 mb-4">
-            <ShieldCheck className="w-6 h-6 text-blue-400" strokeWidth={1.5} />
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/20 border border-primary/30 mb-4">
+            <ShieldCheck className="w-6 h-6 text-primary" strokeWidth={1.5} />
           </div>
-          <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-blue-400 mb-1">
+          <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-primary mb-1">
             Portal de Clientes
           </p>
           <h1 className="text-xl font-semibold text-white tracking-tight">
@@ -128,7 +128,7 @@ export function PortalLoginFeature() {
                   {...register("email")}
                   placeholder="tu@empresa.com"
                   autoComplete="email"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-blue-500/60 focus:bg-white/[0.07] transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-primary/60 focus:bg-white/[0.07] transition-all"
                 />
               </div>
               {errors.email && (
@@ -143,7 +143,7 @@ export function PortalLoginFeature() {
                 </label>
                 <Link
                   href={`/recovery${tenantParam ? `?tenant=${tenantParam}` : ""}`}
-                  className="text-[11px] text-blue-400 hover:text-blue-300 transition-colors"
+                  className="text-[11px] text-primary hover:text-primary/80 transition-colors"
                 >
                   ¿La olvidaste?
                 </Link>
@@ -155,7 +155,7 @@ export function PortalLoginFeature() {
                   {...register("password")}
                   placeholder="••••••••"
                   autoComplete="current-password"
-                  className="w-full pl-10 pr-10 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-blue-500/60 focus:bg-white/[0.07] transition-all"
+                  className="w-full pl-10 pr-10 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-primary/60 focus:bg-white/[0.07] transition-all"
                 />
                 <button
                   type="button"
@@ -174,7 +174,7 @@ export function PortalLoginFeature() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
+              className="w-full py-2.5 rounded-lg bg-primary hover:opacity-90 text-primary-foreground text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
             >
               {isLoading ? (
                 <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

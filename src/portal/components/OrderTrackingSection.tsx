@@ -30,11 +30,11 @@ const PHASE_LABELS: Record<string, string> = {
   DESPACHO: "Despachado",
 };
 const PHASE_COLORS: Record<string, string> = {
-  DISEÑO: "text-violet-400 bg-violet-400/10 border-violet-400/20",
-  CORTE: "text-blue-400 bg-blue-400/10 border-blue-400/20",
-  BALANCEO: "text-amber-400 bg-amber-400/10 border-amber-400/20",
-  PRUEBAS: "text-sky-400 bg-sky-400/10 border-sky-400/20",
-  DESPACHO: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20",
+  DISEÑO: "text-state-info bg-state-info/30 border-state-info/50",
+  CORTE: "text-state-neutral bg-state-neutral/30 border-state-neutral/50",
+  BALANCEO: "text-state-warning bg-state-warning/30 border-state-warning/50",
+  PRUEBAS: "text-state-info bg-state-info/30 border-state-info/50",
+  DESPACHO: "text-state-success bg-state-success/30 border-state-success/50",
 };
 
 function getPhaseInfo(status: string) {
@@ -121,7 +121,7 @@ export function OrderTrackingSection({
                   <span className="hidden sm:flex items-center gap-2">
                     <div className="h-1 w-14 bg-muted rounded-full overflow-hidden flex-shrink-0">
                       <div
-                        className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                        className="h-full bg-state-success rounded-full transition-all duration-500"
                         style={{ width: `${ot.progress}%` }}
                       />
                     </div>
@@ -153,7 +153,7 @@ export function OrderTrackingSection({
                               <div
                                 className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-mono font-bold border transition-all ${
                                   done
-                                    ? "bg-emerald-500 border-emerald-500 text-white"
+                                    ? "bg-state-success border-state-success text-white"
                                     : active
                                     ? "border-primary bg-primary/10 text-primary"
                                     : "border-border/60 bg-background text-muted-foreground/60"
@@ -164,7 +164,7 @@ export function OrderTrackingSection({
                               <span
                                 className={`text-[9px] font-mono uppercase tracking-wider leading-none ${
                                   done
-                                    ? "text-emerald-500"
+                                    ? "text-state-success"
                                     : active
                                     ? "text-primary"
                                     : "text-muted-foreground/50"
@@ -176,7 +176,7 @@ export function OrderTrackingSection({
                             {idx < PHASES.length - 1 && (
                               <div
                                 className={`h-px flex-1 mx-2 mb-4 transition-colors ${
-                                  done ? "bg-emerald-500/60" : "bg-border/40"
+                                  done ? "bg-state-success/60" : "bg-border/40"
                                 }`}
                               />
                             )}
@@ -220,15 +220,15 @@ export function OrderTrackingSection({
 
                     {/* Live telemetry — only for PRUEBAS */}
                     {ot.status.toUpperCase() === "PRUEBAS" && (
-                      <div className="flex items-center gap-6 px-4 py-3 rounded-lg border border-sky-500/20 bg-sky-500/5 text-[11px] font-mono text-sky-400">
+                      <div className="flex items-center gap-6 px-4 py-3 rounded-lg border border-state-info/50 bg-state-info/30 text-[11px] font-mono text-state-info">
                         <span className="flex items-center gap-1.5">
                           <Wind className="w-3.5 h-3.5 animate-spin-slow" />
                           FLUJO: 7,490 CFM
                         </span>
                         <span>RPM: 1,740</span>
                         <span>TEMP: 43.2 °C</span>
-                        <span className="ml-auto flex items-center gap-1.5 text-emerald-400">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                        <span className="ml-auto flex items-center gap-1.5 text-state-success">
+                          <span className="w-1.5 h-1.5 rounded-full bg-state-success" />
                           EN TÚNEL
                         </span>
                       </div>

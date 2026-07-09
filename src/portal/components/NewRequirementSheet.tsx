@@ -341,7 +341,7 @@ export function NewRequirementSheet({
         {/* ── SUCCESS ──────────────────────────────────────────────── */}
         {step === "success" && createdReq && (
           <div className="flex-1 flex flex-col items-center justify-center py-10 text-center space-y-6 px-2">
-            <div className="w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+            <div className="w-16 h-16 rounded-full bg-state-success/20 text-state-success flex items-center justify-center">
               <CheckCircle2 className="w-9 h-9" />
             </div>
 
@@ -360,7 +360,7 @@ export function NewRequirementSheet({
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-xs text-muted-foreground font-mono">Estado</span>
-                <span className="text-xs font-semibold text-sky-600 dark:text-sky-400 bg-sky-500/10 px-2.5 py-0.5 rounded-full">
+                <span className="text-xs font-semibold text-state-info bg-state-info/20 px-2.5 py-0.5 rounded-full">
                   NUEVO
                 </span>
               </div>
