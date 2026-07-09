@@ -86,7 +86,7 @@ export function ErpLoginFeature() {
     .toUpperCase();
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-paper flex">
       {/* ── Left branding panel (hidden on mobile) ── */}
       <div className="hidden lg:flex lg:w-[420px] xl:w-[480px] flex-col justify-between bg-slate-900 p-10 shrink-0 relative overflow-hidden">
         {/* Subtle dot pattern */}

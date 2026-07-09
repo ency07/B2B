@@ -114,7 +114,7 @@ export function PortalLoginFeature() {
           <h1 className="text-xl font-semibold text-white tracking-tight">
             {companyName}
           </h1>
-          <p className="text-xs text-zinc-500 mt-1">
+          <p className="text-xs text-ink-muted mt-1">
             Proyectos · Facturas · Soporte
           </p>
         </div>
@@ -200,7 +200,7 @@ export function PortalLoginFeature() {
         <div className="mt-5 text-center">
           <Link
             href={siteUrl}
-            className="inline-flex items-center gap-1.5 text-[11px] font-mono text-zinc-600 hover:text-zinc-400 transition-colors"
+            className="inline-flex items-center gap-1.5 text-[11px] font-mono text-ink-muted hover:text-ink-soft transition-colors"
           >
             <ArrowLeft className="w-3 h-3" strokeWidth={1.5} />
             Volver al sitio
