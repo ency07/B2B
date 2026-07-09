@@ -11,8 +11,8 @@ export function Toaster() {
       toastOptions={{
         classNames: {
           toast:
-            "bg-card text-foreground border border-border shadow-md text-sm",
-          description: "text-muted-foreground",
+            "bg-[var(--ds-c-toast-background)] text-[var(--ds-c-toast-foreground)] border border-[var(--ds-c-toast-border)] shadow-md text-sm",
+          description: "text-[var(--ds-c-toast-foreground)]",
         },
       }}
     />

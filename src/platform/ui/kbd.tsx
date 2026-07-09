@@ -36,11 +36,11 @@ const baseClasses =
 
 const variantClasses: Record<KbdVariant, string> = {
   default:
-    "bg-bg-elevated-1 text-ink-soft border-line shadow-[inset_0_-1px_0_0_rgba(0,0,0,0.04)]",
+    "bg-[var(--ds-c-kbd-background)] text-[var(--ds-c-kbd-foreground)] border-[var(--ds-c-kbd-border)] shadow-[inset_0_-1px_0_0_rgba(0,0,0,0.04)]",
   onAccent:
     "bg-white/15 text-white border-white/20 backdrop-blur-sm shadow-[inset_0_-1px_0_0_rgba(255,255,255,0.1)]",
   subtle:
-    "bg-transparent text-ink-muted border-transparent",
+    "bg-transparent text-[var(--ds-c-kbd-foreground)] border-transparent",
 };
 
 const sizeClasses: Record<KbdSize, string> = {

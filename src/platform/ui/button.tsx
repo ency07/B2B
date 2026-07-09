@@ -3,16 +3,16 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/platform/utils/cn";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 rounded-lg text-sm font-semibold transition-all duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none cursor-pointer",
+  "inline-flex items-center justify-center gap-2 rounded-lg text-sm font-semibold transition-all duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[var(--ds-c-button-focus-ring)] focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none cursor-pointer",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:opacity-90 shadow-sm",
-        destructive: "bg-destructive text-destructive-foreground hover:opacity-90 shadow-sm",
-        outline: "border border-border bg-card text-foreground hover:bg-accent hover:text-accent-foreground",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
+        default: "bg-[var(--ds-c-button-background)] text-[var(--ds-c-button-foreground)] hover:opacity-90 shadow-sm",
+        destructive: "bg-[var(--ds-c-button-destructive-bg)] text-[var(--ds-c-button-destructive-fg)] hover:opacity-90 shadow-sm",
+        outline: "border border-[var(--ds-c-button-outline-border)] bg-[var(--ds-c-button-outline-bg)] text-[var(--ds-c-button-outline-fg)] hover:bg-[var(--ds-c-button-ghost-hover-bg)] hover:text-[var(--ds-c-button-ghost-fg)]",
+        secondary: "bg-[var(--ds-c-button-secondary-bg)] text-[var(--ds-c-button-secondary-fg)] hover:bg-[var(--ds-c-button-ghost-hover-bg)] hover:text-[var(--ds-c-button-ghost-fg)]",
+        ghost: "hover:bg-[var(--ds-c-button-ghost-hover-bg)] hover:text-[var(--ds-c-button-ghost-fg)]",
+        link: "text-[var(--ds-c-button-link-fg)] underline-offset-4 hover:underline",
       },
       size: {
         default: "h-10 px-4 py-2",

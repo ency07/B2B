@@ -1,5 +1,6 @@
 import type { Theme } from '../themes'
-import { resolvePrimitiveColor } from './resolve-token'
+import { componentTokenRegistry } from '../components'
+import { resolvePrimitiveColor, resolveSemanticToken } from './resolve-token'
 
 export type CSSVariables = Record<string, string>
 
@@ -16,6 +17,10 @@ const CATEGORY_PREFIX: Record<string, string> = {
 
 const TOKEN_CATEGORIES = new Set(['surface', 'text', 'border', 'icon', 'chart', 'status', 'action', 'special'])
 
+function kebabCase(str: string): string {
+  return str.replace(/([A-Z])/g, '-$1').toLowerCase()
+}
+
 export function flattenThemeToCSS(theme: Theme): CSSVariables {
   const vars: CSSVariables = {}
 
@@ -28,7 +33,7 @@ export function flattenThemeToCSS(theme: Theme): CSSVariables {
 
     for (const [key, ref] of Object.entries(tokenMap)) {
       if (typeof ref !== 'string') continue
-      const varName = `--${prefix}-${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`
+      const varName = `--${prefix}-${kebabCase(key)}`
       vars[varName] = resolvePrimitiveColor(ref)
     }
   }
@@ -36,8 +41,79 @@ export function flattenThemeToCSS(theme: Theme): CSSVariables {
   return vars
 }
 
+export function flattenComponentTokensToCSS(theme: Theme): CSSVariables {
+  const vars: CSSVariables = {}
+
+  for (const [componentName, tokens] of Object.entries(componentTokenRegistry)) {
+    for (const [tokenKey, semanticPath] of Object.entries(tokens)) {
+      const [category, ...keyParts] = semanticPath.split('.')
+      const key = keyParts.join('.')
+
+      let resolved: string
+      if (semanticPath === 'transparent') {
+        resolved = 'transparent'
+      } else if (category && key) {
+        resolved = resolveSemanticToken(theme, category as keyof Theme, key)
+      } else {
+        resolved = semanticPath
+      }
+
+      const varName = `--ds-c-${kebabCase(componentName)}-${kebabCase(tokenKey)}`
+      vars[varName] = resolved
+    }
+  }
+
+  return vars
+}
+
+export function generateBridgeCSS(theme: Theme): CSSVariables {
+  const bridge: [string, string][] = [
+    ['--background', 'surface.background'],
+    ['--foreground', 'text.primary'],
+    ['--card', 'surface.card'],
+    ['--card-foreground', 'text.primary'],
+    ['--popover', 'surface.card'],
+    ['--popover-foreground', 'text.primary'],
+    ['--primary', 'action.primary'],
+    ['--primary-foreground', 'text.inverse'],
+    ['--secondary', 'action.secondary'],
+    ['--secondary-foreground', 'text.primary'],
+    ['--muted', 'surface.hover'],
+    ['--muted-foreground', 'text.muted'],
+    ['--accent', 'surface.hover'],
+    ['--accent-foreground', 'text.primary'],
+    ['--destructive', 'action.danger'],
+    ['--destructive-foreground', 'text.inverse'],
+    ['--success', 'status.success'],
+    ['--success-foreground', 'text.inverse'],
+    ['--warning', 'status.warning'],
+    ['--warning-foreground', 'text.inverse'],
+    ['--border', 'border.default'],
+    ['--input', 'border.default'],
+    ['--ring', 'special.focusRing'],
+  ]
+
+  const vars: CSSVariables = {}
+  for (const [cssVar, semanticPath] of bridge) {
+    const [category, ...keyParts] = semanticPath.split('.')
+    const key = keyParts.join('.')
+    if (category && key) {
+      vars[cssVar] = resolveSemanticToken(theme, category as keyof Theme, key)
+    }
+  }
+  return vars
+}
+
+export function flattenAllThemeToCSS(theme: Theme): CSSVariables {
+  return {
+    ...flattenThemeToCSS(theme),
+    ...flattenComponentTokensToCSS(theme),
+    ...generateBridgeCSS(theme),
+  }
+}
+
 export function generateThemeCSS(theme: Theme): string {
-  const vars = flattenThemeToCSS(theme)
+  const vars = flattenAllThemeToCSS(theme)
   const selector = theme.mode === 'dark' ? '.dark' : ':root'
   const declarations = Object.entries(vars)
     .map(([name, value]) => `  ${name}: ${value};`)

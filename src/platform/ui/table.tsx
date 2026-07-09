@@ -5,7 +5,7 @@ const Table = React.forwardRef<
   HTMLTableElement,
   React.HTMLAttributes<HTMLTableElement>
 >(({ className, ...props }, ref) => (
-  <div className="relative w-full overflow-auto rounded-lg border border-border bg-card">
+  <div className="relative w-full overflow-auto rounded-lg border border-[var(--ds-c-table-border)] bg-[var(--ds-c-table-row-background)]">
     <table
       ref={ref}
       className={cn("w-full caption-bottom text-sm border-collapse", className)}
@@ -19,7 +19,7 @@ const TableHeader = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
-  <thead ref={ref} className={cn("bg-muted/40 border-b border-border", className)} {...props} />
+  <thead ref={ref} className={cn("bg-[var(--ds-c-table-header-background)] border-b border-[var(--ds-c-table-border)]", className)} {...props} />
 ));
 TableHeader.displayName = "TableHeader";
 
@@ -42,7 +42,7 @@ const TableFooter = React.forwardRef<
   <tfoot
     ref={ref}
     className={cn(
-      "border-t border-border bg-muted/30 font-medium [&_tr]:last-child:border-b-0",
+      "border-t border-[var(--ds-c-table-border)] bg-[var(--ds-c-table-footer-background,var(--ds-c-table-header-background))] font-medium [&_tr]:last-child:border-b-0",
       className
     )}
     {...props}
@@ -57,7 +57,7 @@ const TableRow = React.forwardRef<
   <tr
     ref={ref}
     className={cn(
-      "border-b border-border transition-colors hover:bg-muted/20 data-[state=selected]:bg-muted/40",
+      "border-b border-[var(--ds-c-table-border)] transition-colors hover:bg-[var(--ds-c-table-row-hover-background)] data-[state=selected]:bg-[var(--ds-c-table-row-hover-background)]",
       className
     )}
     {...props}
@@ -72,7 +72,7 @@ const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      "h-12 px-4 text-left align-middle font-semibold text-muted-foreground select-none [&:has([role=checkbox])]:pr-0",
+      "h-12 px-4 text-left align-middle font-semibold text-[var(--ds-c-table-header-foreground)] select-none [&:has([role=checkbox])]:pr-0",
       className
     )}
     {...props}
@@ -101,7 +101,7 @@ const TableCaption = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <caption
     ref={ref}
-    className={cn("mt-4 text-xs text-muted-foreground p-2", className)}
+    className={cn("mt-4 text-xs text-[var(--ds-c-table-caption-foreground)] p-2", className)}
     {...props}
   />
 ));

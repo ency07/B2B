@@ -10,7 +10,8 @@ import {
 import type { ReactNode } from 'react'
 import { themes, themeMap, getThemeById } from '../themes'
 import type { Theme } from '../themes'
-import { flattenThemeToCSS } from '../utils'
+import { componentTokenRegistry } from '../components'
+import { flattenAllThemeToCSS } from '../utils'
 import { resolveToken, resolveSemanticToken } from '../utils/resolve-token'
 import type { TokenPath } from '../utils/resolve-token'
 
@@ -18,8 +19,10 @@ export interface ThemeContextValue {
   theme: Theme
   themes: Theme[]
   setTheme: (id: string) => void
+  setMode: (mode: 'light' | 'dark') => void
   resolved: (path: TokenPath) => string
   resolve: (category: keyof Theme, key: string) => string
+  componentToken: (component: string, token: string) => string
   cssVars: Record<string, string>
 }
 
@@ -61,7 +64,17 @@ export function DesignSystemProvider({
     }
   }, [])
 
-  const cssVars = useMemo(() => flattenThemeToCSS(theme), [theme])
+  const setMode = useCallback((mode: 'light' | 'dark') => {
+    const candidates = themes.filter((t) => t.mode === mode)
+    if (candidates.length === 0) return
+    const current = theme
+    const sameFamily = candidates.find(
+      (t) => t.id.replace(/-(light|dark)$/, '') === current.id.replace(/-(light|dark)$/, ''),
+    )
+    setThemeState(sameFamily ?? candidates[0])
+  }, [theme])
+
+  const cssVars = useMemo(() => flattenAllThemeToCSS(theme), [theme])
 
   useEffect(() => {
     const root = document.documentElement
@@ -93,16 +106,35 @@ export function DesignSystemProvider({
     [theme],
   )
 
+  const componentToken = useCallback(
+    (component: string, token: string): string => {
+      const compTokens = componentTokenRegistry[component]
+      if (!compTokens) return token
+      const semanticPath = compTokens[token]
+      if (!semanticPath) return token
+      if (semanticPath === 'transparent') return 'transparent'
+      const [category, ...keyParts] = semanticPath.split('.')
+      const key = keyParts.join('.')
+      if (category && key) {
+        return resolveSemanticToken(theme, category as keyof Theme, key)
+      }
+      return semanticPath
+    },
+    [theme],
+  )
+
   const value = useMemo<ThemeContextValue>(
     () => ({
       theme,
       themes: [...themes],
       setTheme,
+      setMode,
       resolved,
       resolve,
+      componentToken,
       cssVars,
     }),
-    [theme, setTheme, resolved, resolve, cssVars],
+    [theme, setTheme, setMode, resolved, resolve, componentToken, cssVars],
   )
 
   return (

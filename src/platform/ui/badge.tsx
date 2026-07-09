@@ -3,17 +3,17 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/platform/utils/cn";
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-hidden focus:ring-2 focus:ring-[var(--ds-c-badge-border)] focus:ring-offset-2",
   {
     variants: {
       variant: {
-        default: "border-transparent bg-primary text-primary-foreground shadow-sm",
-        secondary: "border-transparent bg-secondary text-secondary-foreground",
-        destructive: "border-transparent bg-destructive text-destructive-foreground shadow-sm",
-        outline: "text-foreground border-border bg-card",
-        success: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
-        warning: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
-        info: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20",
+        default: "border-transparent bg-[var(--ds-c-badge-background)] text-[var(--ds-c-badge-foreground)] shadow-sm",
+        secondary: "border-transparent bg-[var(--ds-c-button-secondary-background)] text-[var(--ds-c-button-secondary-foreground)]",
+        destructive: "border-transparent bg-[var(--ds-c-badge-error-background)] text-[var(--ds-c-badge-error-foreground)] shadow-sm",
+        outline: "text-[var(--ds-c-badge-neutral-foreground)] border-[var(--ds-c-badge-border)] bg-[var(--ds-c-badge-neutral-background)]",
+        success: "bg-[var(--ds-c-badge-success-background)] text-[var(--ds-c-badge-success-foreground)] border-[var(--ds-c-badge-border)]",
+        warning: "bg-[var(--ds-c-badge-warning-background)] text-[var(--ds-c-badge-warning-foreground)] border-[var(--ds-c-badge-border)]",
+        info: "bg-[var(--ds-c-badge-background)] text-[var(--ds-c-badge-foreground)] border-[var(--ds-c-badge-border)]",
       },
     },
     defaultVariants: {
