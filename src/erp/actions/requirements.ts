@@ -39,10 +39,26 @@ export async function getRequirements(tenantCode?: string | null): Promise<Requi
     return [];
   }
 
-  const rows = (data ?? []).map((row: any) => ({
+  const reqs = data ?? [];
+
+  // Batch query para nombres de ingenieros asignados — evita datos inventados.
+  const engIds = [...new Set(reqs.map((r: any) => r.engineering_user_id).filter(Boolean))];
+  const { data: engUsers } = engIds.length > 0
+    ? await supabaseAdmin
+        .from("users")
+        .select("id, first_name, last_name")
+        .in("id", engIds)
+    : { data: [] };
+
+  const engById = new Map<string, { first_name: string; last_name: string }>();
+  for (const u of engUsers || []) {
+    engById.set(u.id, { first_name: u.first_name, last_name: u.last_name });
+  }
+
+  const rows = reqs.map((row: any) => ({
     ...row,
     client: Array.isArray(row.client) ? row.client[0] ?? null : row.client,
-    engineering_user: row.engineering_user_id ? { first_name: "Ing.", last_name: "Asignado" } : null
+    engineering_user: row.engineering_user_id ? (engById.get(row.engineering_user_id) ?? null) : null,
   }));
 
   return rows as any[];

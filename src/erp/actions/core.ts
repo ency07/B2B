@@ -159,29 +159,52 @@ export async function getJobs(tenantCode?: string | null) {
   }));
 }
 
+export async function getAssignableUsers(tenantCode: string | null): Promise<{ id: string; name: string }[]> {
+  const ctx = await requireAction("jobs.create");
+  const tenantId = await getTenantId(tenantCode);
+  await validateTenantAccess(ctx.userId, ctx.role, tenantId);
+
+  const { data, error } = await supabaseAdmin
+    .from("users")
+    .select("id, first_name, last_name")
+    .eq("tenant_id", tenantId)
+    .order("first_name", { ascending: true });
+
+  if (error) {
+    console.error("Error fetching assignable users:", error);
+    return [];
+  }
+
+  return (data || []).map((u: any) => ({ id: u.id, name: `${u.first_name} ${u.last_name}` }));
+}
+
 export async function createJob(
   tenantCode: string | null,
-  jobData: { description: string; assignedTech: string; priority: string; startDate: string; endDate: string }
+  jobData: {
+    clientId: string;
+    requirementId: string;
+    assignedUserId: string;
+    description: string;
+    priority: string;
+    startDate: string;
+    endDate: string;
+  }
 ) {
-  // P8: Validacion backend. Accion: jobs.create.
   const ctx = await requireAction("jobs.create");
   const tenantId = await getTenantId(tenantCode);
 
-  // Resolver referencias en paralelo; fallar con error descriptivo si no existen
+  // Validar que cliente y requerimiento pertenecen al tenant (evita IDOR)
   const [clientResult, reqResult, siteResult, areaResult] = await Promise.all([
-    supabaseAdmin.from("clients").select("id").eq("tenant_id", tenantId).is("deleted_at", null).limit(1).maybeSingle(),
-    supabaseAdmin.from("requirements").select("id").eq("tenant_id", tenantId).limit(1).maybeSingle(),
+    supabaseAdmin.from("clients").select("id").eq("tenant_id", tenantId).eq("id", jobData.clientId).is("deleted_at", null).maybeSingle(),
+    supabaseAdmin.from("requirements").select("id").eq("tenant_id", tenantId).eq("id", jobData.requirementId).maybeSingle(),
     supabaseAdmin.from("sites").select("id").eq("tenant_id", tenantId).limit(1).maybeSingle(),
     supabaseAdmin.from("areas").select("id").eq("tenant_id", tenantId).limit(1).maybeSingle(),
   ]);
 
-  if (!clientResult.data) throw new Error("El tenant no tiene clientes registrados. Crea un cliente antes de generar una orden de trabajo.");
-  if (!reqResult.data) throw new Error("El tenant no tiene requerimientos registrados. Crea un requerimiento antes de generar una orden de trabajo.");
+  if (!clientResult.data) throw new Error("Cliente no encontrado en este tenant.");
+  if (!reqResult.data) throw new Error("Requerimiento no encontrado en este tenant.");
   if (!siteResult.data) throw new Error("El tenant no tiene sitios configurados. Contacta al administrador.");
   if (!areaResult.data) throw new Error("El tenant no tiene áreas configuradas. Contacta al administrador.");
-
-  const siteId = siteResult.data.id;
-  const areaId = areaResult.data.id;
 
   // job_code se omite intencionalmente: el trigger handle_job_sequences()
   // lo genera con get_next_tenant_sequence() de forma atómica y sin race conditions.
@@ -189,13 +212,13 @@ export async function createJob(
     .from("jobs")
     .insert({
       tenant_id: tenantId,
-      client_id: clientResult.data.id,
-      requirement_id: reqResult.data.id,
-      site_id: siteId,
-      area_id: areaId,
+      client_id: jobData.clientId,
+      requirement_id: jobData.requirementId,
+      site_id: siteResult.data.id,
+      area_id: areaResult.data.id,
       title: jobData.description.substring(0, 100),
       description: jobData.description,
-      assigned_user_id: ctx.userId,
+      assigned_user_id: jobData.assignedUserId,
       planned_start_date: new Date(jobData.startDate).toISOString(),
       planned_end_date: new Date(jobData.endDate).toISOString(),
       priority: jobData.priority === "ALTA" ? "HIGH" : jobData.priority === "BAJA" ? "LOW" : "MEDIUM",

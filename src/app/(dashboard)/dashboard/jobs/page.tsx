@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react/jsx-no-comment-textnodes */
 "use client";
 
 import * as React from "react";
@@ -65,15 +67,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/platform/ui/select";
-import { getJobs, createJob } from "@/erp/actions/core";;
+import { getJobs, createJob, getAssignableUsers, getClients } from "@/erp/actions/core";
+import { getRequirements } from "@/erp/actions/requirements";
 
-// Zod schema for job creation with date validations
 const jobSchema = z.object({
+  clientId: z.string().min(1, { message: "Selecciona un cliente." }),
+  requirementId: z.string().min(1, { message: "Selecciona un requerimiento." }),
+  assignedUserId: z.string().min(1, { message: "Selecciona el técnico responsable." }),
   description: z.string().min(5, { message: "La descripción debe tener al menos 5 caracteres." }),
-  assignedTech: z.string().min(1, { message: "Por favor, selecciona un técnico responsable." }),
-  priority: z.string().min(1, { message: "Por favor, selecciona la prioridad del trabajo." }),
-  startDate: z.string().min(1, { message: "Por favor, selecciona la fecha de inicio." }),
-  endDate: z.string().min(1, { message: "Por favor, selecciona la fecha de finalización." }),
+  priority: z.string().min(1, { message: "Selecciona la prioridad del trabajo." }),
+  startDate: z.string().min(1, { message: "Selecciona la fecha de inicio." }),
+  endDate: z.string().min(1, { message: "Selecciona la fecha de finalización." }),
 }).refine((data) => {
   const start = new Date(data.startDate);
   const end = new Date(data.endDate);
@@ -111,6 +115,10 @@ export default function JobsPage() {
   const [submitting, setSubmitting] = React.useState(false);
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
 
+  const [clientOptions, setClientOptions] = React.useState<{ id: string; name: string }[]>([]);
+  const [requirementOptions, setRequirementOptions] = React.useState<{ id: string; code: string; title: string; clientId: string }[]>([]);
+  const [userOptions, setUserOptions] = React.useState<{ id: string; name: string }[]>([]);
+
   // States
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [selectedJob, setSelectedJob] = React.useState<Job | null>(null);
@@ -127,20 +135,26 @@ export default function JobsPage() {
   const form = useForm<JobFormValues>({
     resolver: zodResolver(jobSchema),
     defaultValues: {
+      clientId: "",
+      requirementId: "",
+      assignedUserId: "",
       description: "",
-      assignedTech: "",
       priority: "",
       startDate: "",
       endDate: "",
     },
   });
 
+  const selectedClientId = form.watch("clientId");
+  const filteredRequirements = requirementOptions.filter(
+    (r) => !selectedClientId || r.clientId === selectedClientId
+  );
+
   const loadJobs = React.useCallback(async () => {
     setLoading(true);
     try {
       const data = await getJobs(tenantParam);
       setJobs(data);
-      // If we already have a selected job, refresh its reference from new data
       if (selectedJob) {
         const updated = data.find((j: any) => j.id === selectedJob.id);
         if (updated) setSelectedJob(updated);
@@ -156,11 +170,44 @@ export default function JobsPage() {
     loadJobs();
   }, [tenantParam]);
 
+  React.useEffect(() => {
+    async function loadFormData() {
+      try {
+        const [clients, requirements, users] = await Promise.all([
+          getClients(tenantParam),
+          getRequirements(tenantParam),
+          getAssignableUsers(tenantParam),
+        ]);
+        setClientOptions(clients.map((c: any) => ({ id: c.id, name: c.name })));
+        setRequirementOptions(
+          requirements.map((r: any) => ({
+            id: r.id,
+            code: r.requirement_code,
+            title: r.title,
+            clientId: r.client_id,
+          }))
+        );
+        setUserOptions(users);
+      } catch (err: any) {
+        console.error("Error cargando opciones del formulario:", err);
+      }
+    }
+    loadFormData();
+  }, [tenantParam]);
+
   const onSubmit = async (values: JobFormValues) => {
     setSubmitting(true);
     setErrorMsg(null);
     try {
-      await createJob(tenantParam, values);
+      await createJob(tenantParam, {
+        clientId: values.clientId,
+        requirementId: values.requirementId,
+        assignedUserId: values.assignedUserId,
+        description: values.description,
+        priority: values.priority,
+        startDate: values.startDate,
+        endDate: values.endDate,
+      });
       setIsSheetOpen(false);
       form.reset();
       await loadJobs();
@@ -379,6 +426,52 @@ export default function JobsPage() {
                 <form id="create-job-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
                   <FormField
                     control={form.control}
+                    name="clientId"
+                    render={({ field }) => (
+                      <FormItem className="space-y-1.5">
+                        <FormLabel className="text-xs font-semibold text-foreground">Cliente</FormLabel>
+                        <Select onValueChange={(val) => { field.onChange(val); form.setValue("requirementId", ""); }} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="bg-background border-border text-foreground text-xs focus:ring-primary">
+                              <SelectValue placeholder="Selecciona el cliente" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent className="bg-card border-border text-foreground">
+                            {clientOptions.map((c) => (
+                              <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage className="text-[10px] text-destructive font-mono" />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="requirementId"
+                    render={({ field }) => (
+                      <FormItem className="space-y-1.5">
+                        <FormLabel className="text-xs font-semibold text-foreground">Requerimiento</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value} disabled={!selectedClientId}>
+                          <FormControl>
+                            <SelectTrigger className="bg-background border-border text-foreground text-xs focus:ring-primary">
+                              <SelectValue placeholder={selectedClientId ? "Selecciona el requerimiento" : "Selecciona un cliente primero"} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent className="bg-card border-border text-foreground">
+                            {filteredRequirements.map((r) => (
+                              <SelectItem key={r.id} value={r.id}>{r.code} — {r.title}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage className="text-[10px] text-destructive font-mono" />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
                     name="description"
                     render={({ field }) => (
                       <FormItem className="space-y-1.5">
@@ -393,7 +486,7 @@ export default function JobsPage() {
 
                   <FormField
                     control={form.control}
-                    name="assignedTech"
+                    name="assignedUserId"
                     render={({ field }) => (
                       <FormItem className="space-y-1.5">
                         <FormLabel className="text-xs font-semibold text-foreground">Técnico Principal Responsable</FormLabel>
@@ -404,9 +497,9 @@ export default function JobsPage() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent className="bg-card border-border text-foreground">
-                            <SelectItem value="Ing. Carlos Mendoza">Ing. Carlos Mendoza (Calidad)</SelectItem>
-                            <SelectItem value="Téc. Andrés Silva">Téc. Andrés Silva (Estructura)</SelectItem>
-                            <SelectItem value="Téc. Sofía Ramos">Téc. Sofía Ramos (Balanceo)</SelectItem>
+                            {userOptions.map((u) => (
+                              <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                         <FormMessage className="text-[10px] text-destructive font-mono" />
