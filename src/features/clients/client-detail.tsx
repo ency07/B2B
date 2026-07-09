@@ -52,12 +52,14 @@ import type { ClientListItem } from "./client-list";
 
 const statusToVariant: Record<ClientListItem["status"], StatusVariant> = {
   ACTIVO: "success",
+  INACTIVO: "danger",
   PENDIENTE: "warning",
   SUSPENDIDO: "danger",
 };
 
 const statusToLabel: Record<ClientListItem["status"], string> = {
   ACTIVO: "Activo",
+  INACTIVO: "Inactivo",
   PENDIENTE: "Pendiente",
   SUSPENDIDO: "Suspendido",
 };
