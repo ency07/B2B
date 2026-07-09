@@ -56,12 +56,15 @@ interface DashboardHeaderProps {
   notificationsCount?: number;
   notificationsList?: NotificationItem[];
   role?: string | null;
+  /** auth_user_id de Supabase. Cuando se provee, omite supabase.auth.getUser(). */
+  userId?: string;
 }
 
 export function DashboardHeader({
   notificationsCount = 0,
   notificationsList = [],
   role: initialRole = null,
+  userId: initialUserId,
 }: DashboardHeaderProps = {}) {
   const { toggleMobileOpen } = useLayout();
   const router = useRouter();
@@ -80,45 +83,49 @@ export function DashboardHeader({
   React.useEffect(() => {
     async function loadUserData() {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data: userData } = await supabase
-            .from("users")
-            .select("first_name, last_name")
-            .eq("auth_user_id", user.id)
-            .maybeSingle();
-          if (userData?.first_name) {
-            setUserName(`${userData.first_name} ${userData.last_name || ""}`.trim());
-          } else {
-            setUserName(user.email?.split("@")[0] || "Administrador");
-          }
+        // When userId is provided from the server, skip getUser() entirely.
+        let authUserId = initialUserId;
+        if (!authUserId) {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
+          authUserId = user.id;
+        }
 
-          let userRole = initialRole;
-          if (!userRole) {
-            userRole = await getUserRole(user.id);
-          }
-          setRole(userRole);
-          if (userRole) {
-            const roleLabels: Record<string, string> = {
-              SUPER_ADMIN: "Super Admin",
-              ADMIN_EMPRESA: "Admin Tenant",
-              GERENTE_GENERAL: "Gerente General",
-              DIRECTOR_COMERCIAL: "Dir. Comercial",
-              EJECUTIVO_COMERCIAL: "Ej. Comercial",
-              DIRECTOR_OPERACIONES: "Dir. Operaciones",
-              TECNICO_CAMPO: "Tecnico de Campo",
-              ALMACENISTA: "Almacenista",
-              AUDITOR: "Auditor de Procesos",
-            };
-            setUserRoleLabel(roleLabels[userRole] || userRole);
-          }
+        const { data: userData } = await supabase
+          .from("users")
+          .select("first_name, last_name")
+          .eq("auth_user_id", authUserId)
+          .maybeSingle();
+
+        if (userData?.first_name) {
+          setUserName(`${userData.first_name} ${userData.last_name || ""}`.trim());
+        }
+
+        let userRole = initialRole;
+        if (!userRole) {
+          userRole = await getUserRole(authUserId);
+        }
+        setRole(userRole);
+        if (userRole) {
+          const roleLabels: Record<string, string> = {
+            SUPER_ADMIN: "Super Admin",
+            ADMIN_EMPRESA: "Admin Tenant",
+            GERENTE_GENERAL: "Gerente General",
+            DIRECTOR_COMERCIAL: "Dir. Comercial",
+            EJECUTIVO_COMERCIAL: "Ej. Comercial",
+            DIRECTOR_OPERACIONES: "Dir. Operaciones",
+            TECNICO_CAMPO: "Tecnico de Campo",
+            ALMACENISTA: "Almacenista",
+            AUDITOR: "Auditor de Procesos",
+          };
+          setUserRoleLabel(roleLabels[userRole] || userRole);
         }
       } catch (err) {
         console.error("Error loading user info in header:", err);
       }
     }
     loadUserData();
-  }, [initialRole]);
+  }, [initialRole, initialUserId]);
 
   // Build nav groups with real navigation callbacks, filtered by role permissions.
   const navGroups: CommandBarGroup[] = React.useMemo(() => {
