@@ -1,4 +1,4 @@
-import { ROUTES } from "@/lib/routes";
+"use client";
 
 /**
  * DashboardSidebar — shell de navegacion del ERP (Ola 5).
@@ -15,9 +15,8 @@ import { ROUTES } from "@/lib/routes";
  * el layout context existente.
  */
 
-"use client";
-
 import * as React from "react";
+import { ROUTES } from "@/lib/routes";
 import Link from "next/link";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";

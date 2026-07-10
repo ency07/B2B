@@ -1,4 +1,4 @@
-import { ROUTES } from "@/lib/routes";
+"use client";
 
 /**
  * DashboardHeader — header del ERP (Ola 5).
@@ -16,9 +16,8 @@ import { ROUTES } from "@/lib/routes";
  * - Breadcrumb tipo "TENANT / DASHBOARD" (info ya esta en la pagina)
  */
 
-"use client";
-
 import * as React from "react";
+import { ROUTES } from "@/lib/routes";
 import Headroom from "react-headroom";
 import { ChevronDown, Bell, CircleHelp, LogOut, Search, Building2 } from "lucide-react";
 import { ThemeCustomizer } from "@/platform/components/theme-customizer";

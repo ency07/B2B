@@ -1,6 +1,5 @@
 "use server";
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ROUTES } from "@/lib/routes";
 
 /**
  * KPIs y "Pending" especificos por rol (P8 - dashboard role-adaptive).
@@ -18,7 +17,7 @@ import { ROUTES } from "@/lib/routes";
  * lado del servidor y los datos siguen filtrados por tenant_id.
  */
 
-"use server";
+import { ROUTES } from "@/lib/routes";
 
 import { supabaseAdmin } from "@/platform/auth/clients";
 import { getTenantId } from "@/erp/actions/core";
