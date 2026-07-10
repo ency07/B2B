@@ -1,4 +1,5 @@
 "use server";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { supabaseAdmin } from "@/platform/auth/clients";
 import { getTenantId } from "@/erp/actions/core";
@@ -75,7 +76,7 @@ export interface CatalogCategory {
  *  - Caché en memoria de 60 segundos por tenant
  */
 // Definición interna del fetching y procesado jerárquico del catálogo
-async function fetchRawCatalogFromDB(tenantId: string): Promise<CatalogCategory[]> {
+async function fetchRawCatalogFromDB(): Promise<CatalogCategory[]> {
   // ── 1. Consulta jerárquica unificada en una sola query ────────────────────────
   const { data: categoriesData, error } = await supabaseAdmin
     .from("product_categories")
@@ -149,7 +150,6 @@ async function fetchRawCatalogFromDB(tenantId: string): Promise<CatalogCategory[
         )
       )
     `)
-    .eq("tenant_id", tenantId)
     .is("deleted_at", null)
     .order("name", { ascending: true });
 
@@ -268,13 +268,13 @@ async function fetchRawCatalogFromDB(tenantId: string): Promise<CatalogCategory[
 }
 
 // Inicialización de la función de caché condicional según el runtime (soporte para ts-node/Next.js)
-let getCachedCatalogInternal: (tenantId: string) => Promise<CatalogCategory[]>;
+let getCachedCatalogInternal: () => Promise<CatalogCategory[]>;
 
 try {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { unstable_cache } = require("next/cache");
   getCachedCatalogInternal = unstable_cache(
-    async (tenantId: string) => fetchRawCatalogFromDB(tenantId),
+    async () => fetchRawCatalogFromDB(),
     ["industrial-catalog-key"],
     {
       revalidate: 60, // 60 segundos
@@ -283,7 +283,7 @@ try {
   );
 } catch {
   // Fallback para entornos que no son de Next.js (como los scripts de prueba en ts-node)
-  getCachedCatalogInternal = async (tenantId: string) => fetchRawCatalogFromDB(tenantId);
+  getCachedCatalogInternal = async () => fetchRawCatalogFromDB();
 }
 
 /**
@@ -292,10 +292,9 @@ try {
  *  - Caché de Next.js persistente e invalidable (unstable_cache)
  */
 export async function getIndustrialCatalog(
-  tenantCode?: string | null
+  _tenantCode?: string | null
 ): Promise<CatalogCategory[]> {
-  const tenantId = await getTenantId(tenantCode);
-  return getCachedCatalogInternal(tenantId);
+  return getCachedCatalogInternal();
 }
 
 
@@ -333,7 +332,6 @@ export async function addProductImage(
   const { data: prodImg, error: linkError } = await supabaseAdmin
     .from("product_images")
     .insert({
-      tenant_id: tenantId,
       product_id: productId,
       media_asset_id: asset.id,
       sort_order: 10,
@@ -374,7 +372,6 @@ export async function saveProduct(
     let productId = product.id;
 
     const productPayload = {
-      tenant_id: tenantId,
       product_code: product.productCode,
       name: product.name,
       description: product.description,
@@ -388,8 +385,7 @@ export async function saveProduct(
       const { error: updateErr } = await supabaseAdmin
         .from("products")
         .update(productPayload)
-        .eq("id", productId)
-        .eq("tenant_id", tenantId);
+        .eq("id", productId);
 
       if (updateErr) throw new Error(updateErr.message);
     } else {
@@ -447,8 +443,7 @@ export async function deleteProduct(tenantCode: string | null, productId: string
     const { error } = await supabaseAdmin
       .from("products")
       .update({ deleted_at: new Date().toISOString() })
-      .eq("id", productId)
-      .eq("tenant_id", tenantId);
+      .eq("id", productId);
 
     if (error) throw new Error(error.message);
     _invalidateCache(tenantCode);
@@ -478,7 +473,6 @@ export async function saveCategory(
     const userId = await resolveTenantOwnerUserIdAsync(tenantId);
 
     const payload = {
-      tenant_id: tenantId,
       category_code: category.categoryCode,
       name: category.name,
       description: category.description,
@@ -490,8 +484,7 @@ export async function saveCategory(
       const { error } = await supabaseAdmin
         .from("product_categories")
         .update(payload)
-        .eq("id", category.id)
-        .eq("tenant_id", tenantId);
+        .eq("id", category.id);
 
       if (error) throw new Error(error.message);
     } else {
@@ -521,8 +514,7 @@ export async function deleteCategory(tenantCode: string | null, categoryId: stri
     const { error } = await supabaseAdmin
       .from("product_categories")
       .update({ deleted_at: new Date().toISOString() })
-      .eq("id", categoryId)
-      .eq("tenant_id", tenantId);
+      .eq("id", categoryId);
 
     if (error) throw new Error(error.message);
     _invalidateCache(tenantCode);
