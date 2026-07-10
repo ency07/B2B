@@ -37,6 +37,6 @@ export async function middlewareDispatcher(request: NextRequest) {
   } catch (error) {
     console.error('[dispatcher] Error no capturado en middleware:', error);
     // Fail-closed: denegar acceso por defecto
-    return NextResponse.redirect(new URL('/error?code=middleware_failure', request.url));
+    return NextResponse.redirect(new URL('/error-page?code=middleware_failure', request.url));
   }
 }

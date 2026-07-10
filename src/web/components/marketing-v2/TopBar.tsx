@@ -5,6 +5,7 @@ import * as React from "react";
 import { Menu, X, Command } from "lucide-react";
 import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion";
 import { TenantLogo } from "@/design-system/components/TenantLogo";
+import { ROUTES } from "@/lib/routes";
 
 interface TopBarProps {
   siteName: string;
@@ -206,7 +207,7 @@ export function TopBar({ siteName, logoUrl, tenantCode }: TopBarProps) {
             </a>
 
             <a
-              href="/login"
+              href={ROUTES.LOGIN}
               title="Acceso personal interno"
               className={`
                 hidden lg:inline-block text-[11px] font-mono uppercase tracking-wider px-3 py-2 transition-colors duration-300 opacity-40 hover:opacity-80
@@ -338,7 +339,7 @@ export function TopBar({ siteName, logoUrl, tenantCode }: TopBarProps) {
                     Portal cliente
                   </a>
                   <a
-                    href="/login"
+                    href={ROUTES.LOGIN}
                     className="block py-2 text-sm text-ink-muted hover:text-ink-soft transition-colors font-mono uppercase tracking-wider"
                   >
                     Acceso Staff (ERP)

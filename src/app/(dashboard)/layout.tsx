@@ -2,7 +2,8 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { getAuthContext } from "@/platform/auth/server-guards";
 import { DashboardShell } from "@/erp/components/dashboard-shell";
-import { CLIENT_ROLE, PORTAL_PATH } from "@/lib/role-permissions";
+import { CLIENT_ROLE } from "@/lib/role-permissions";
+import { ROUTES } from "@/lib/routes";
 
 export default async function DashboardLayout({
   children,
@@ -12,11 +13,11 @@ export default async function DashboardLayout({
   const ctx = await getAuthContext();
 
   if (!ctx) {
-    redirect("/login?redirect=/dashboard");
+    redirect(`${ROUTES.LOGIN}?redirect=${ROUTES.DASHBOARD}`);
   }
 
   if (ctx.role === CLIENT_ROLE) {
-    redirect(PORTAL_PATH);
+    redirect(ROUTES.PORTAL);
   }
 
   return (

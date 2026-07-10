@@ -1,5 +1,6 @@
 "use server";
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { ROUTES } from "@/lib/routes";
 
 /**
  * KPIs y "Pending" especificos por rol (P8 - dashboard role-adaptive).
@@ -472,7 +473,7 @@ export async function getKpisForRole(
       { id: "total", label: "Eventos (7d)", value: `${total}`, link: "/dashboard" },
       { id: "critical", label: "Eventos Criticos (DELETE)", value: `${critical.length}`, variant: critical.length > 0 ? "danger" : "success", link: "/dashboard" },
       { id: "today", label: "Eventos Hoy", value: `${todayEvents.length}`, link: "/dashboard" },
-      { id: "users", label: "Usuarios Unicos", value: `${uniqueUsers}`, link: "/dashboard/settings" },
+      { id: "users", label: "Usuarios Unicos", value: `${uniqueUsers}`, link: ROUTES.DASHBOARD_SETTINGS },
     ];
     pending = validAudit.slice(0, 4).map((a: any) => ({
       id: `task-audit-${a.id}`,

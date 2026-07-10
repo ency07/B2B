@@ -4,10 +4,12 @@ import React from "react";
 import { FileCheck, Download, Send } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { ROUTES } from "@/lib/routes";
+import type { WizardResult } from "@/web/actions/wizard";
 
 interface SuccessStepProps {
-  form: any;
-  result: any;
+  form: { ciudad: string; [key: string]: unknown };
+  result: WizardResult;
   siteName: string;
   primaryColor: string;
   generatePdfReport: () => void;
@@ -35,7 +37,7 @@ export function SuccessStep({
           <FileCheck className="w-8 h-8" strokeWidth={1.5} />
         </div>
 
-        <p className="editorial-eyebrow mb-6">// Preingeniería registrada</p>
+        <p className="editorial-eyebrow mb-6">{'// Preingeniería registrada'}</p>
         <h2 className="font-display text-4xl lg:text-5xl font-light text-ink tracking-[-0.03em] leading-[1.05] mb-6">
           Su solicitud ha sido
           <br />
@@ -111,7 +113,7 @@ export function SuccessStep({
 
       <div className="mt-16 pt-10 text-center">
         <Link
-          href="/"
+          href={ROUTES.HOME}
           className="font-mono text-[11px] tracking-widest text-fg-muted hover:text-ink uppercase transition-colors"
         >
           ← Volver al sitio

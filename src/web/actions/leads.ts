@@ -152,7 +152,7 @@ export async function createLeadWithScore(
       tenant_id: tenantId,
       client_id: leadData.clientId,
       contact_id: leadData.contactId,
-      lead_source: "WEBSITE", // Fuente de cotizador web
+      lead_source: "Cotizador Web",
       score,
       risk_level: riskLevel, // Estados en español: CALIENTE, TIBIO, FRIO, SPAM
       notes: leadData.notes || `Contacto registrado vía Wizard Web. Rol: ${leadData.role}. Urgencia: ${leadData.urgency}.`,

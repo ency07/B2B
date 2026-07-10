@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { AlertTriangle, RefreshCw, Home } from "lucide-react";
+import { ROUTES } from "@/lib/routes";
 import { getPublicBranding } from "@/web/actions/branding";
 
 interface ErrorProps {
@@ -66,7 +67,7 @@ export default function Error({ error, reset }: ErrorProps) {
             Reintentar
           </button>
           <Link
-            href="/"
+            href={ROUTES.HOME}
             className="inline-flex items-center justify-center gap-2 w-full px-6 py-3 bg-transparent border border-zinc-700 hover:bg-zinc-800 active:scale-95 text-zinc-300 rounded-lg font-semibold transition-all duration-150"
           >
             <Home className="w-4 h-4" />

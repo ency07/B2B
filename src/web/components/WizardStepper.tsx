@@ -6,6 +6,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { ROUTES } from "@/lib/routes";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ArrowLeft, 
@@ -581,7 +582,7 @@ Solicito una cotización formal y confirmación de disponibilidad técnica. Grac
       {/* === HEADER === */}
       <header className="border-b border-line bg-paper">
         <div className="max-w-[1600px] mx-auto px-6 sm:px-10 lg:px-14 h-20 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3 group">
+          <Link href={ROUTES.HOME} className="flex items-center gap-3 group">
             <TenantLogo
               variant="claro"
               logoClaroUrl={siteLogo}
@@ -593,7 +594,7 @@ Solicito una cotización formal y confirmación de disponibilidad técnica. Grac
           </Link>
 
           <Link
-            href="/"
+            href={ROUTES.HOME}
             className="font-mono text-[11px] tracking-widest text-fg-muted hover:text-ink uppercase transition-colors"
           >
             ← Volver al sitio
@@ -846,7 +847,7 @@ Solicito una cotización formal y confirmación de disponibilidad técnica. Grac
           <div className="max-w-[1600px] mx-auto px-6 sm:px-10 lg:px-14 py-10 lg:py-12 flex justify-between items-center">
             {step === 1 ? (
               <Link
-                href="/"
+                href={ROUTES.HOME}
                 className="inline-flex items-center gap-2 font-sans text-sm text-ink-soft hover:text-ink transition-colors group"
               >
                 <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" strokeWidth={1.5} />

@@ -18,6 +18,7 @@ import { Input } from "@/platform/ui/input";
 import { Button } from "@/platform/ui/button";
 import { Spinner } from "@/platform/ui/spinner";
 import { toast } from "sonner";
+import { ROUTES } from "@/lib/routes";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
@@ -32,8 +33,13 @@ export default function RegisterPortalPage() {
   const [password, setPassword] = React.useState("");
   const [confirmPassword, setConfirmPassword] = React.useState("");
   const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-  const [step, setStep] = React.useState<"loading" | "form" | "success">("loading");
+  const validInvite = Boolean(token) && type === "invite";
+  const [error, setError] = React.useState<string | null>(
+    !validInvite ? "Enlace incorrecto. Verifica el email de invitación." : null
+  );
+  const [step, setStep] = React.useState<"loading" | "form" | "success">(
+    !validInvite ? "form" : "loading"
+  );
 
   const supabase = React.useMemo(
     () =>
@@ -42,6 +48,7 @@ export default function RegisterPortalPage() {
   );
 
   React.useEffect(() => {
+    if (!validInvite) return;
     async function getUser() {
       const { data, error } = await supabase.auth.getUser();
       if (error || !data.user?.email) {
@@ -52,13 +59,8 @@ export default function RegisterPortalPage() {
       setEmail(data.user.email);
       setStep("form");
     }
-    if (token && type === "invite") {
-      getUser();
-    } else {
-      setError("Enlace incorrecto. Verifica el email de invitación.");
-      setStep("form");
-    }
-  }, [token, type, supabase]);
+    getUser();
+  }, [validInvite, supabase]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,7 +89,7 @@ export default function RegisterPortalPage() {
       } else {
         setStep("success");
         setTimeout(() => {
-          router.push("/portal");
+          router.push(ROUTES.PORTAL);
         }, 2000);
       }
     } catch (err) {

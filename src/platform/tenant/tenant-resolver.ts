@@ -135,18 +135,12 @@ export async function resolveTenantOwnerUserIdAsync(
 ): Promise<string> {
   // Si hay un usuario real autenticado, usarlo (máxima trazabilidad)
   if (overrideUserId) return overrideUserId;
-  // 1. Verificar mapa estático
-  for (const [code, id] of Object.entries(TENANT_CODE_TO_ID)) {
-    if (id === tenantId) {
-      return TENANT_OWNER_USER_ID[code] ?? TENANT_OWNER_USER_ID.acme;
-    }
-  }
 
-  // 2. Verificar caché dinámica
+  // 1. Verificar caché dinámica
   const cachedOwner = DYNAMIC_OWNER_CACHE[tenantId];
   if (cachedOwner) return cachedOwner;
 
-  // 3. Consultar base de datos
+  // 2. Consultar base de datos (fuente autoritativa)
   try {
     const { data } = await supabaseAdmin
       .from("users")

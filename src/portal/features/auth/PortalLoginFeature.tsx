@@ -10,6 +10,7 @@ import * as z from "zod";
 import { Eye, EyeOff, Lock, Mail, ArrowLeft, ShieldCheck } from "lucide-react";
 import Image from "next/image";
 import { getBrandingDefaults } from "@/platform/branding/branding-defaults";
+import { ROUTES } from "@/lib/routes";
 import { loginPortal } from "@/portal/actions/auth";
 import { isSafeRedirect } from "@/utils/auth-redirect";
 import { getPortalBrowserClient } from "@/platform/auth/clients";
@@ -25,8 +26,8 @@ export function PortalLoginFeature() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tenantParam = searchParams.get("tenant");
-  const rawRedirect = searchParams.get("redirect") || "/portal";
-  const redirectTo = isSafeRedirect(rawRedirect) ? rawRedirect : "/portal";
+  const rawRedirect = searchParams.get("redirect") || ROUTES.PORTAL;
+  const redirectTo = isSafeRedirect(rawRedirect) ? rawRedirect : ROUTES.PORTAL;
   const defaults = getBrandingDefaults(tenantParam);
 
   const [showPassword, setShowPassword] = React.useState(false);

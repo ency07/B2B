@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import { ArcoForm } from "./arco-form";
+import { ROUTES } from "@/lib/routes";
 
 export const metadata: Metadata = {
   title: "Política de Privacidad — Portal de Clientes",
@@ -11,7 +12,7 @@ export default function PrivacyPage() {
     <main className="min-h-screen bg-stone-50 py-16 px-6">
       <div className="max-w-3xl mx-auto space-y-8">
         <Link
-          href="/portal"
+          href={ROUTES.PORTAL}
           className="text-xs font-mono text-stone-500 hover:text-stone-900 underline underline-offset-2"
         >
           &larr; Volver al portal

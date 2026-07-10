@@ -672,14 +672,15 @@ function TechnicalDetailModal({
                     strokeWidth={1.5}
                   />
                 </a>
-                <a
-                  href="#"
-                  onClick={(e) => e.preventDefault()}
-                  className="inline-flex items-center justify-center gap-3 h-12 px-6 border border-ink text-ink text-sm font-medium tracking-tight rounded-sm hover:bg-ink hover:text-paper transition-colors"
+                <button
+                  type="button"
+                  aria-disabled="true"
+                  title="Ficha técnica no disponible aún"
+                  className="inline-flex items-center justify-center gap-3 h-12 px-6 border border-ink text-ink text-sm font-medium tracking-tight rounded-sm hover:bg-ink hover:text-paper transition-colors cursor-not-allowed"
                 >
                   <FileDown className="w-4 h-4" strokeWidth={1.5} />
                   <span>Descargar Ficha Técnica</span>
-                </a>
+                </button>
               </div>
             </footer>
           </motion.aside>

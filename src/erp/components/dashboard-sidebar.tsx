@@ -1,3 +1,5 @@
+import { ROUTES } from "@/lib/routes";
+
 /**
  * DashboardSidebar — shell de navegacion del ERP (Ola 5).
  *
@@ -98,7 +100,7 @@ const NAV_SECTIONS: NavSection[] = [
     label: "Sistema",
     items: [
       { href: "/dashboard/cms", label: "Contenido", icon: Layers, shortcut: "7" },
-      { href: "/dashboard/settings", label: "Configuracion", icon: Settings, shortcut: "8" },
+      { href: ROUTES.DASHBOARD_SETTINGS, label: "Configuracion", icon: Settings, shortcut: "8" },
     ],
   },
 ];

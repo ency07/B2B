@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { ROUTES } from "@/lib/routes";
 
 export function SessionVersionListener() {
   const router = useRouter();
@@ -38,7 +39,7 @@ export function SessionVersionListener() {
 
       if (currentVersion && newVersion !== currentVersion) {
         clearLocalStorage();
-        window.location.href = "/login";
+        window.location.href = ROUTES.LOGIN;
       }
     };
 

@@ -4,6 +4,9 @@ import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 import { applyTenantToPath, isSafeRedirect } from "@/utils/auth-redirect";
 import { logAuthEvent } from "@/lib/utils/audit-logger";
+import { ROUTES } from "@/lib/routes";
+import { loginSchema } from "@/lib/utils/auth-schemas";
+import { checkLoginRateLimit } from "@/lib/utils/rate-limiter";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
@@ -14,8 +17,18 @@ export async function loginPortal(
   tenant?: string | null,
   redirect?: string
 ): Promise<{ success: boolean; redirectTo?: string; error?: string; session?: { access_token: string; refresh_token: string; expires_in: number } }> {
-  if (!email || !password) {
-    return { success: false, error: "Email y contraseña requeridos" };
+  // — M-01: Validación Zod —
+  const parseResult = loginSchema.safeParse({ email, password });
+  if (!parseResult.success) {
+    return { success: false, error: "Credenciales inválidas" };
+  }
+  const normalizedEmail = parseResult.data.email.trim().toLowerCase();
+
+  // — M-02: Rate limiting (5 intentos por minuto por email) —
+  const { allowed } = await checkLoginRateLimit(normalizedEmail, "portal");
+  if (!allowed) {
+    await logAuthEvent("LOGIN_FAILED", null, { email: normalizedEmail, error: "rate_limit_exceeded" });
+    return { success: false, error: "Demasiados intentos. Espera 1 minuto." };
   }
 
   const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -23,17 +36,17 @@ export async function loginPortal(
   });
 
   const { data: authData, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
+    email: normalizedEmail,
+    password: parseResult.data.password,
   });
 
   if (error || !authData?.user) {
-    await logAuthEvent("LOGIN_FAILED", null, { email, error: error?.message });
-    return { success: false, error: "Credenciales incorrectas" };
+    await logAuthEvent("LOGIN_FAILED", null, { email: normalizedEmail, error: error?.message });
+    return { success: false, error: "Credenciales inválidas" };
   }
 
   if (!authData.session) {
-    await logAuthEvent("LOGIN_FAILED", null, { email, error: "no_session" });
+    await logAuthEvent("LOGIN_FAILED", null, { email: normalizedEmail, error: "no_session" });
     return { success: false, error: "Tu cuenta aún no está activada. Revisa tu correo de confirmación." };
   }
 
@@ -42,11 +55,11 @@ export async function loginPortal(
     return { success: false, error: "Error al obtener tokens de sesión" };
   }
 
-  await logAuthEvent("LOGIN_SUCCESS", authData.user.id, { email });
+  await logAuthEvent("LOGIN_SUCCESS", authData.user.id, { email: normalizedEmail });
 
   const cookieStore = await cookies();
   const redirectStr = redirect || "";
-  const safeRedirect: string = isSafeRedirect(redirectStr) ? redirectStr : "/portal";
+  const safeRedirect: string = isSafeRedirect(redirectStr) ? redirectStr : ROUTES.PORTAL;
   const destination = applyTenantToPath(safeRedirect, tenant);
 
   cookieStore.set("sb-portal-access-token", session.access_token, {

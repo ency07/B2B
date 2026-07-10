@@ -1,3 +1,5 @@
+import { ROUTES } from "@/lib/routes";
+
 /**
  * DashboardHeader — header del ERP (Ola 5).
  *
@@ -47,7 +49,7 @@ const QUICK_NAV: CommandBarGroup[] = [
       { id: "m-purchases", title: "Compras", subtitle: "/dashboard/purchases", onSelect: () => {} },
       { id: "m-invoices", title: "Facturacion", subtitle: "/dashboard/invoices", onSelect: () => {} },
       { id: "m-cms", title: "CMS Admin", subtitle: "/dashboard/cms", onSelect: () => {} },
-      { id: "m-settings", title: "Configuracion", subtitle: "/dashboard/settings", onSelect: () => {} },
+      { id: "m-settings", title: "Configuracion", subtitle: ROUTES.DASHBOARD_SETTINGS, onSelect: () => {} },
     ],
   },
 ];
@@ -142,7 +144,7 @@ export function DashboardHeader({
       { id: "m-jobs", title: "Trabajos OTs", subtitle: "/dashboard/jobs", icon: Building2, onSelect: () => { router.push("/dashboard/jobs"); setCommandOpen(false); } },
       { id: "m-invoices", title: "Facturacion", subtitle: "/dashboard/invoices", icon: Building2, onSelect: () => { router.push("/dashboard/invoices"); setCommandOpen(false); } },
       { id: "m-cms", title: "CMS Admin", subtitle: "/dashboard/cms", icon: Building2, onSelect: () => { router.push("/dashboard/cms"); setCommandOpen(false); } },
-      { id: "m-settings", title: "Configuracion", subtitle: "/dashboard/settings", icon: Building2, onSelect: () => { router.push("/dashboard/settings"); setCommandOpen(false); } },
+      { id: "m-settings", title: "Configuracion", subtitle: ROUTES.DASHBOARD_SETTINGS, icon: Building2, onSelect: () => { router.push(ROUTES.DASHBOARD_SETTINGS); setCommandOpen(false); } },
     ];
 
     const filteredItems = allItems.filter(item => all || perms.includes(item.subtitle));
@@ -385,7 +387,7 @@ export function DashboardHeader({
                       type="button"
                       onClick={() => {
                         setShowAccountMenu(false);
-                        router.push("/dashboard/settings");
+                        router.push(ROUTES.DASHBOARD_SETTINGS);
                       }}
                       className="w-full text-left px-3 py-2 text-[12px] text-ink-soft hover:bg-accent hover:text-ink transition-colors"
                     >

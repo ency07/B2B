@@ -1,5 +1,46 @@
 import { getSupabaseAdmin } from "@/platform/auth/clients";
 
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOGIN_WINDOW_SECONDS = 60;
+
+/**
+ * Verifica y contabiliza un intento de login usando la función SQL atómica
+ * check_and_increment_rate_limit (migración 51). Diferencia de checkRateLimit:
+ * usa INSERT ON CONFLICT DO UPDATE vía RPC para eliminar la race condition
+ * del SELECT-then-UPDATE. Fail-closed: un error de BD bloquea el intento.
+ */
+export async function checkLoginRateLimit(
+  email: string,
+  domain: "erp" | "portal"
+): Promise<{ allowed: boolean }> {
+  const admin = getSupabaseAdmin();
+  const normalized = email.trim().toLowerCase();
+  const identifier = `login:${domain}:${normalized}`;
+  const windowMinute = Math.floor(Date.now() / (LOGIN_WINDOW_SECONDS * 1000));
+  const windowKey = String(windowMinute);
+  const expiresAt = new Date((windowMinute + 2) * LOGIN_WINDOW_SECONDS * 1000).toISOString();
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (admin as any).rpc("check_and_increment_rate_limit", {
+      p_identifier: identifier,
+      p_window_key: windowKey,
+      p_expires_at: expiresAt,
+    });
+
+    if (error) {
+      console.error("[rate-limiter] check_and_increment_rate_limit:", error);
+      return { allowed: false }; // fail-closed
+    }
+
+    const count = typeof data === "number" ? data : 0;
+    return { allowed: count <= MAX_LOGIN_ATTEMPTS };
+  } catch (err) {
+    console.error("[rate-limiter] Unexpected error:", err);
+    return { allowed: false }; // fail-closed
+  }
+}
+
 export async function checkRateLimit(
   identifier: string,
   maxRequests: number = 10,

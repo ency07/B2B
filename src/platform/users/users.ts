@@ -14,7 +14,11 @@ export const getUserRole = cache(async (authUserId: string): Promise<string | nu
     .limit(1)
     .maybeSingle();
 
-  if (error || !data) return null;
+  if (error) {
+    console.error("[getUserRole] Error al consultar users/user_roles:", error);
+    return null;
+  }
+  if (!data) return null;
 
   const userRoles = data.user_roles as any;
   const first = Array.isArray(userRoles) ? userRoles[0] : userRoles;

@@ -5,6 +5,7 @@
 import * as React from "react";
 import { motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
+import { ROUTES } from "@/lib/routes";
 
 interface FooterProps {
   siteName: string;
@@ -41,7 +42,7 @@ const OFFICES = [
 export function Footer({ siteName, tenantCode, branding = {} }: FooterProps) {
   const year = new Date().getFullYear();
   const tc = tenantCode || "";
-  const portalHref = tc ? `/portal?tenant=${tc}` : "/portal";
+  const portalHref = tc ? `${ROUTES.PORTAL}?tenant=${tc}` : ROUTES.PORTAL;
   const wizardHref = tc ? `/wizard?tenant=${tc}` : "/wizard";
 
   const NAV_GROUPS = [
@@ -220,15 +221,32 @@ export function Footer({ siteName, tenantCode, branding = {} }: FooterProps) {
             {branding.copyright_footer || `© ${year} · ${siteName} · Todos los derechos reservados`}
           </p>
           <div className="flex items-center gap-5">
-            {["Términos", "Privacidad", "Cookies", "RETIE"].map((l) => (
-              <a
-                key={l}
-                href="#"
-                className="font-mono text-[10px] tracking-widest text-white/40 hover:text-white uppercase transition-colors link-reveal"
-              >
-                {l}
-              </a>
-            ))}
+            {([
+              { label: "Términos",   href: null },
+              { label: "Privacidad", href: "/privacidad" },
+              { label: "Cookies",    href: null },
+              { label: "RETIE",      href: null },
+            ] as { label: string; href: string | null }[]).map(({ label, href }) =>
+              href ? (
+                <a
+                  key={label}
+                  href={href}
+                  className="font-mono text-[10px] tracking-widest text-white/40 hover:text-white uppercase transition-colors link-reveal"
+                >
+                  {label}
+                </a>
+              ) : (
+                <button
+                  key={label}
+                  type="button"
+                  aria-disabled="true"
+                  title="Próximamente"
+                  className="font-mono text-[10px] tracking-widest text-white/40 hover:text-white uppercase transition-colors link-reveal cursor-not-allowed"
+                >
+                  {label}
+                </button>
+              )
+            )}
           </div>
         </div>
       </div>
@@ -244,7 +262,7 @@ export function Footer({ siteName, tenantCode, branding = {} }: FooterProps) {
             <span>{branding.nombre_erp || "Sistema B2B"} {branding.version_sistema || "v1.0.0"}</span>
             <span>Bogotá · 4.7110° N</span>
             <a
-              href="/login"
+              href={ROUTES.LOGIN}
               className="hover:text-white/70 transition-colors"
               title="Acceso personal interno"
             >

@@ -12,6 +12,7 @@ import {
   getClientRequirements,
 } from "@/portal/actions/portal";
 import { buildLoginUrl } from "@/utils/auth-redirect";
+import { ROUTES } from "@/lib/routes";
 import CustomerPortalClient from "./client/page";
 
 import { supabaseAdmin } from "@/platform/auth/clients";
@@ -74,9 +75,9 @@ export default async function PortalPage({ searchParams }: Props) {
     // 2) Hay sesión pero el usuario no tiene client asignado → mostrar
     //    estado de error visible, NO redirigir (sino loop infinito).
     if (!(await hasAccessTokenCookie())) {
-      const loginUrl = buildLoginUrl("/login", {
+      const loginUrl = buildLoginUrl(ROUTES.LOGIN, {
         tenant: tenantParam,
-        redirectTo: "/portal",
+        redirectTo: ROUTES.PORTAL,
       });
       redirect(loginUrl);
     }
