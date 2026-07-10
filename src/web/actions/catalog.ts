@@ -4,7 +4,7 @@
 import { supabaseAdmin } from "@/platform/auth/clients";
 import { getTenantId } from "@/erp/actions/core";
 import { resolveTenantOwnerUserIdAsync } from "@/platform/tenant/tenant-resolver";
-import { requireAction, validateTenantAccess } from "@/platform/auth/server-guards";
+import { requireAction } from "@/platform/auth/server-guards";
 import {
   invalidateCatalogCache as _invalidateCache,
 } from "@/web/actions/catalog-cache";
@@ -306,9 +306,8 @@ export async function addProductImage(
   productId: string,
   image: { fileName: string; filePath: string; fileSize: number; mimeType: string; altText?: string }
 ) {
-  const ctx = await requireAction("items.manage");
+  await requireAction("catalog.manage");
   const tenantId = await getTenantId(tenantCode);
-  await validateTenantAccess(ctx.userId, ctx.role, tenantId);
 
   const { data: asset, error: assetError } = await supabaseAdmin
     .from("media_assets")
@@ -364,9 +363,8 @@ export async function saveProduct(
   }
 ) {
   try {
-    const ctx = await requireAction("items.manage");
+    await requireAction("catalog.manage");
     const tenantId = await getTenantId(tenantCode);
-    await validateTenantAccess(ctx.userId, ctx.role, tenantId);
     const userId = await resolveTenantOwnerUserIdAsync(tenantId);
 
     let productId = product.id;
@@ -437,9 +435,7 @@ export async function saveProduct(
  */
 export async function deleteProduct(tenantCode: string | null, productId: string) {
   try {
-    const ctx = await requireAction("items.manage");
-    const tenantId = await getTenantId(tenantCode);
-    await validateTenantAccess(ctx.userId, ctx.role, tenantId);
+    await requireAction("catalog.manage");
     const { error } = await supabaseAdmin
       .from("products")
       .update({ deleted_at: new Date().toISOString() })
@@ -467,9 +463,8 @@ export async function saveCategory(
   }
 ) {
   try {
-    const ctx = await requireAction("items.manage");
+    await requireAction("catalog.manage");
     const tenantId = await getTenantId(tenantCode);
-    await validateTenantAccess(ctx.userId, ctx.role, tenantId);
     const userId = await resolveTenantOwnerUserIdAsync(tenantId);
 
     const payload = {
@@ -508,9 +503,7 @@ export async function saveCategory(
  */
 export async function deleteCategory(tenantCode: string | null, categoryId: string) {
   try {
-    const ctx = await requireAction("items.manage");
-    const tenantId = await getTenantId(tenantCode);
-    await validateTenantAccess(ctx.userId, ctx.role, tenantId);
+    await requireAction("catalog.manage");
     const { error } = await supabaseAdmin
       .from("product_categories")
       .update({ deleted_at: new Date().toISOString() })

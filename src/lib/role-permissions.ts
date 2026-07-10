@@ -320,7 +320,8 @@ export type Action =
   | "invoices.manage"
   | "invoices.view"
   | "branding.manage"
-  | "settings.manage";
+  | "settings.manage"
+  | "catalog.manage";
 
 /**
  * Acciones permitidas por rol, derivadas de la columna "Visibilidad (UX)"
