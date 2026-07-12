@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   output: "standalone",
@@ -51,7 +52,11 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://*.supabase.co https://*.vercel-storage.com",
-              "connect-src 'self' https://*.supabase.co https://api.whatsapp.com wss://*.supabase.co",
+              // *.sentry.io cubre tanto el legacy o<org>.ingest.sentry.io como los
+              // hosts de ingesta regionales (o<org>.ingest.us.sentry.io, .de.sentry.io).
+              // Sin DSN configurado, Sentry.init() nunca dispara estas requests —
+              // permitir el dominio es inofensivo aunque el proyecto no use Sentry.
+              "connect-src 'self' https://*.supabase.co https://api.whatsapp.com wss://*.supabase.co https://*.sentry.io",
               "frame-src 'self' https://challenges.cloudflare.com",
               "base-uri 'self'",
               "form-action 'self'",
@@ -83,4 +88,21 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// El wrapper de Sentry instrumenta el build (Turbopack/webpack) para inyectar
+// el SDK y, si SENTRY_AUTH_TOKEN está presente, sube source maps a Sentry.
+// Sin auth token simplemente omite la subida (build normal, sin fallar CI).
+export default withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+
+  // No imprimir logs del plugin de Sentry en desarrollo — solo en CI.
+  silent: !process.env.CI,
+
+  // Equivalente moderno de la antigua opción `hideSourceMaps`: sube los source
+  // maps a Sentry y los borra del build de Next para que no queden expuestos
+  // públicamente (es el default, se deja explícito para que quede documentado).
+  sourcemaps: {
+    deleteSourcemapsAfterUpload: true,
+  },
+
+});
