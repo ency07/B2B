@@ -2,43 +2,122 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main]
   pull_request:
-    branches: [main, master]
+    branches: [main]
 
 jobs:
-  quality:
-    name: Lint, TypeCheck & Test
+  ci:
+    name: Lint, TypeCheck, Test & Build
     runs-on: ubuntu-latest
 
+    # NEXT_PUBLIC_SUPABASE_URL/ANON_KEY caen a un placeholder si no hay
+    # secrets configurados, porque next build necesita *algún* valor para
+    # inicializar el cliente Supabase aunque no llegue a usarlo en runtime.
+    #
+    # SUPABASE_SERVICE_ROLE_KEY es distinto: solo se usa dentro de
+    # src/tests/security/helpers.ts (hasLiveCredentials) para decidir si los
+    # tests de concurrencia multi-tenant corren contra una base real o se
+    # saltan (describe.skip). Sin el secret configurado, esos tests se
+    # saltan automáticamente — el job sigue en verde. Configúralo solo si
+    # quieres que CI escriba de verdad en un proyecto Supabase (idealmente
+    # uno de staging/test dedicado, nunca producción). Ver la lista de
+    # secrets al final de este archivo.
     env:
-      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key' }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key' }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key' }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: "22.x"
           cache: "npm"
 
-      - run: npm ci
-
-      - name: Type check
-        run: npx tsc --noEmit
+      - name: Install dependencies
+        run: npm ci
 
       - name: Lint
         run: npm run lint
 
-      - name: Unit & Integration tests
-        run: npx vitest run --reporter=verbose
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Unit & security tests
+        run: npm run test
 
       - name: Coverage report
         run: npx vitest run --coverage --reporter=text
 
       - name: Build
         run: npm run build
+        env:
+          # Sin estas dos, el build igual completa: withSentryConfig() solo
+          # omite la subida de source maps a Sentry (ver next.config.ts).
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
 
       - name: Security audit
         run: npm audit --audit-level=high
+
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: ci
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Deploy placeholder
+        run: |
+          echo "Ready to deploy."
+          echo "CI pasó en main — este job es el punto de enganche para el deploy real."
+          echo ""
+          echo "Ejemplo Vercel (requiere vercel-action o Vercel CLI + secrets):"
+          echo "  - uses: amondnet/vercel-action@v25"
+          echo "    with:"
+          echo "      vercel-token: \${{ secrets.VERCEL_TOKEN }}"
+          echo "      vercel-org-id: \${{ secrets.VERCEL_ORG_ID }}"
+          echo "      vercel-project-id: \${{ secrets.VERCEL_PROJECT_ID }}"
+          echo "      vercel-args: '--prod'"
+          echo ""
+          echo "Ejemplo Supabase (migraciones remotas vía Supabase CLI):"
+          echo "  - uses: supabase/setup-cli@v1"
+          echo "  - run: supabase link --project-ref \$SUPABASE_PROJECT_REF"
+          echo "  - run: supabase db push"
+          echo "    env:"
+          echo "      SUPABASE_ACCESS_TOKEN: \${{ secrets.SUPABASE_ACCESS_TOKEN }}"
+
+# =============================================================================
+# GitHub Secrets requeridos (Settings → Secrets and variables → Actions)
+# =============================================================================
+#
+# Obligatorios para que `next build` complete sin errores:
+#   NEXT_PUBLIC_SUPABASE_URL       URL del proyecto Supabase
+#   NEXT_PUBLIC_SUPABASE_ANON_KEY  Anon key pública del proyecto
+#
+# Opcionales — habilitan los tests de concurrencia/seguridad multi-tenant
+# (src/tests/security/*) contra una base real en vez de saltarlos:
+#   SUPABASE_URL                   Normalmente igual a NEXT_PUBLIC_SUPABASE_URL
+#   SUPABASE_ANON_KEY              Normalmente igual a NEXT_PUBLIC_SUPABASE_ANON_KEY
+#   SUPABASE_SERVICE_ROLE_KEY      Requerido por helpers.ts para crear/borrar
+#                                  usuarios de prueba en ambos tenants (ACME/APEX)
+#                                  ⚠️ Usa un proyecto de staging/test dedicado,
+#                                  nunca el de producción — estos tests escriben
+#                                  filas reales.
+#
+# Opcionales — suben source maps a Sentry durante el build (next.config.ts):
+#   SENTRY_AUTH_TOKEN              Settings → Auth Tokens en sentry.io
+#   SENTRY_ORG                     Slug de la organización en Sentry
+#   SENTRY_PROJECT                 Slug del proyecto en Sentry
+#
+# Futuro (job `deploy`, aún no implementado):
+#   VERCEL_TOKEN / VERCEL_ORG_ID / VERCEL_PROJECT_ID   si se despliega a Vercel
+#   SUPABASE_ACCESS_TOKEN / SUPABASE_PROJECT_REF        si se aplican migraciones remotas
+# =============================================================================
