@@ -21,17 +21,16 @@ import { NewRequirementSheet } from "@/portal/components/NewRequirementSheet";
 import { capture } from "@/lib/analytics";
 import type { CustomerPortalProps } from "@/portal/components/dashboard/types";
 
-// Este componente vive en app/portal/client/page.tsx para ser reutilizable
-// (src/app/portal/page.tsx lo importa directo como `./client/page`), pero al
-// estar bajo app/ el router de Next.js TAMBIÉN lo registra como página real
-// de la ruta /portal/client — nada en la app navega ahí (ROUTES.PORTAL_CLIENT
-// en src/lib/routes.ts no se referencia en ningún otro lado), pero
-// `next build` igual intenta prerenderizarlo sin props reales. El resto de
-// los props ya tenían default por este motivo; a `clientInfo` le faltaba.
-const DEFAULT_CLIENT_INFO = { legalName: "", taxId: "", email: "" };
-
+/**
+ * Orquestador de presentación del Portal de Clientes. Vive fuera de app/ a
+ * propósito — su único caller es src/app/portal/page.tsx (el Server
+ * Component que resuelve la sesión y hace el data-fetching real), y estar
+ * fuera del árbol de app/ evita que Next.js lo registre como una ruta propia
+ * (antes vivía en app/portal/client/page.tsx, lo que generaba /portal/client
+ * como página huérfana que next build intentaba prerenderizar sin props).
+ */
 export default function CustomerPortal({
-  clientInfo = DEFAULT_CLIENT_INFO,
+  clientInfo,
   jobs: initialJobs = [],
   invoices: initialInvoices = [],
   payments: initialPayments = [],

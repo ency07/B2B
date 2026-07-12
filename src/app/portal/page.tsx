@@ -13,7 +13,7 @@ import {
 } from "@/portal/actions/portal";
 import { buildLoginUrl } from "@/utils/auth-redirect";
 import { ROUTES } from "@/lib/routes";
-import CustomerPortalClient from "./client/page";
+import CustomerPortalClient from "@/portal/components/dashboard/CustomerPortal";
 
 import { supabaseAdmin } from "@/platform/auth/clients";
 
@@ -75,10 +75,8 @@ export default async function PortalPage({ searchParams }: Props) {
     // 2) Hay sesión pero el usuario no tiene client asignado → mostrar
     //    estado de error visible, NO redirigir (sino loop infinito).
     if (!(await hasAccessTokenCookie())) {
-      const loginUrl = buildLoginUrl(ROUTES.LOGIN, {
-        tenant: tenantParam,
-        redirectTo: ROUTES.PORTAL,
-      });
+      // Sin tenant en la URL de login: nunca se expone antes de autenticar.
+      const loginUrl = buildLoginUrl(ROUTES.PORTAL_LOGIN);
       redirect(loginUrl);
     }
 
@@ -160,6 +158,7 @@ export default async function PortalPage({ searchParams }: Props) {
       allClients={allClients}
       documents={documents}
       requirements={requirements}
+      tenantId={currentClient.tenantId}
     />
   );
 }
@@ -206,7 +205,7 @@ function PortalNoClientAssigned() {
           </a>
           .
         </p>
-        <form action="/api/auth/signout" method="post" className="mt-6">
+        <form action="/api/auth/signout?context=portal" method="post" className="mt-6">
           <button
             type="submit"
             className="inline-flex h-9 items-center justify-center rounded-md border border-stone-300 bg-white px-4 text-xs font-semibold uppercase tracking-widest text-stone-700 hover:bg-stone-50"
