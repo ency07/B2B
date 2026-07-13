@@ -4,6 +4,49 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
+// Rutas que requieren un permiso granular además de autenticación ERP básica.
+// Formato: { pathPrefix: permissionCode }
+// Comportamiento por defecto: rutas NO listadas aquí pasan con solo
+// verifyErpToken (autenticación). Agregar aquí cualquier ruta que requiera
+// un permiso específico (no solo estar autenticado).
+const ROUTE_PERMISSION_MAP: Record<string, string> = {
+  '/dashboard/settings/roles': 'roles.view',
+  '/dashboard/settings': 'settings.view',
+};
+
+// Cache de permisos en memoria por proceso.
+// En serverless/Edge Runtime la vida del proceso varía — este cache es
+// best-effort: reduce queries en warm starts pero no garantiza consistencia
+// entre instancias. TTL de 5 minutos. La clave es `${authUserId}:${tenantId}`.
+const PERMISSION_CACHE = new Map<string, { permissions: Set<string>; expiresAt: number }>();
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutos
+
+function getCachedPermissions(cacheKey: string): Set<string> | null {
+  const entry = PERMISSION_CACHE.get(cacheKey);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) {
+    PERMISSION_CACHE.delete(cacheKey);
+    return null;
+  }
+  return entry.permissions;
+}
+
+function setCachedPermissions(cacheKey: string, permissions: Set<string>): void {
+  // Evitar crecimiento ilimitado: limpiar entradas expiradas si el cache supera 500 entradas
+  if (PERMISSION_CACHE.size > 500) {
+    const now = Date.now();
+    for (const [key, entry] of PERMISSION_CACHE) {
+      if (now > entry.expiresAt) PERMISSION_CACHE.delete(key);
+    }
+  }
+  PERMISSION_CACHE.set(cacheKey, { permissions, expiresAt: Date.now() + CACHE_TTL_MS });
+}
+
+/** Invalida el cache de permisos de un usuario. Llamar tras cambios de roles. */
+export function invalidatePermissionCache(authUserId: string, tenantId: string): void {
+  PERMISSION_CACHE.delete(`${authUserId}:${tenantId}`);
+}
+
 /**
  * Verifica un token de acceso JWT crudo en el Edge Runtime.
  * Retorna true si el usuario es válido, false en caso contrario.
@@ -80,6 +123,73 @@ export async function verifyErpToken(accessToken: string | undefined): Promise<b
   } catch {
     return false;
   }
+}
+
+/**
+ * Verifica si un usuario (identificado por auth_user_id) tiene un permiso granular
+ * en el tenant dado. Usa la función SQL `check_user_permission` con SECURITY DEFINER
+ * para evitar recursión de RLS.
+ *
+ * Fail-closed: retorna false ante cualquier error.
+ */
+export async function hasPermission(
+  authUserId: string,
+  tenantId: string,
+  permissionCode: string
+): Promise<boolean> {
+  const cacheKey = `${authUserId}:${tenantId}`;
+
+  // Intentar resolver desde cache
+  const cached = getCachedPermissions(cacheKey);
+  if (cached) return cached.has(permissionCode);
+
+  try {
+    const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+
+    // Resolver el users.id desde el auth_user_id
+    const { data: userRow, error: userError } = await adminClient
+      .from('users')
+      .select('id')
+      .eq('auth_user_id', authUserId)
+      .eq('status', 'Activo')
+      .maybeSingle();
+
+    if (userError || !userRow) return false;
+
+    // Cargar TODOS los permisos del usuario de una sola vez para poblar el cache
+    const { data: perms, error: permsError } = await adminClient.rpc(
+      'get_user_permissions',
+      { p_user_id: userRow.id, p_tenant_id: tenantId }
+    );
+
+    if (permsError) return false;
+
+    const permSet = new Set<string>(
+      (perms ?? []).map((p: { permission_code: string }) => p.permission_code)
+    );
+    setCachedPermissions(cacheKey, permSet);
+
+    return permSet.has(permissionCode);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Determina qué permiso granular (si alguno) requiere una ruta.
+ * Retorna null si la ruta no tiene un permiso adicional requerido.
+ */
+export function getRequiredPermissionForPath(pathname: string): string | null {
+  // Ordenar descendente para que rutas más específicas ganen
+  const entries = Object.entries(ROUTE_PERMISSION_MAP).sort(
+    ([a], [b]) => b.length - a.length
+  );
+  for (const [prefix, permission] of entries) {
+    if (pathname.startsWith(prefix)) return permission;
+  }
+  return null;
 }
 
 /**
