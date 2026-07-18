@@ -6,6 +6,7 @@ import { Menu, X, Command } from "lucide-react";
 import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion";
 import { TenantLogo } from "@/design-system/components/TenantLogo";
 import { ROUTES } from "@/lib/routes";
+import { useActiveSection } from "@/hooks/use-active-section";
 
 interface TopBarProps {
   siteName: string;
@@ -25,38 +26,9 @@ const NAV_ITEMS = [
 export function TopBar({ siteName, logoUrl, tenantCode }: TopBarProps) {
   const [open, setOpen] = React.useState(false);
   const [scrolled, setScrolled] = React.useState(false);
-  const [activeSection, setActiveSection] = React.useState<string>("inicio");
   const [hoveredIndex, setHoveredIndex] = React.useState<number | null>(null);
 
-  // Scroll spy con IntersectionObserver
-  React.useEffect(() => {
-    const sections = [
-      { id: "inicio", path: "#inicio" },
-      ...NAV_ITEMS,
-    ];
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            setActiveSection(entry.target.id);
-            break;
-          }
-        }
-      },
-      {
-        rootMargin: "-30% 0px -60% 0px",
-        threshold: 0,
-      }
-    );
-
-    for (const s of sections) {
-      const el = document.getElementById(s.id);
-      if (el) observer.observe(el);
-    }
-
-    return () => observer.disconnect();
-  }, []);
+  const activeSection = useActiveSection(["inicio", ...NAV_ITEMS.map((item) => item.id)]);
 
   React.useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);

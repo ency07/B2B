@@ -3,14 +3,26 @@
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import { useActiveSection } from "@/hooks/use-active-section";
 
 interface FloatingCtaProps {
   tenantCode: string;
 }
 
+const SECTIONS = [
+  "inicio",
+  "confianza",
+  "desafios",
+  "proceso",
+  "servicios",
+  "capacidades",
+  "sectores",
+  "casos",
+  "calculadora",
+];
+
 export function FloatingCta({ tenantCode }: FloatingCtaProps) {
   const [visible, setVisible] = React.useState(false);
-  const [activeSection, setActiveSection] = React.useState<string>("inicio");
 
   // Scroll-spy: aparece después de 600px de scroll
   React.useEffect(() => {
@@ -22,39 +34,7 @@ export function FloatingCta({ tenantCode }: FloatingCtaProps) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Detectar sección activa para ocultar el CTA mientras estamos en el Hero
-  React.useEffect(() => {
-    const sections = [
-      "inicio",
-      "confianza",
-      "desafios",
-      "proceso",
-      "servicios",
-      "capacidades",
-      "sectores",
-      "casos",
-      "calculadora",
-    ];
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            setActiveSection(entry.target.id);
-            break;
-          }
-        }
-      },
-      { rootMargin: "-30% 0px -60% 0px", threshold: 0 }
-    );
-
-    for (const id of sections) {
-      const el = document.getElementById(id);
-      if (el) observer.observe(el);
-    }
-
-    return () => observer.disconnect();
-  }, []);
+  const activeSection = useActiveSection(SECTIONS);
 
   // Ocultar cuando estamos en el Hero (ya tiene su propio CTA visible)
   const isHidden = activeSection === "inicio";
