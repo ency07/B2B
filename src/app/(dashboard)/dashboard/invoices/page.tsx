@@ -27,6 +27,7 @@ import {
   InvoiceList,
   InvoiceDetail,
   PaymentForm,
+  CreditNoteForm,
   type InvoiceListItem,
   type InvoiceStatus,
   type ReceiptItem,
@@ -147,6 +148,9 @@ export default function InvoicesPage() {
   // === Payment state ===
   const [paymentInvoiceId, setPaymentInvoiceId] = React.useState<string | null>(null);
 
+  // === Credit Note state ===
+  const [creditNoteInvoiceId, setCreditNoteInvoiceId] = React.useState<string | null>(null);
+
   // === Load invoices & clients ===
   const loadData = React.useCallback(async () => {
     try {
@@ -250,6 +254,22 @@ export default function InvoicesPage() {
     () => invoices.find((i) => i.id === paymentInvoiceId) || null,
     [invoices, paymentInvoiceId]
   );
+
+  // === Invoice for credit note ===
+  const creditNoteInvoice = React.useMemo(() => {
+    if (!creditNoteInvoiceId) return null;
+    const inv = invoices.find((i) => i.id === creditNoteInvoiceId);
+    if (!inv) return null;
+    return {
+      id: inv.id,
+      code: inv.code,
+      clientName: inv.clientName,
+      clientId: clients.find((c) => c.name === inv.clientName)?.id ?? "",
+      total: inv.totalAmount,
+      paidAmount: inv.paidAmount,
+      balanceAmount: inv.totalAmount - inv.paidAmount,
+    };
+  }, [invoices, creditNoteInvoiceId, clients]);
 
   // === Handlers ===
   const handleCreateInvoice = async (e: React.FormEvent) => {
@@ -471,6 +491,10 @@ export default function InvoicesPage() {
                 setSelectedInvoiceId(null);
                 setPaymentInvoiceId(selectedInvoice.id);
               }}
+              onCreateCreditNote={() => {
+                setSelectedInvoiceId(null);
+                setCreditNoteInvoiceId(selectedInvoice.id);
+              }}
               onSendReminder={() => console.log("reminder", selectedInvoice.code)}
               onDownload={() => console.log("download", selectedInvoice.code)}
               onPrint={() => window.print()}
@@ -499,6 +523,22 @@ export default function InvoicesPage() {
               registerPaymentAction={(data) =>
                 registerPayment(tenantParam, data)
               }
+            />
+          )}
+        </SheetContent>
+      </Sheet>
+
+      {/* Drawer / Sheet modal lateral para nota de crédito */}
+      <Sheet open={creditNoteInvoiceId !== null} onOpenChange={(open) => { if (!open) setCreditNoteInvoiceId(null); }}>
+        <SheetContent className="flex flex-col h-full w-full max-w-[500px] border-l border-border bg-card text-foreground p-0 shadow-2xl">
+          {creditNoteInvoice && (
+            <CreditNoteForm
+              invoice={creditNoteInvoice}
+              onClose={() => setCreditNoteInvoiceId(null)}
+              onCreated={async () => {
+                setCreditNoteInvoiceId(null);
+                await loadData();
+              }}
             />
           )}
         </SheetContent>

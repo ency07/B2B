@@ -12,6 +12,7 @@ import {
   createInvoiceSchema,
   registerPaymentSchema,
   updateJobStatusSchema,
+  createCreditNoteSchema,
   updateTenantSettingsSchema,
   createInventoryItemSchema,
 } from "@/lib/validations/erp";
@@ -669,6 +670,79 @@ export async function registerPayment(
   }
 
   return payment;
+}
+
+// ==========================================
+// CREDIT NOTES ACTIONS
+// ==========================================
+
+export async function createCreditNote(
+  tenantCode: string | null,
+  data: {
+    invoiceId: string;
+    clientId: string;
+    reason: "DEVOLUCION" | "ERROR" | "DESCUENTO" | "ANULACION" | "GARANTIA";
+    description?: string;
+    subtotal: number;
+    taxAmount?: number;
+    totalAmount: number;
+  }
+) {
+  const ctx = await requireAction("credit_notes.create");
+  data = validate(createCreditNoteSchema, data);
+  const tenantId = await getTenantId(tenantCode);
+  await validateTenantAccess(ctx.userId, ctx.role, tenantId);
+
+  // Verificar que la factura pertenece al tenant y está en estado válido
+  const { data: invoice, error: invErr } = await supabaseAdmin
+    .from("invoices")
+    .select("id, status, total_amount, client_id, deleted_at")
+    .eq("id", data.invoiceId)
+    .eq("tenant_id", tenantId)
+    .maybeSingle();
+
+  if (invErr || !invoice || invoice.deleted_at) {
+    throw new Error("Factura no encontrada.");
+  }
+
+  if (!["EMITIDA", "PARCIALMENTE_PAGADA", "PAGADA", "VENCIDA"].includes(invoice.status)) {
+    throw new Error(`No se puede emitir NC para una factura en estado ${invoice.status}.`);
+  }
+
+  if (invoice.client_id !== data.clientId) {
+    throw new Error("El cliente no coincide con la factura.");
+  }
+
+  if (data.totalAmount > Number(invoice.total_amount)) {
+    throw new Error(
+      `El monto de la NC ($${data.totalAmount}) no puede exceder el total de la factura ($${invoice.total_amount}).`
+    );
+  }
+
+  // Insertar NC — el trigger valida el monto y genera el código
+  const { data: creditNote, error: cnErr } = await supabaseAdmin
+    .from("credit_notes")
+    .insert({
+      tenant_id: tenantId,
+      invoice_id: data.invoiceId,
+      client_id: data.clientId,
+      reason: data.reason,
+      description: data.description || null,
+      subtotal: data.subtotal,
+      tax_amount: data.taxAmount || 0,
+      total_amount: data.totalAmount,
+      status: "APLICADA",
+      created_by: ctx.userId,
+    })
+    .select()
+    .single();
+
+  if (cnErr) {
+    console.error("Error creating credit note:", cnErr);
+    throw new Error(cnErr.message);
+  }
+
+  return creditNote;
 }
 
 // ==========================================

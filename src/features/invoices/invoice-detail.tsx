@@ -15,7 +15,7 @@
 
 import * as React from "react";
 import { useSearchParams } from "next/navigation";
-import { X, CreditCard, Bell, Send, Download, Printer } from "lucide-react";
+import { X, CreditCard, Bell, Send, Download, Printer, FileMinus } from "lucide-react";
 import {
   Receipt,
   type ReceiptItem,
@@ -58,6 +58,7 @@ export interface InvoiceDetailProps {
   items: ReceiptItem[];
   onClose: () => void;
   onPay?: () => void;
+  onCreateCreditNote?: () => void;
   onSendReminder?: () => void;
   onDownload?: () => void;
   onPrint?: () => void;
@@ -69,6 +70,7 @@ export function InvoiceDetail({
   items,
   onClose,
   onPay,
+  onCreateCreditNote,
   onSendReminder,
   onDownload,
   onPrint,
@@ -178,6 +180,16 @@ export function InvoiceDetail({
               aria-label="Descargar PDF"
             >
               <Download className="h-3.5 w-3.5" strokeWidth={1.5} />
+            </Button>
+          )}
+          {onCreateCreditNote && invoice.status !== "ANULADA" && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={onCreateCreditNote}
+              aria-label="Crear nota de crédito"
+            >
+              <FileMinus className="h-3.5 w-3.5" strokeWidth={1.5} />
             </Button>
           )}
         </div>

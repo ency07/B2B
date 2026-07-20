@@ -320,6 +320,7 @@ export type Action =
   | "payments.confirm"
   | "invoices.manage"
   | "invoices.view"
+  | "credit_notes.create"
   | "branding.manage"
   | "settings.manage"
   | "catalog.manage";
@@ -352,6 +353,7 @@ export const ACTION_PERMISSIONS: Record<RoleName, Action[] | ["*"]> = {
     "invoices.manage",
     "invoices.view",
     "payments.confirm",
+    "credit_notes.create",
     "branding.manage",
     "settings.manage",
   ],
@@ -363,6 +365,7 @@ export const ACTION_PERMISSIONS: Record<RoleName, Action[] | ["*"]> = {
     "invoices.manage",
     "invoices.view",
     "payments.confirm",
+    "credit_notes.create",
     "branding.manage",
     "settings.manage",
   ],

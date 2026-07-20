@@ -113,6 +113,18 @@ export const registerPaymentSchema = z.object({
   notes: z.string().max(1000).optional(),
 });
 
+// ── Credit Notes ─────────────────────────────────────────────────────────────
+
+export const createCreditNoteSchema = z.object({
+  invoiceId: uuidSchema,
+  clientId: uuidSchema,
+  reason: z.enum(["DEVOLUCION", "ERROR", "DESCUENTO", "ANULACION", "GARANTIA"]),
+  description: z.string().trim().max(1000).optional(),
+  subtotal: z.number().nonnegative("El subtotal no puede ser negativo"),
+  taxAmount: z.number().nonnegative("El impuesto no puede ser negativo").default(0),
+  totalAmount: z.number().positive("El total debe ser mayor a 0"),
+});
+
 // ── Jobs ─────────────────────────────────────────────────────────────────────
 
 export const updateJobStatusSchema = z.object({
