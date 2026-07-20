@@ -3,7 +3,12 @@
 
 import { supabaseAdmin } from "@/platform/auth/clients";
 import { getTenantId, getCallerTenantId } from "@/erp/actions/core";
-import { requireAction, getAuthContext } from "@/platform/auth/server-guards";
+import { requireAction, getAuthContext, validateTenantAccess } from "@/platform/auth/server-guards";
+import {
+  validate,
+  createRequirementSchema,
+  updateRequirementStatusSchema,
+} from "@/lib/validations/erp";
 
 export interface RequirementRow {
   id: string;
@@ -69,7 +74,9 @@ export async function createRequirement(
   reqData: { title: string; clientId: string; category: string; priority: string }
 ) {
   const ctx = await requireAction("requirements");
+  reqData = validate(createRequirementSchema, reqData);
   const tenantId = await getTenantId(tenantCode);
+  await validateTenantAccess(ctx.userId, ctx.role, tenantId);
 
   const { data, error } = await supabaseAdmin
     .from("requirements")
@@ -99,12 +106,24 @@ export async function updateRequirementStatus(
   extra?: Record<string, any>
 ) {
   const ctx = await requireAction("requirements");
+  ({ reqId, newStatus } = validate(updateRequirementStatusSchema, { reqId, newStatus }));
   const tenantId = await getCallerTenantId();
+
+  // Whitelist anti mass-assignment: `extra` solo puede setear estas columnas
+  // (asignación de ingeniería/ventas). Evita que un caller inyecte columnas
+  // arbitrarias (tenant_id, created_by, etc.) vía el spread.
+  const ALLOWED_EXTRA_KEYS = ["engineering_user_id", "sales_user_id"] as const;
+  const sanitizedExtra: Record<string, unknown> = {};
+  if (extra) {
+    for (const key of ALLOWED_EXTRA_KEYS) {
+      if (extra[key] !== undefined) sanitizedExtra[key] = extra[key];
+    }
+  }
 
   const payload: any = {
     status: newStatus,
     updated_by: ctx.userId,
-    ...extra,
+    ...sanitizedExtra,
   };
 
   const { data, error } = await supabaseAdmin

@@ -3,6 +3,7 @@
 import { supabaseAdmin } from "@/platform/auth/clients";
 import { getTenantId, getCallerTenantId } from "@/erp/actions/core";
 import { requireAction } from "@/platform/auth/server-guards";
+import { validate, updateLeadStatusSchema } from "@/lib/validations/erp";
 
 export interface LeadRow {
   id: string;
@@ -72,6 +73,7 @@ export async function updateLeadStatus(
   leadId: string,
   newStatus: "NUEVO" | "EN_SEGUIMIENTO" | "CALIFICADO" | "RECHAZADO" | "CONVERTIDO"
 ): Promise<void> {
+  ({ leadId, newStatus } = validate(updateLeadStatusSchema, { leadId, newStatus }));
   await requireAction("leads");
   const tenantId = await getCallerTenantId();
 

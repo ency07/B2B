@@ -4,6 +4,15 @@
 import { supabaseAdmin } from "@/platform/auth/clients";
 import { requireAction, getAuthContext, validateTenantAccess } from "@/platform/auth/server-guards";
 import { resolveTenantIdAsync } from "@/platform/tenant/tenant-resolver";
+import {
+  validate,
+  createClientSchema,
+  createJobSchema,
+  createInventoryMovementSchema,
+  createInvoiceSchema,
+  updateTenantSettingsSchema,
+  createInventoryItemSchema,
+} from "@/lib/validations/erp";
 
 export async function getTenantId(tenantCode?: string | null): Promise<string> {
   return resolveTenantIdAsync(tenantCode);
@@ -89,8 +98,10 @@ export async function createClient(
 ) {
   // P8: Validacion backend. Accion: clients.create.
   const ctx = await requireAction("clients.create");
+  clientData = validate(createClientSchema, clientData);
   const tenantId = await getTenantId(tenantCode);
-  
+  await validateTenantAccess(ctx.userId, ctx.role, tenantId);
+
   // First, verify if client already exists (to prevent duplicate constraint error)
   const { data: existing } = await supabaseAdmin
     .from("clients")
@@ -210,7 +221,9 @@ export async function createJob(
   }
 ) {
   const ctx = await requireAction("jobs.create");
+  jobData = validate(createJobSchema, jobData);
   const tenantId = await getTenantId(tenantCode);
+  await validateTenantAccess(ctx.userId, ctx.role, tenantId);
 
   // Validar que cliente y requerimiento pertenecen al tenant (evita IDOR)
   const [clientResult, reqResult, siteResult, areaResult] = await Promise.all([
@@ -309,6 +322,7 @@ export async function createInventoryMovement(
 ) {
   // P8: Validacion backend. Accion: inventory.movement.
   const ctx = await requireAction("inventory.movement");
+  movement = validate(createInventoryMovementSchema, movement);
   const tenantId = await getTenantId(tenantCode);
   await validateTenantAccess(ctx.userId, ctx.role, tenantId);
 
@@ -376,18 +390,11 @@ export async function createInventoryMovement(
     }
   }
 
-  // Calculate sequence code
-  const { count } = await supabaseAdmin
-    .from("inventory_movements")
-    .select("id", { count: "exact", head: true })
-    .eq("tenant_id", tenantId);
-
-  const seq = (count || 0) + 1;
-  const code = `MOV-2026-${String(seq).padStart(4, "0")}`;
-
+  // movement_code se omite intencionalmente: el trigger handle_inventory_sequences()
+  // lo genera con get_next_tenant_sequence() de forma atómica (MOV-000001), sin el
+  // race condition del antiguo count+1.
   const insertPayload: any = {
     tenant_id: tenantId,
-    movement_code: code,
     item_id: item.id,
     movement_type: movement.type,
     quantity: movement.quantity,
@@ -465,6 +472,7 @@ export async function createInvoice(
   invoiceData: { clientName: string; concept: string; amount: number }
 ) {
   const ctx = await requireAction("invoices.manage");
+  invoiceData = validate(createInvoiceSchema, invoiceData);
   const tenantId = await getTenantId(tenantCode);
   await validateTenantAccess(ctx.userId, ctx.role, tenantId);
 
@@ -492,55 +500,22 @@ export async function createInvoice(
   if (!client) throw new Error("No se encontró ningún cliente para este tenant. Crea un cliente antes de emitir una factura.");
   const clientId = client.id;
 
-  // Calculate invoice code
-  const { count } = await supabaseAdmin
-    .from("invoices")
-    .select("id", { count: "exact", head: true })
-    .eq("tenant_id", tenantId);
-
-  const seq = (count || 0) + 1;
-  const code = `FAC-2026-${String(seq).padStart(4, "0")}`;
-
-  // Insert invoice header
-  const { data: invoice, error } = await supabaseAdmin
-    .from("invoices")
-    .insert({
-      tenant_id: tenantId,
-      invoice_code: code,
-      client_id: clientId,
-      source_type: "CLIENT",
-      source_id: clientId,
-      invoice_date: new Date().toISOString().substring(0, 10),
-      due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10), // 30 days default
-      subtotal: invoiceData.amount,
-      discount_amount: 0,
-      tax_amount: 0,
-      total_amount: invoiceData.amount,
-      paid_amount: 0,
-      status: "EMITIDA",
-      created_by: ctx.userId,
-    })
-    .select()
-    .single();
+  // Cabecera de factura + primera línea de forma ATÓMICA vía RPC transaccional.
+  // Antes eran 2 inserts separados sin transacción (y el 2º ni verificaba error):
+  // si fallaba el insert de invoice_items quedaba una factura huérfana sin líneas.
+  // invoice_code lo genera el trigger handle_invoice_sequences (FAC-000001).
+  const { data: invoice, error } = await supabaseAdmin.rpc("create_invoice_with_item", {
+    p_tenant_id: tenantId,
+    p_client_id: clientId,
+    p_amount: invoiceData.amount,
+    p_concept: invoiceData.concept,
+    p_created_by: ctx.userId,
+  });
 
   if (error) {
     console.error("Error creating invoice:", error);
     throw new Error(error.message);
   }
-
-  // Insert invoice items
-  await supabaseAdmin.from("invoice_items").insert({
-    tenant_id: tenantId,
-    invoice_id: invoice.id,
-    line_number: 1,
-    description: invoiceData.concept,
-    quantity: 1,
-    unit_price: invoiceData.amount,
-    discount_amount: 0,
-    tax_amount: 0,
-    line_total: invoiceData.amount,
-    created_by: ctx.userId,
-  });
 
   return invoice;
 }
@@ -659,6 +634,7 @@ export async function updateTenantSettings(
   isEncrypted: boolean = false
 ) {
   const ctx = await requireAction("settings.manage");
+  validate(updateTenantSettingsSchema, { module, key, isEncrypted });
   const tenantId = await getTenantId(tenantCode);
   await validateTenantAccess(ctx.userId, ctx.role, tenantId);
 
@@ -731,75 +707,34 @@ export async function createInventoryItem(
   }
 ) {
   const ctx = await requireAction("items.manage");
+  itemData = validate(createInventoryItemSchema, itemData);
   const tenantId = await getTenantId(tenantCode);
   await validateTenantAccess(ctx.userId, ctx.role, tenantId);
 
-  // 1. Insert item record
-  const { data: item, error: itemErr } = await supabaseAdmin
-    .from("inventory_items")
-    .insert({
-      tenant_id: tenantId,
-      item_code: itemData.itemCode,
-      name: itemData.name,
-      description: itemData.description,
-      category: itemData.category,
-      item_type: itemData.itemType,
-      unit: itemData.unit,
-      minimum_stock: itemData.minimumStock,
-      maximum_stock: itemData.maximumStock,
-      reorder_point: itemData.reorderPoint,
-      average_cost: 0,
-      last_cost: 0,
-      status: "Activo",
-      created_by: ctx.userId,
-    })
-    .select()
-    .single();
+  // Ítem + stock inicial + movimiento de entrada de forma ATÓMICA vía RPC
+  // transaccional. Antes eran 3 inserts separados sin transacción: si fallaba
+  // el stock/movimiento quedaba el ítem sin inventario coherente. Ahora si
+  // cualquier paso falla, todo hace rollback. Los códigos los generan los
+  // triggers (item_code / movement_code).
+  const { data: item, error } = await supabaseAdmin.rpc("create_inventory_item_with_stock", {
+    p_tenant_id: tenantId,
+    p_item_code: itemData.itemCode,
+    p_name: itemData.name,
+    p_description: itemData.description,
+    p_category: itemData.category,
+    p_item_type: itemData.itemType,
+    p_unit: itemData.unit,
+    p_minimum_stock: itemData.minimumStock,
+    p_maximum_stock: itemData.maximumStock,
+    p_reorder_point: itemData.reorderPoint,
+    p_initial_quantity: itemData.initialQuantity ?? null,
+    p_warehouse_id: itemData.warehouseId ?? null,
+    p_created_by: ctx.userId,
+  });
 
-  if (itemErr) {
-    console.error("Error creating inventory item:", itemErr);
-    throw new Error(itemErr.message);
-  }
-
-  // 2. If initial quantity is specified, create initial stock row and record movement
-  if (itemData.initialQuantity && itemData.initialQuantity > 0 && itemData.warehouseId) {
-    const { error: stockErr } = await supabaseAdmin
-      .from("inventory_stock")
-      .upsert({
-        tenant_id: tenantId,
-        warehouse_id: itemData.warehouseId,
-        item_id: item.id,
-        quantity: itemData.initialQuantity,
-        reserved_quantity: 0,
-        created_by: ctx.userId,
-      }, {
-        onConflict: "tenant_id,warehouse_id,item_id",
-      });
-
-    if (stockErr) {
-      console.error("Error creating initial stock:", stockErr);
-    } else {
-      const { count } = await supabaseAdmin
-        .from("inventory_movements")
-        .select("id", { count: "exact", head: true })
-        .eq("tenant_id", tenantId);
-
-      const seq = (count || 0) + 1;
-      const code = `MOV-2026-${String(seq).padStart(4, "0")}`;
-
-      await supabaseAdmin.from("inventory_movements").insert({
-        tenant_id: tenantId,
-        movement_code: code,
-        item_id: item.id,
-        warehouse_id: itemData.warehouseId,
-        movement_type: "Entrada",
-        quantity: itemData.initialQuantity,
-        unit_cost: 0,
-        notes: "Carga inicial de inventario",
-        status: "Aplicado",
-        created_by: ctx.userId,
-      });
-    }
+  if (error) {
+    console.error("Error creating inventory item:", error);
+    throw new Error(error.message);
   }
 
   return item;

@@ -159,22 +159,25 @@ export async function getDashboardCommandCenter(
   let leadSlaBreachRate = 0;
 
   try {
-    // Run calculations
-    await supabaseAdmin.rpc("calculate_kpi", {
-      p_tenant_id: tenantId,
-      p_kpi_code: "TOTAL_INVOICED",
-      p_period: currentPeriod,
-    });
-    await supabaseAdmin.rpc("calculate_kpi", {
-      p_tenant_id: tenantId,
-      p_kpi_code: "TOTAL_PAYMENTS",
-      p_period: currentPeriod,
-    });
-    await supabaseAdmin.rpc("calculate_kpi", {
-      p_tenant_id: tenantId,
-      p_kpi_code: "LEAD_SLA_BREACH_RATE",
-      p_period: currentPeriod,
-    });
+    // Run calculations — los 3 KPIs son independientes (distinto kpi_code),
+    // se ejecutan en paralelo en vez de 3 round-trips secuenciales.
+    await Promise.all([
+      supabaseAdmin.rpc("calculate_kpi", {
+        p_tenant_id: tenantId,
+        p_kpi_code: "TOTAL_INVOICED",
+        p_period: currentPeriod,
+      }),
+      supabaseAdmin.rpc("calculate_kpi", {
+        p_tenant_id: tenantId,
+        p_kpi_code: "TOTAL_PAYMENTS",
+        p_period: currentPeriod,
+      }),
+      supabaseAdmin.rpc("calculate_kpi", {
+        p_tenant_id: tenantId,
+        p_kpi_code: "LEAD_SLA_BREACH_RATE",
+        p_period: currentPeriod,
+      }),
+    ]);
 
     // Fetch from history
     const { data: history } = await supabaseAdmin
@@ -310,16 +313,38 @@ export async function getDashboardCommandCenter(
     });
   }
 
-  // Add tasks for high priority requirements
-  const { data: highReqs } = await supabaseAdmin
-    .from("requirements")
-    .select("id, requirement_code, title")
-    .eq("tenant_id", tenantId)
-    .eq("priority", "HIGH")
-    .in("status", ["BORRADOR", "NUEVO", "EN_REVISION"])
-    .is("deleted_at", null)
-    .limit(2);
+  // Tareas de cola: requerimientos críticos, OTs activas y leads nuevos.
+  // Los 3 SELECTs son independientes → se ejecutan en paralelo (antes eran
+  // 3 round-trips secuenciales).
+  const [
+    { data: highReqs },
+    { data: activeJobs },
+    { data: newLeads },
+  ] = await Promise.all([
+    supabaseAdmin
+      .from("requirements")
+      .select("id, requirement_code, title")
+      .eq("tenant_id", tenantId)
+      .eq("priority", "HIGH")
+      .in("status", ["BORRADOR", "NUEVO", "EN_REVISION"])
+      .is("deleted_at", null)
+      .limit(2),
+    supabaseAdmin
+      .from("jobs")
+      .select("id, job_code, title")
+      .eq("tenant_id", tenantId)
+      .eq("priority", "HIGH")
+      .in("status", ["PENDIENTE", "EN_EJECUCION"])
+      .limit(2),
+    supabaseAdmin
+      .from("leads")
+      .select("id, lead_code")
+      .eq("tenant_id", tenantId)
+      .eq("status", "NUEVO")
+      .limit(2),
+  ]);
 
+  // Add tasks for high priority requirements
   if (highReqs) {
     for (const r of highReqs) {
       queueTasks.push({
@@ -334,14 +359,6 @@ export async function getDashboardCommandCenter(
   }
 
   // Add tasks for pending high-priority jobs
-  const { data: activeJobs } = await supabaseAdmin
-    .from("jobs")
-    .select("id, job_code, title")
-    .eq("tenant_id", tenantId)
-    .eq("priority", "HIGH")
-    .in("status", ["PENDIENTE", "EN_EJECUCION"])
-    .limit(2);
-
   if (activeJobs) {
     for (const j of activeJobs) {
       queueTasks.push({
@@ -356,13 +373,6 @@ export async function getDashboardCommandCenter(
   }
 
   // Add tasks for new leads needing contact
-  const { data: newLeads } = await supabaseAdmin
-    .from("leads")
-    .select("id, lead_code")
-    .eq("tenant_id", tenantId)
-    .eq("status", "NUEVO")
-    .limit(2);
-
   if (newLeads) {
     for (const l of newLeads) {
       queueTasks.push({

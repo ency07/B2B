@@ -3,7 +3,13 @@
 
 import { supabaseAdmin } from "@/platform/auth/clients";
 import { getTenantId, getCallerTenantId } from "@/erp/actions/core";
-import { requireAction, getAuthContext } from "@/platform/auth/server-guards";
+import { requireAction, getAuthContext, validateTenantAccess } from "@/platform/auth/server-guards";
+import {
+  validate,
+  createQuoteSchema,
+  addQuoteItemSchema,
+  updateQuoteStatusSchema,
+} from "@/lib/validations/erp";
 
 export interface QuoteRow {
   id: string;
@@ -51,7 +57,9 @@ export async function createQuote(
   quoteData: { clientId: string; requirementId?: string; validUntil: string }
 ) {
   const ctx = await requireAction("quotes.create");
+  quoteData = validate(createQuoteSchema, quoteData);
   const tenantId = await getTenantId(tenantCode);
+  await validateTenantAccess(ctx.userId, ctx.role, tenantId);
 
   const { data, error } = await supabaseAdmin
     .from("quotes")
@@ -109,7 +117,9 @@ export async function addQuoteItem(
   }
 ) {
   const ctx = await requireAction("quotes.create");
+  itemData = validate(addQuoteItemSchema, itemData);
   const tenantId = await getTenantId(tenantCode);
+  await validateTenantAccess(ctx.userId, ctx.role, tenantId);
 
   // Verify the target quote belongs to this tenant before inserting items.
   const { data: quoteCheck } = await supabaseAdmin
@@ -148,6 +158,7 @@ export async function addQuoteItem(
 }
 
 export async function updateQuoteStatus(quoteId: string, status: string) {
+  ({ quoteId, status } = validate(updateQuoteStatusSchema, { quoteId, status }));
   const ctx = status === "APROBADA"
     ? await requireAction("quotes.approve")
     : await requireAction("quotes.create");
