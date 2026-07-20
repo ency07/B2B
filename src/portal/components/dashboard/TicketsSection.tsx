@@ -55,12 +55,12 @@ export function TicketsSection({ tickets, onNewTicket }: TicketsSectionProps) {
                 <span className="font-mono text-xs font-bold text-primary">{tck.code}</span>
                 <div className="flex gap-1.5">
                   <Badge className={`text-[8px] font-mono border-none ${
-                    tck.severity === "ALTO" || tck.severity === "CRÍTICO" ? "bg-destructive/15 text-destructive" : tck.severity === "MEDIO" ? "bg-amber-500/15 text-amber-600" : "bg-primary/15 text-primary"
+                    tck.severity === "ALTO" || tck.severity === "CRÍTICO" ? "bg-destructive/15 text-destructive" : tck.severity === "MEDIO" ? "bg-warning/15 text-warning" : "bg-primary/15 text-primary"
                   }`}>
                     {tck.severity}
                   </Badge>
                   <Badge className={`text-[8px] font-mono border-none ${
-                    tck.status === "RESUELTO" ? "bg-emerald-500/15 text-emerald-500" : "bg-sky-500/15 text-sky-500"
+                    tck.status === "RESUELTO" ? "bg-success/15 text-success" : "bg-primary/15 text-primary"
                   }`}>
                     {tck.status}
                   </Badge>

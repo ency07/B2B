@@ -17,7 +17,6 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { Input } from "@/platform/ui/input";
 import { Button } from "@/platform/ui/button";
 import { Spinner } from "@/platform/ui/spinner";
-import { toast } from "sonner";
 import { ROUTES } from "@/lib/routes";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -92,7 +91,7 @@ export default function RegisterPortalPage() {
           router.push(ROUTES.PORTAL);
         }, 2000);
       }
-    } catch (err) {
+    } catch {
       setError("Error al establecer la contraseña. Intenta de nuevo.");
     } finally {
       setLoading(false);
@@ -101,10 +100,10 @@ export default function RegisterPortalPage() {
 
   if (step === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-stone-50 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <div className="flex flex-col items-center gap-3">
           <Spinner className="w-6 h-6 text-primary" />
-          <p className="text-sm text-stone-600 font-mono">Verificando invitación...</p>
+          <p className="text-sm text-muted-foreground font-mono">Verificando invitación...</p>
         </div>
       </div>
     );
@@ -112,17 +111,17 @@ export default function RegisterPortalPage() {
 
   if (step === "success") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-stone-50 p-4">
-        <div className="w-full max-w-md rounded-lg border border-stone-200 bg-white p-8 text-center shadow-sm">
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <div className="w-full max-w-md rounded-lg border border-border bg-card p-8 text-center shadow-sm">
           <div className="mb-4 flex justify-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-              <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-success/10">
+              <svg className="h-6 w-6 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
           </div>
-          <h1 className="text-lg font-semibold text-stone-900 mb-2">¡Registro completado!</h1>
-          <p className="text-sm text-stone-600 mb-4">
+          <h1 className="text-lg font-semibold text-foreground mb-2">¡Registro completado!</h1>
+          <p className="text-sm text-muted-foreground mb-4">
             Tu cuenta ha sido activada. Redirigiendo al portal...
           </p>
           <div className="animate-spin inline-block h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
@@ -132,31 +131,31 @@ export default function RegisterPortalPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-stone-50 to-stone-100 p-4">
-      <div className="w-full max-w-md rounded-lg border border-stone-200 bg-white p-8 shadow-sm">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted p-4">
+      <div className="w-full max-w-md rounded-lg border border-border bg-card p-8 shadow-sm">
         <div className="mb-6 text-center">
-          <h1 className="text-2xl font-bold text-stone-900">Crear Contraseña</h1>
-          <p className="mt-2 text-sm text-stone-600">
+          <h1 className="text-2xl font-bold text-foreground">Crear Contraseña</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
             Establece tu contraseña para acceder al portal de tu empresa
           </p>
         </div>
 
         {email && (
-          <div className="mb-6 rounded-md bg-stone-50 border border-stone-200 p-3">
-            <p className="text-xs text-stone-600 font-mono">Email registrado:</p>
-            <p className="text-sm font-medium text-stone-900 break-all">{email}</p>
+          <div className="mb-6 rounded-md bg-muted border border-border p-3">
+            <p className="text-xs text-muted-foreground font-mono">Email registrado:</p>
+            <p className="text-sm font-medium text-foreground break-all">{email}</p>
           </div>
         )}
 
         {error && (
-          <div className="mb-4 rounded-md bg-red-50 border border-red-200 p-3">
-            <p className="text-sm text-red-800 font-mono">{error}</p>
+          <div className="mb-4 rounded-md bg-destructive/10 border border-destructive/20 p-3">
+            <p className="text-sm text-destructive font-mono">{error}</p>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-stone-900 mb-1.5">
+            <label className="block text-xs font-semibold text-foreground mb-1.5">
               Contraseña
             </label>
             <Input
@@ -165,13 +164,13 @@ export default function RegisterPortalPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={loading}
-              className="bg-stone-50 border-stone-200"
+              className="bg-muted border-border"
               autoComplete="new-password"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-stone-900 mb-1.5">
+            <label className="block text-xs font-semibold text-foreground mb-1.5">
               Confirmar Contraseña
             </label>
             <Input
@@ -180,7 +179,7 @@ export default function RegisterPortalPage() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               disabled={loading}
-              className="bg-stone-50 border-stone-200"
+              className="bg-muted border-border"
               autoComplete="new-password"
             />
           </div>
@@ -201,7 +200,7 @@ export default function RegisterPortalPage() {
           </Button>
         </form>
 
-        <p className="mt-6 text-center text-[11px] text-stone-500">
+        <p className="mt-6 text-center text-[11px] text-muted-foreground">
           ¿Necesitas ayuda?{" "}
           <a href="mailto:soporte@empresa.com" className="text-primary hover:underline">
             Contacta al soporte

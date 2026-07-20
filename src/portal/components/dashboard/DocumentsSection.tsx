@@ -54,7 +54,7 @@ export function DocumentsSection({ documents, onRequestFromExecutive }: Document
           </div>
           <Button
             onClick={onRequestFromExecutive}
-            className="bg-primary hover:bg-primary/95 text-white text-xs font-mono px-4 py-2 rounded-lg cursor-pointer"
+            className="bg-primary hover:bg-primary/95 text-primary-foreground text-xs font-mono px-4 py-2 rounded-lg cursor-pointer"
           >
             Solicitar a mi ejecutivo
           </Button>

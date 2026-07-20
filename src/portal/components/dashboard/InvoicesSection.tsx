@@ -100,7 +100,7 @@ export function InvoicesSection({
                         <Badge
                           variant="secondary"
                           className={`text-[9px] font-mono border-none ${
-                            inv.status === "PAGADA" ? "bg-emerald-500/10 text-emerald-500" : "bg-destructive/10 text-destructive"
+                            inv.status === "PAGADA" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
                           }`}
                         >
                           {inv.status}
@@ -113,7 +113,7 @@ export function InvoicesSection({
                               <SheetTrigger asChild>
                                 <Button
                                   onClick={() => { setSelectedInvoice(inv); capture("portal_invoice_viewed", { code: inv.code, balance: inv.total - inv.paid }); }}
-                                  className="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-mono h-8 px-3 flex items-center gap-1 cursor-pointer"
+                                  className="bg-success hover:bg-success/90 text-success-foreground text-[10px] font-mono h-8 px-3 flex items-center gap-1 cursor-pointer"
                                 >
                                   <CreditCard className="w-3.5 h-3.5" /> Ver detalle de factura
                                 </Button>
@@ -189,7 +189,7 @@ export function InvoicesSection({
                 <div className="space-y-1">
                   <div className="flex items-center gap-1.5">
                     <span className="font-bold text-primary">{rec.id}</span>
-                    <Badge className="bg-emerald-500/10 text-emerald-500 border-none hover:bg-emerald-500/10 text-[8px]">{rec.status}</Badge>
+                    <Badge className="bg-success/10 text-success border-none hover:bg-success/10 text-[8px]">{rec.status}</Badge>
                   </div>
                   <span className="text-muted-foreground block text-[10px]">Factura: {rec.code} · {rec.date} · {rec.method}</span>
                 </div>

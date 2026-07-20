@@ -10,21 +10,21 @@ interface RequirementsSectionProps {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; cls: string }> = {
-  NUEVO: { label: "Recibido", cls: "bg-sky-500/10 text-sky-600 dark:text-sky-400" },
-  EN_REVISION: { label: "En revisión técnica", cls: "bg-violet-500/10 text-violet-600 dark:text-violet-400" },
-  DIAGNOSTICO: { label: "En diagnóstico", cls: "bg-amber-500/10 text-amber-600 dark:text-amber-400" },
-  COTIZACION: { label: "Cotización en proceso", cls: "bg-orange-500/10 text-orange-600 dark:text-orange-400" },
-  APROBACION: { label: "Lista para aprobar", cls: "bg-teal-500/10 text-teal-600 dark:text-teal-400" },
-  OT_GENERADA: { label: "Orden de trabajo creada", cls: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
-  EJECUCION: { label: "En ejecución", cls: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
+  NUEVO: { label: "Recibido", cls: "bg-primary/10 text-primary" },
+  EN_REVISION: { label: "En revisión técnica", cls: "bg-accent/10 text-accent" },
+  DIAGNOSTICO: { label: "En diagnóstico", cls: "bg-warning/10 text-warning" },
+  COTIZACION: { label: "Cotización en proceso", cls: "bg-warning/10 text-warning" },
+  APROBACION: { label: "Lista para aprobar", cls: "bg-success/10 text-success" },
+  OT_GENERADA: { label: "Orden de trabajo creada", cls: "bg-success/10 text-success" },
+  EJECUCION: { label: "En ejecución", cls: "bg-success/10 text-success" },
   CERRADO: { label: "Completado", cls: "bg-muted text-muted-foreground" },
   CANCELADO: { label: "Cancelado", cls: "bg-destructive/10 text-destructive" },
 };
 
 const PRIORITY_CONFIG: Record<string, string> = {
   LOW: "text-muted-foreground bg-muted",
-  MEDIUM: "text-sky-600 dark:text-sky-400 bg-sky-500/10",
-  HIGH: "text-amber-600 dark:text-amber-400 bg-amber-500/10",
+  MEDIUM: "text-primary bg-primary/10",
+  HIGH: "text-warning bg-warning/10",
   CRITICAL: "text-destructive bg-destructive/10",
 };
 

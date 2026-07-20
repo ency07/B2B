@@ -13,6 +13,19 @@ export interface PortalClientInfo {
   email: string;
 }
 
+/**
+ * Branding del tenant, resuelto en el Server Component (page.tsx) y pasado
+ * como prop. Antes se fetcheaba client-side vía useEffect, lo que provocaba
+ * un flash de marca (defaults → branding real).
+ */
+export interface PortalBranding {
+  nombre_comercial?: string | null;
+  email_corporativo?: string | null;
+  telefono_principal?: string | null;
+  logo_claro_url?: string | null;
+  logo_oscuro_url?: string | null;
+}
+
 export interface CustomerPortalProps {
   clientInfo: PortalClientInfo;
   jobs?: ClientJob[];
@@ -27,6 +40,7 @@ export interface CustomerPortalProps {
   isClientContact?: boolean;
   allClients?: Array<{ id: string; legalName: string; tenantCode: string }>;
   tenantId?: string | null;
+  branding?: PortalBranding | null;
 }
 
 /** OT normalizada para uso en el UI del portal (deriva de ClientJob). */

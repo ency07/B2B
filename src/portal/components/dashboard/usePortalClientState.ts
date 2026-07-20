@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { getPortalBrowserClient } from "@/platform/auth/clients";
 import { getTenantConfig } from "@/platform/tenant/tenant";
-import { getTenantBranding } from "@/web/actions/branding";
 import {
   createClientTicket,
   sendClientMessage,
@@ -19,6 +18,7 @@ import {
 import { capture } from "@/lib/analytics";
 import type {
   PortalClientInfo,
+  PortalBranding,
   PortalOt,
   PortalInvoice,
   PortalReceipt,
@@ -69,6 +69,7 @@ interface UsePortalClientStateInput {
   requirements: ClientRequirement[];
   previewClientId: string | null;
   tenantId?: string | null;
+  branding?: PortalBranding | null;
 }
 
 export function usePortalClientState({
@@ -80,6 +81,7 @@ export function usePortalClientState({
   messages: initialMessages,
   requirements: initialRequirements,
   previewClientId,
+  branding: initialBranding = null,
 }: UsePortalClientStateInput) {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -88,8 +90,9 @@ export function usePortalClientState({
 
   const [isLoading, setIsLoading] = React.useState(false);
   const [activeSection, setActiveSection] = React.useState<PortalActiveSection>("ots");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [brandingState, setBrandingState] = React.useState<any>(null);
+  // Branding resuelto en el servidor (page.tsx) y pasado como prop — sin
+  // re-fetch client-side ni flash de marca.
+  const [brandingState] = React.useState<PortalBranding | null>(initialBranding);
   const [isProfileModalOpen, setIsProfileModalOpen] = React.useState(false);
   const [isRequirementSheetOpen, setIsRequirementSheetOpen] = React.useState(false);
   const [requirements, setRequirements] = React.useState<ClientRequirement[]>(initialRequirements);
@@ -185,18 +188,6 @@ export function usePortalClientState({
   const [selectedInvoice, setSelectedInvoice] = React.useState<PortalInvoice | null>(null);
 
   const [searchQuery, setSearchQuery] = React.useState("");
-
-  React.useEffect(() => {
-    async function loadBranding() {
-      try {
-        const data = await getTenantBranding(tenantParam);
-        setBrandingState(data);
-      } catch (err) {
-        console.error("Error loading branding in portal:", err);
-      }
-    }
-    loadBranding();
-  }, [tenantParam]);
 
   const companyName = brandingState?.nombre_comercial || config.name;
   const supportEmail = brandingState?.email_corporativo || config.contactEmail || "soporte@ventitech.com";

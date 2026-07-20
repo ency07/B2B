@@ -40,7 +40,7 @@ export function PortalHeader({
     <>
       {/* Offline Status Warning Banner */}
       {isOffline && (
-        <div className="bg-destructive/90 text-white text-xs font-mono py-2.5 px-4 text-center flex items-center justify-center gap-2 sticky top-0 z-layer-modal shadow-md backdrop-blur-md">
+        <div className="bg-destructive/90 text-destructive-foreground text-xs font-mono py-2.5 px-4 text-center flex items-center justify-center gap-2 sticky top-0 z-layer-modal shadow-md backdrop-blur-md">
           <WifiOff className="w-4 h-4 animate-pulse" />
           <span>⚠️ CONEXIÓN INTERRUMPIDA - Operando en modo local desconectado. Las transacciones se sincronizarán al volver.</span>
         </div>
@@ -50,8 +50,8 @@ export function PortalHeader({
       {isPlatformAdmin && !isClientContact && (
         <div className="bg-background text-foreground text-xs font-mono py-2 px-4 flex flex-wrap items-center justify-between gap-3 sticky top-0 z-layer-modal border-b border-border shadow-md">
           <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-emerald-500 animate-pulse" />
-            <span className="font-bold tracking-wider text-emerald-400">MODO ADMINISTRADOR</span>
+            <ShieldCheck className="w-4 h-4 text-success animate-pulse" />
+            <span className="font-bold tracking-wider text-success">MODO ADMINISTRADOR</span>
             <span className="text-muted-foreground">| Inspeccionando cliente: <strong className="text-foreground">{clientInfo.legalName}</strong></span>
           </div>
           <div className="flex items-center gap-2">
@@ -103,8 +103,8 @@ export function PortalHeader({
               <p className="text-sm font-semibold text-foreground tracking-tight leading-tight mt-0.5">{brandName}</p>
             </div>
             <div className="flex items-center gap-1.5 pl-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-              <span className="text-[9px] font-mono text-emerald-600 dark:text-emerald-400 hidden lg:block">ACTIVO</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse shrink-0" />
+              <span className="text-[9px] font-mono text-success hidden lg:block">ACTIVO</span>
             </div>
           </div>
 
@@ -121,7 +121,7 @@ export function PortalHeader({
               <div className="flex items-center border border-border/80 bg-background/50 rounded-lg p-1 gap-1">
                 <button
                   onClick={() => setIsOffline(!isOffline)}
-                  className={`text-[9px] font-mono px-2 py-1 rounded cursor-pointer transition-all ${isOffline ? "bg-destructive text-white font-bold" : "text-muted-foreground hover:text-foreground"}`}
+                  className={`text-[9px] font-mono px-2 py-1 rounded cursor-pointer transition-all ${isOffline ? "bg-destructive text-destructive-foreground font-bold" : "text-muted-foreground hover:text-foreground"}`}
                   title="Simular pérdida de conexión de red"
                 >
                   Simular Offline

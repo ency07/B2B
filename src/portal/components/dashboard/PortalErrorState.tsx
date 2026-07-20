@@ -27,7 +27,7 @@ export function PortalErrorState({ onDismiss, onRetry }: PortalErrorStateProps) 
           <Button variant="outline" className="text-xs font-mono cursor-pointer" onClick={onDismiss}>
             Ignorar
           </Button>
-          <Button onClick={onRetry} className="bg-destructive hover:bg-destructive/90 text-white text-xs font-mono flex items-center gap-1.5 cursor-pointer">
+          <Button onClick={onRetry} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground text-xs font-mono flex items-center gap-1.5 cursor-pointer">
             <RefreshCw className="w-3.5 h-3.5" /> Reintentar Conexión
           </Button>
         </div>
