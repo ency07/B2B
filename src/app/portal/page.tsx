@@ -14,6 +14,7 @@ import {
 import { buildLoginUrl } from "@/utils/auth-redirect";
 import { ROUTES } from "@/lib/routes";
 import CustomerPortalClient from "@/portal/components/dashboard/CustomerPortal";
+import { DesignSystemProvider } from "@/design-system";
 
 import { supabaseAdmin } from "@/platform/auth/clients";
 
@@ -76,7 +77,9 @@ export default async function PortalPage({ searchParams }: Props) {
     //    estado de error visible, NO redirigir (sino loop infinito).
     if (!(await hasAccessTokenCookie())) {
       // Sin tenant en la URL de login: nunca se expone antes de autenticar.
-      const loginUrl = buildLoginUrl(ROUTES.PORTAL_LOGIN);
+      // ROUTES.PORTAL_LOGIN ("/portal/login") no es una ruta real — el login
+      // vive en /login (compartido con ERP) y se distingue por ?redirect=/portal.
+      const loginUrl = buildLoginUrl(ROUTES.LOGIN, { redirectTo: ROUTES.PORTAL });
       redirect(loginUrl);
     }
 
@@ -141,7 +144,8 @@ export default async function PortalPage({ searchParams }: Props) {
   }
 
   return (
-    <CustomerPortalClient
+    <DesignSystemProvider>
+      <CustomerPortalClient
       clientInfo={{
         legalName: currentClient.legalName,
         taxId: currentClient.taxId,
@@ -158,8 +162,9 @@ export default async function PortalPage({ searchParams }: Props) {
       allClients={allClients}
       documents={documents}
       requirements={requirements}
-      tenantId={currentClient.tenantId}
-    />
+tenantId={currentClient.tenantId}
+      />
+    </DesignSystemProvider>
   );
 }
 
