@@ -393,7 +393,7 @@ export default function SettingsPage() {
           <Button
             onClick={handleSaveBranding}
             disabled={isSubmitting || isBrandingLoading}
-            className="bg-primary hover:bg-primary/90 text-white text-xs h-9 px-5 cursor-pointer shrink-0"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs h-9 px-5 cursor-pointer shrink-0"
           >
             {isSubmitting ? (
               <><Spinner className="w-3.5 h-3.5 mr-1.5" /> Guardando...</>
@@ -407,7 +407,7 @@ export default function SettingsPage() {
           <Button
             onClick={handleSaveIntegrations}
             disabled={isSubmitting}
-            className="bg-primary hover:bg-primary/90 text-white text-xs h-9 px-5 cursor-pointer shrink-0"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs h-9 px-5 cursor-pointer shrink-0"
           >
             {isSubmitting ? (
               <><Spinner className="w-3.5 h-3.5 mr-1.5" /> Guardando...</>

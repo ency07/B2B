@@ -10,6 +10,7 @@ import * as z from "zod";
 import { Eye, EyeOff, Lock, Mail, ArrowLeft, ShieldCheck } from "lucide-react";
 import Image from "next/image";
 import { getBrandingDefaults } from "@/platform/branding/branding-defaults";
+import { getTenantBranding } from "@/web/actions/branding";
 import { ROUTES } from "@/lib/routes";
 import { loginPortal } from "@/portal/actions/auth";
 import { isSafeRedirect } from "@/utils/auth-redirect";
@@ -28,11 +29,21 @@ export function PortalLoginFeature() {
   const tenantParam = searchParams.get("tenant");
   const rawRedirect = searchParams.get("redirect") || ROUTES.PORTAL;
   const redirectTo = isSafeRedirect(rawRedirect) ? rawRedirect : ROUTES.PORTAL;
-  const defaults = getBrandingDefaults(tenantParam);
 
+  const [branding, setBranding] = React.useState(() => getBrandingDefaults(tenantParam));
   const [showPassword, setShowPassword] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const [authError, setAuthError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    getTenantBranding(tenantParam).then((real) => {
+      if (!cancelled) setBranding(real);
+    }).catch(() => {
+      // sin conexión o tenant sin config propia — se queda con los defaults
+    });
+    return () => { cancelled = true; };
+  }, [tenantParam]);
 
   React.useEffect(() => {
     document.documentElement.classList.add("dark");
@@ -76,8 +87,8 @@ export function PortalLoginFeature() {
   };
 
   const siteUrl = tenantParam ? `/?tenant=${tenantParam}` : "/";
-  const companyName = defaults.nombre_comercial;
-  const logoLoginUrl = defaults.logo_login_url;
+  const companyName = branding.nombre_comercial;
+  const logoLoginUrl = branding.logo_login_url;
 
   return (
     <div className="min-h-screen bg-[var(--ds-c-marketing-cfm-background)] flex flex-col items-center justify-center p-4 relative overflow-hidden">

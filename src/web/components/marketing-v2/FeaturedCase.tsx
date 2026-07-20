@@ -98,7 +98,7 @@ export function FeaturedCase({ content }: FeaturedCaseProps = {}) {
         <div className="flex justify-between items-end flex-wrap gap-6 mb-14">
           <div>
             <p className="editorial-eyebrow mb-5">— Casos destacados</p>
-            <h2 className="editorial-h2 text-[clamp(32px,4vw,50px)] max-w-4xl">
+            <h2 className="editorial-h2 text-[clamp(40px,5.5vw,80px)] max-w-4xl">
               Proyectos que
               <br />
               <span className="italic text-ink-soft">sostienen la operación.</span>

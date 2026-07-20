@@ -73,7 +73,7 @@ export default function CustomerPortal({
         isClientContact={isClientContact}
         clientInfo={clientInfo}
         clientName={s.clientName}
-        brandName={s.config.name}
+        brandName={s.companyName}
         allClients={allClients}
         onOpenProfile={() => s.setIsProfileModalOpen(true)}
         onLogout={s.handleLogout}
