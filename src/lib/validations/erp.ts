@@ -113,6 +113,30 @@ export const registerPaymentSchema = z.object({
   notes: z.string().max(1000).optional(),
 });
 
+// ── Jobs ─────────────────────────────────────────────────────────────────────
+
+export const updateJobStatusSchema = z.object({
+  jobId: uuidSchema,
+  newStatus: z.enum([
+    "PENDIENTE",
+    "PROGRAMADO",
+    "EN_EJECUCION",
+    "SUSPENDIDO",
+    "FINALIZADO",
+    "ENTREGADO",
+    "CERRADO",
+    "CANCELADO",
+  ]),
+  cancelReason: z.string().trim().min(10, "El motivo de cancelación debe tener al menos 10 caracteres").max(1000).optional(),
+  actualHours: z.number().nonnegative("Las horas reales no pueden ser negativas").optional(),
+}).refine((d) => {
+  if (d.newStatus === "CANCELADO") return !!d.cancelReason;
+  return true;
+}, {
+  message: "El motivo de cancelación es obligatorio",
+  path: ["cancelReason"],
+});
+
 // ── Tenant settings ──────────────────────────────────────────────────────────
 
 export const updateTenantSettingsSchema = z.object({

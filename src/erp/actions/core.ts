@@ -11,6 +11,7 @@ import {
   createInventoryMovementSchema,
   createInvoiceSchema,
   registerPaymentSchema,
+  updateJobStatusSchema,
   updateTenantSettingsSchema,
   createInventoryItemSchema,
 } from "@/lib/validations/erp";
@@ -186,7 +187,7 @@ export async function getJobs(tenantCode?: string | null) {
     priority: (job.priority === "HIGH" ? "ALTA" : job.priority === "LOW" ? "BAJA" : "MEDIA") as "BAJA" | "MEDIA" | "ALTA",
     startDate: job.planned_start_date ? job.planned_start_date.substring(0, 10) : "",
     endDate: job.planned_end_date ? job.planned_end_date.substring(0, 10) : "",
-    status: (job.status === "EN_EJECUCION" ? "EN_PROGRESO" : job.status) as "PENDIENTE" | "EN_PROGRESO" | "COMPLETADA" | "CANCELADA",
+    status: job.status as "PENDIENTE" | "PROGRAMADO" | "EN_EJECUCION" | "SUSPENDIDO" | "FINALIZADO" | "ENTREGADO" | "CERRADO" | "CANCELADO",
   }));
 }
 
@@ -267,6 +268,80 @@ export async function createJob(
   }
 
   return data;
+}
+
+export async function updateJobStatus(
+  tenantCode: string | null,
+  data: {
+    jobId: string;
+    newStatus: "PENDIENTE" | "PROGRAMADO" | "EN_EJECUCION" | "SUSPENDIDO" | "FINALIZADO" | "ENTREGADO" | "CERRADO" | "CANCELADO";
+    cancelReason?: string;
+    actualHours?: number;
+  }
+) {
+  const ctx = await requireAction("jobs.manage");
+  data = validate(updateJobStatusSchema, data);
+  const tenantId = await getTenantId(tenantCode);
+  await validateTenantAccess(ctx.userId, ctx.role, tenantId);
+
+  // Verificar que la OT pertenece al tenant
+  const { data: job, error: jobErr } = await supabaseAdmin
+    .from("jobs")
+    .select("id, status, deleted_at")
+    .eq("id", data.jobId)
+    .eq("tenant_id", tenantId)
+    .maybeSingle();
+
+  if (jobErr || !job || job.deleted_at) {
+    throw new Error("Orden de trabajo no encontrada.");
+  }
+
+  if (job.status === "CERRADO") {
+    throw new Error("No se puede modificar una OT con estado final CERRADO.");
+  }
+
+  if (job.status === data.newStatus) {
+    throw new Error(`La OT ya se encuentra en estado ${data.newStatus}.`);
+  }
+
+  // Actualizar estado — el trigger validate_job_state_transitions valida la transición
+  // y dispatch_job_events emite el business_event correspondiente
+  const updatePayload: Record<string, unknown> = {
+    status: data.newStatus,
+    updated_by: ctx.userId,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (data.newStatus === "EN_EJECUCION") {
+    updatePayload.actual_start_date = new Date().toISOString();
+  }
+
+  if (data.newStatus === "FINALIZADO") {
+    updatePayload.actual_end_date = new Date().toISOString();
+    if (data.actualHours !== undefined) {
+      updatePayload.actual_hours = data.actualHours;
+    }
+  }
+
+  if (data.newStatus === "CANCELADO") {
+    updatePayload.cancel_reason = data.cancelReason;
+    updatePayload.cancelled_by = ctx.userId;
+    updatePayload.cancelled_at = new Date().toISOString();
+  }
+
+  const { data: updated, error: updateErr } = await supabaseAdmin
+    .from("jobs")
+    .update(updatePayload)
+    .eq("id", data.jobId)
+    .select()
+    .single();
+
+  if (updateErr) {
+    console.error("Error updating job status:", updateErr);
+    throw new Error(updateErr.message);
+  }
+
+  return updated;
 }
 
 // ==========================================
