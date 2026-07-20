@@ -10,6 +10,7 @@ import {
   createJobSchema,
   createInventoryMovementSchema,
   createInvoiceSchema,
+  registerPaymentSchema,
   updateTenantSettingsSchema,
   createInventoryItemSchema,
 } from "@/lib/validations/erp";
@@ -518,6 +519,81 @@ export async function createInvoice(
   }
 
   return invoice;
+}
+
+// ==========================================
+// PAYMENTS ACTIONS
+// ==========================================
+
+export async function registerPayment(
+  tenantCode: string | null,
+  paymentData: {
+    invoiceId: string;
+    clientId: string;
+    amount: number;
+    paymentMethod: "Transferencia" | "Efectivo" | "Cheque" | "Tarjeta" | "PSE" | "Otro";
+    referenceNumber?: string;
+    paymentDate: string;
+    notes?: string;
+  }
+) {
+  const ctx = await requireAction("payments.confirm");
+  paymentData = validate(registerPaymentSchema, paymentData);
+  const tenantId = await getTenantId(tenantCode);
+  await validateTenantAccess(ctx.userId, ctx.role, tenantId);
+
+  // Verificar que la factura pertenece al tenant y está en estado válido
+  const { data: invoice, error: invErr } = await supabaseAdmin
+    .from("invoices")
+    .select("id, status, balance_amount, total_amount, client_id, deleted_at")
+    .eq("id", paymentData.invoiceId)
+    .eq("tenant_id", tenantId)
+    .maybeSingle();
+
+  if (invErr || !invoice || invoice.deleted_at) {
+    throw new Error("Factura no encontrada.");
+  }
+
+  if (!["EMITIDA", "PARCIALMENTE_PAGADA", "VENCIDA"].includes(invoice.status)) {
+    throw new Error(`No se puede registrar un pago para una factura en estado ${invoice.status}.`);
+  }
+
+  if (invoice.client_id !== paymentData.clientId) {
+    throw new Error("El cliente no coincide con la factura.");
+  }
+
+  const balance = Number(invoice.balance_amount);
+  if (paymentData.amount > balance) {
+    throw new Error(
+      `El monto del pago ($${paymentData.amount}) excede el saldo pendiente ($${balance}).`
+    );
+  }
+
+  // Insertar pago — el trigger trg_handle_payment_code genera payment_code
+  // y trg_handle_payment_application actualiza invoices.paid_amount + status
+  // cuando el pago pasa a APLICADO.
+  const { data: payment, error: payErr } = await supabaseAdmin
+    .from("payments")
+    .insert({
+      tenant_id: tenantId,
+      client_id: paymentData.clientId,
+      invoice_id: paymentData.invoiceId,
+      payment_date: paymentData.paymentDate,
+      payment_method: paymentData.paymentMethod,
+      reference_number: paymentData.referenceNumber || null,
+      amount: paymentData.amount,
+      status: "APLICADO",
+      created_by: ctx.userId,
+    })
+    .select()
+    .single();
+
+  if (payErr) {
+    console.error("Error registering payment:", payErr);
+    throw new Error(payErr.message);
+  }
+
+  return payment;
 }
 
 // ==========================================

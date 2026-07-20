@@ -317,6 +317,7 @@ export type Action =
   | "purchases"
   | "audit.view_tenant"
   | "payments.view"
+  | "payments.confirm"
   | "invoices.manage"
   | "invoices.view"
   | "branding.manage"
@@ -350,6 +351,7 @@ export const ACTION_PERMISSIONS: Record<RoleName, Action[] | ["*"]> = {
     "audit.view_tenant",
     "invoices.manage",
     "invoices.view",
+    "payments.confirm",
     "branding.manage",
     "settings.manage",
   ],
@@ -360,6 +362,7 @@ export const ACTION_PERMISSIONS: Record<RoleName, Action[] | ["*"]> = {
     "audit.view_tenant",
     "invoices.manage",
     "invoices.view",
+    "payments.confirm",
     "branding.manage",
     "settings.manage",
   ],

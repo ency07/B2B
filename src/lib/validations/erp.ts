@@ -101,6 +101,18 @@ export const createInvoiceSchema = z.object({
   amount: z.number().positive("El monto debe ser mayor a 0"),
 });
 
+// ── Payments ─────────────────────────────────────────────────────────────────
+
+export const registerPaymentSchema = z.object({
+  invoiceId: uuidSchema,
+  clientId: uuidSchema,
+  amount: z.number().positive("El monto debe ser mayor a 0"),
+  paymentMethod: z.enum(["Transferencia", "Efectivo", "Cheque", "Tarjeta", "PSE", "Otro"]),
+  referenceNumber: z.string().trim().max(150).optional(),
+  paymentDate: dateString("Fecha de pago"),
+  notes: z.string().max(1000).optional(),
+});
+
 // ── Tenant settings ──────────────────────────────────────────────────────────
 
 export const updateTenantSettingsSchema = z.object({
