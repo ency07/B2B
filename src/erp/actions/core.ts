@@ -41,6 +41,43 @@ export async function getCallerTenantId(): Promise<string> {
   return data.tenant_id as string;
 }
 
+// ── Business Events ─────────────────────────────────────────────────────────
+
+const EVENT_CODES = {
+  CLIENT_CREATED: "CLIENT_CREATED",
+  JOB_CREATED: "JOB_CREATED",
+  JOB_STATUS_CHANGED: "JOB_STATUS_CHANGED",
+  INVOICE_CREATED: "INVOICE_CREATED",
+  PAYMENT_RECEIVED: "PAYMENT_RECEIVED",
+  PO_CREATED: "PO_CREATED",
+  PO_APPROVED: "PO_APPROVED",
+  PO_RECEIVED: "PO_RECEIVED",
+  INVENTORY_MOVEMENT: "INVENTORY_MOVEMENT",
+} as const;
+
+async function emitBusinessEvent(
+  tenantId: string,
+  eventCode: string,
+  entityType: string,
+  entityId: string,
+  payload?: Record<string, unknown>,
+  userId?: string
+) {
+  try {
+    const { error } = await supabaseAdmin.from("business_events").insert({
+      tenant_id: tenantId,
+      event_code: eventCode,
+      entity_type: entityType,
+      entity_id: entityId,
+      payload: payload || {},
+      created_by: userId || null,
+    });
+    if (error) console.warn("emitBusinessEvent:", error.message);
+  } catch (err) {
+    console.warn("emitBusinessEvent failed:", err);
+  }
+}
+
 // ==========================================
 // CLIENTS ACTIONS
 // ==========================================
@@ -140,6 +177,8 @@ export async function createClient(
     console.error("Error creating client:", error);
     throw new Error(error.message);
   }
+
+  emitBusinessEvent(tenantId, EVENT_CODES.CLIENT_CREATED, "CLIENT", data.id, { client_id: data.id }, ctx.userId);
 
   return data;
 }
@@ -269,6 +308,8 @@ export async function createJob(
     throw new Error(error.message);
   }
 
+  emitBusinessEvent(tenantId, EVENT_CODES.JOB_CREATED, "JOB", data.id, { job_id: data.id }, ctx.userId);
+
   return data;
 }
 
@@ -342,6 +383,8 @@ export async function updateJobStatus(
     console.error("Error updating job status:", updateErr);
     throw new Error(updateErr.message);
   }
+
+  emitBusinessEvent(tenantId, EVENT_CODES.JOB_STATUS_CHANGED, "JOB", data.jobId, { old_status: job.status, new_status: data.newStatus }, ctx.userId);
 
   return updated;
 }
@@ -500,6 +543,8 @@ export async function createInventoryMovement(
     throw new Error(error.message);
   }
 
+  emitBusinessEvent(tenantId, EVENT_CODES.INVENTORY_MOVEMENT, "INVENTORY_MOVEMENT", data.id, { item_code: movement.itemCode, type: movement.type, quantity: movement.quantity }, ctx.userId);
+
   return data;
 }
 
@@ -595,6 +640,11 @@ export async function createInvoice(
     throw new Error(error.message);
   }
 
+  const invoiceId = typeof invoice === "object" && invoice !== null ? (invoice as any).id : null;
+  if (invoiceId) {
+    emitBusinessEvent(tenantId, EVENT_CODES.INVOICE_CREATED, "INVOICE", invoiceId, { amount: invoiceData.amount }, ctx.userId);
+  }
+
   return invoice;
 }
 
@@ -669,6 +719,8 @@ export async function registerPayment(
     console.error("Error registering payment:", payErr);
     throw new Error(payErr.message);
   }
+
+  emitBusinessEvent(tenantId, EVENT_CODES.PAYMENT_RECEIVED, "PAYMENT", payment.id, { invoice_id: paymentData.invoiceId, amount: paymentData.amount }, ctx.userId);
 
   return payment;
 }
@@ -795,6 +847,8 @@ export async function createPurchaseOrder(
 
   if (itemsErr) throw new Error(itemsErr.message);
 
+  emitBusinessEvent(tenantId, EVENT_CODES.PO_CREATED, "PURCHASE_ORDER", po.id, { vendor_id: data.vendorId, total: data.totalAmount }, ctx.userId);
+
   return po;
 }
 
@@ -819,6 +873,7 @@ export async function approvePurchaseOrder(
     .single();
 
   if (poErr) throw new Error(poErr.message);
+  emitBusinessEvent(tenantId, EVENT_CODES.PO_APPROVED, "PURCHASE_ORDER", poId, { po_id: poId }, ctx.userId);
   return po;
 }
 
@@ -839,6 +894,7 @@ export async function receivePurchaseOrder(
     .single();
 
   if (poErr) throw new Error(poErr.message);
+  emitBusinessEvent(tenantId, EVENT_CODES.PO_RECEIVED, "PURCHASE_ORDER", poId, { po_id: poId }, ctx.userId);
   return po;
 }
 

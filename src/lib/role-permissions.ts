@@ -27,6 +27,7 @@ export type RoleName =
   | "JEFE_MANTENIMIENTO"
   | "ALMACENISTA"
   | "JEFE_INVENTARIO"
+  | "JEFE_COMPRAS"
   | "AUDITOR"
   | "CLIENTE";
 
@@ -106,6 +107,12 @@ export const ROLE_PERMISSIONS: Record<RoleName, string[]> = {
     "/dashboard",
     "/dashboard/inventory",
     "/dashboard/purchases",
+    "/dashboard/settings",
+  ],
+  JEFE_COMPRAS: [
+    "/dashboard",
+    "/dashboard/purchases",
+    "/dashboard/inventory",
     "/dashboard/settings",
   ],
 
@@ -266,6 +273,7 @@ export const DASHBOARD_SECTIONS: Record<RoleName, DashboardSection[]> = {
   //  Requerimientos de compra de insumos."
   ALMACENISTA: ["operations_health", "to_do_queue"],
   JEFE_INVENTARIO: ["operations_health", "to_do_queue"],
+  JEFE_COMPRAS: ["cash_pulse", "to_do_queue"],
 
   // 7. Auditor: trazabilidad y cumplimiento legal.
   // "Trazabilidad y cumplimiento legal. Acceso a los logs de auditoria
