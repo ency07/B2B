@@ -136,6 +136,7 @@ export const updateJobStatusSchema = z.object({
     "SUSPENDIDO",
     "FINALIZADO",
     "ENTREGADO",
+    "FACTURADA",
     "CERRADO",
     "CANCELADO",
   ]),

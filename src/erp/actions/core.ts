@@ -54,6 +54,7 @@ const EVENT_CODES = {
   PO_RECEIVED: "PO_RECEIVED",
   INVENTORY_MOVEMENT: "INVENTORY_MOVEMENT",
   LEAD_STATUS_CHANGED: "LEAD_STATUS_CHANGED",
+  JOB_INVOICED: "JOB_INVOICED",
 } as const;
 
 export async function emitBusinessEvent(
@@ -233,7 +234,7 @@ export async function getJobs(tenantCode?: string | null, clientId?: string) {
     priority: (job.priority === "HIGH" ? "ALTA" : job.priority === "LOW" ? "BAJA" : "MEDIA") as "BAJA" | "MEDIA" | "ALTA",
     startDate: job.planned_start_date ? job.planned_start_date.substring(0, 10) : "",
     endDate: job.planned_end_date ? job.planned_end_date.substring(0, 10) : "",
-    status: job.status as "PENDIENTE" | "PROGRAMADO" | "EN_EJECUCION" | "SUSPENDIDO" | "FINALIZADO" | "ENTREGADO" | "CERRADO" | "CANCELADO",
+    status: job.status as "PENDIENTE" | "PROGRAMADO" | "EN_EJECUCION" | "SUSPENDIDO" | "FINALIZADO" | "ENTREGADO" | "FACTURADA" | "CERRADO" | "CANCELADO",
   }));
 }
 
@@ -322,7 +323,7 @@ export async function updateJobStatus(
   tenantCode: string | null,
   data: {
     jobId: string;
-    newStatus: "PENDIENTE" | "PROGRAMADO" | "EN_EJECUCION" | "SUSPENDIDO" | "FINALIZADO" | "ENTREGADO" | "CERRADO" | "CANCELADO";
+    newStatus: "PENDIENTE" | "PROGRAMADO" | "EN_EJECUCION" | "SUSPENDIDO" | "FINALIZADO" | "ENTREGADO" | "FACTURADA" | "CERRADO" | "CANCELADO";
     cancelReason?: string;
     actualHours?: number;
   }
