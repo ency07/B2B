@@ -6,6 +6,7 @@ import type {
   ClientSupportMessage,
   ClientRequirement,
 } from "@/portal/actions/portal";
+import type { ClientQuote } from "@/portal/actions/quotes";
 
 export interface PortalClientInfo {
   legalName: string;
@@ -35,6 +36,7 @@ export interface CustomerPortalProps {
   messages?: ClientSupportMessage[];
   documents?: Array<{ id: string; name: string; type: string; url: string }>;
   requirements?: ClientRequirement[];
+  quotes?: ClientQuote[];
   previewClientId?: string | null;
   isPlatformAdmin?: boolean;
   isClientContact?: boolean;
@@ -98,5 +100,5 @@ export interface PortalChatMessage {
   text: string;
 }
 
-export type PortalActiveSection = "ots" | "invoices" | "docs" | "tickets" | "requirements";
+export type PortalActiveSection = "ots" | "invoices" | "docs" | "tickets" | "requirements" | "quotes";
 export type PortalInvoiceFilter = "ALL" | "PENDIENTE" | "PAGADA";

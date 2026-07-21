@@ -11,6 +11,7 @@ import {
   getClientMessages,
   getClientRequirements,
 } from "@/portal/actions/portal";
+import { getClientQuotes } from "@/portal/actions/quotes";
 import { buildLoginUrl } from "@/utils/auth-redirect";
 import { ROUTES } from "@/lib/routes";
 import CustomerPortalClient from "@/portal/components/dashboard/CustomerPortal";
@@ -90,13 +91,14 @@ export default async function PortalPage({ searchParams }: Props) {
   // tenant, todo en paralelo. El branding se resuelve aquí (server) y se pasa
   // como prop, en vez de re-fetchearlo client-side con useEffect (evita el
   // flash de marca: defaults → branding real).
-  const [jobs, invoices, payments, tickets, messages, requirements, branding] = await Promise.all([
+  const [jobs, invoices, payments, tickets, messages, requirements, quotes, branding] = await Promise.all([
     getClientJobs(previewClientId),
     getClientInvoices(previewClientId),
     getClientPayments(previewClientId),
     getClientTickets(previewClientId),
     getClientMessages(previewClientId),
     getClientRequirements(previewClientId),
+    getClientQuotes(previewClientId),
     getTenantBranding(tenantParam),
   ]);
 
@@ -166,6 +168,7 @@ export default async function PortalPage({ searchParams }: Props) {
       allClients={allClients}
       documents={documents}
       requirements={requirements}
+      quotes={quotes}
       tenantId={currentClient.tenantId}
       branding={branding}
       />

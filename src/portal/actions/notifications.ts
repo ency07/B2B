@@ -62,13 +62,15 @@ export async function notifyClientTicketCreated(
  * Soporta Slack y Discord vía webhooks configurados en .env.
  */
 export async function notifyStaffClientUpdate(
-  type: "ticket" | "message",
+  type: "ticket" | "message" | "quote_response",
   data: {
     clientName: string;
     tenantId: string;
     ticketCode?: string;
     subject?: string;
     messageBody?: string;
+    quoteCode?: string;
+    quoteResponse?: "ACEPTADA" | "RECHAZADA";
   }
 ): Promise<{ ok: boolean; error?: string }> {
   try {
@@ -80,11 +82,13 @@ export async function notifyStaffClientUpdate(
 
     // Si no hay webhooks configurados, solo loggear
     if (!slackUrl && !discordUrl) {
-      const emoji = type === "ticket" ? "🎫" : "💬";
+      const emoji = type === "ticket" ? "🎫" : type === "quote_response" ? "📄" : "💬";
       console.log(
         `[notifications] ${emoji} ${type.toUpperCase()} de ${data.clientName}:`,
         type === "ticket"
           ? `${data.ticketCode} — ${data.subject}`
+          : type === "quote_response"
+          ? `${data.quoteCode} — ${data.quoteResponse}`
           : data.messageBody?.substring(0, 80)
       );
       return { ok: true };
@@ -107,6 +111,10 @@ export async function notifyStaffClientUpdate(
                   },
                 },
               ],
+            }
+          : type === "quote_response"
+          ? {
+              text: `📄 *${data.clientName}* respondió la cotización *${data.quoteCode}*: ${data.quoteResponse}`,
             }
           : {
               text: `💬 Mensaje de *${data.clientName}*: ${data.messageBody?.substring(0, 100)}`,
@@ -142,6 +150,10 @@ export async function notifyStaffClientUpdate(
                   timestamp: new Date().toISOString(),
                 },
               ],
+            }
+          : type === "quote_response"
+          ? {
+              content: `📄 **${data.clientName}** respondió la cotización **${data.quoteCode}**: **${data.quoteResponse}**`,
             }
           : {
               content: `💬 **${data.clientName}**: ${data.messageBody?.substring(0, 200)}`,
