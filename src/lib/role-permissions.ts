@@ -321,6 +321,9 @@ export type Action =
   | "invoices.manage"
   | "invoices.view"
   | "credit_notes.create"
+  | "purchases.create"
+  | "purchases.approve"
+  | "purchases.view"
   | "branding.manage"
   | "settings.manage"
   | "catalog.manage";
@@ -354,6 +357,9 @@ export const ACTION_PERMISSIONS: Record<RoleName, Action[] | ["*"]> = {
     "invoices.view",
     "payments.confirm",
     "credit_notes.create",
+    "purchases.create",
+    "purchases.approve",
+    "purchases.view",
     "branding.manage",
     "settings.manage",
   ],
@@ -366,8 +372,16 @@ export const ACTION_PERMISSIONS: Record<RoleName, Action[] | ["*"]> = {
     "invoices.view",
     "payments.confirm",
     "credit_notes.create",
+    "purchases.create",
+    "purchases.approve",
+    "purchases.view",
     "branding.manage",
     "settings.manage",
+  ],
+  JEFE_COMPRAS: [
+    "purchases.create",
+    "purchases.approve",
+    "purchases.view",
   ],
 
   // 3. Comercial: leads, clientes, requerimientos, cotizaciones.

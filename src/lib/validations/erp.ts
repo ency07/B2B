@@ -231,6 +231,20 @@ export const updateLeadStatusSchema = z.object({
   newStatus: leadStatusSchema,
 });
 
+// ── Purchases ────────────────────────────────────────────────────────────────
+
+export const createPurchaseOrderSchema = z.object({
+  vendorId: uuidSchema,
+  totalAmount: z.number().nonnegative(),
+  notes: z.string().max(1000).optional(),
+  items: z.array(z.object({
+    description: z.string().trim().min(1),
+    quantity: z.number().positive(),
+    unitPrice: z.number().nonnegative(),
+    subtotal: z.number().nonnegative(),
+  })).min(1, "Debe incluir al menos un item"),
+});
+
 // ── Users ────────────────────────────────────────────────────────────────────
 
 export const createUserSchema = z.object({

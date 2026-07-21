@@ -13,6 +13,7 @@ import {
   registerPaymentSchema,
   updateJobStatusSchema,
   createCreditNoteSchema,
+  createPurchaseOrderSchema,
   updateTenantSettingsSchema,
   createInventoryItemSchema,
 } from "@/lib/validations/erp";
@@ -743,6 +744,174 @@ export async function createCreditNote(
   }
 
   return creditNote;
+}
+
+// ==========================================
+// PURCHASES ACTIONS
+// ==========================================
+
+export async function createPurchaseOrder(
+  tenantCode: string | null,
+  data: {
+    vendorId: string;
+    totalAmount: number;
+    notes?: string;
+    items: {
+      description: string;
+      quantity: number;
+      unitPrice: number;
+      subtotal: number;
+    }[];
+  }
+) {
+  const ctx = await requireAction("purchases.create");
+  data = validate(createPurchaseOrderSchema, data);
+  const tenantId = await getTenantId(tenantCode);
+  await validateTenantAccess(ctx.userId, ctx.role, tenantId);
+
+  // Insertar cabecera
+  const { data: po, error: poErr } = await supabaseAdmin
+    .from("purchase_orders")
+    .insert({
+      tenant_id: tenantId,
+      vendor_id: data.vendorId,
+      total_amount: data.totalAmount,
+      notes: data.notes,
+      status: "BORRADOR",
+      created_by: ctx.userId,
+    })
+    .select()
+    .single();
+
+  if (poErr) throw new Error(poErr.message);
+
+  // Insertar items
+  const { error: itemsErr } = await supabaseAdmin
+    .from("purchase_order_items")
+    .insert(data.items.map((item) => ({
+      po_id: po.id,
+      ...item
+    })));
+
+  if (itemsErr) throw new Error(itemsErr.message);
+
+  return po;
+}
+
+export async function approvePurchaseOrder(
+  tenantCode: string | null,
+  poId: string
+) {
+  const ctx = await requireAction("purchases.approve");
+  const tenantId = await getTenantId(tenantCode);
+  await validateTenantAccess(ctx.userId, ctx.role, tenantId);
+
+  const { data: po, error: poErr } = await supabaseAdmin
+    .from("purchase_orders")
+    .update({
+      status: "APROBADA",
+      approved_by: ctx.userId,
+      approved_at: new Date().toISOString(),
+    })
+    .eq("id", poId)
+    .eq("tenant_id", tenantId)
+    .select()
+    .single();
+
+  if (poErr) throw new Error(poErr.message);
+  return po;
+}
+
+export async function receivePurchaseOrder(
+  tenantCode: string | null,
+  poId: string
+) {
+  const ctx = await requireAction("purchases.create");
+  const tenantId = await getTenantId(tenantCode);
+  await validateTenantAccess(ctx.userId, ctx.role, tenantId);
+
+  const { data: po, error: poErr } = await supabaseAdmin
+    .from("purchase_orders")
+    .update({ status: "RECIBIDA" })
+    .eq("id", poId)
+    .eq("tenant_id", tenantId)
+    .select()
+    .single();
+
+  if (poErr) throw new Error(poErr.message);
+  return po;
+}
+
+export interface PurchaseOrderItemData {
+  id: string;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  subtotal: number;
+}
+
+export interface PurchaseOrderData {
+  id: string;
+  code: string;
+  vendor_id: string;
+  vendor_name: string;
+  status: string;
+  total_amount: number;
+  notes: string | null;
+  created_at: string;
+  items: PurchaseOrderItemData[];
+}
+
+export async function getPurchaseOrders(
+  tenantCode: string | null
+): Promise<PurchaseOrderData[]> {
+  const ctx = await getAuthContext();
+  if (!ctx) throw new Error("No autenticado");
+  const tenantId = await getTenantId(tenantCode);
+  await validateTenantAccess(ctx.userId, ctx.role, tenantId);
+
+  const { data: orders, error: ordersErr } = await supabaseAdmin
+    .from("purchase_orders")
+    .select("id, code, vendor_id, status, total_amount, notes, created_at")
+    .eq("tenant_id", tenantId)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false });
+
+  if (ordersErr) throw new Error(ordersErr.message);
+
+  const vendorIds = [...new Set(orders.map((o: any) => o.vendor_id))];
+
+  const { data: vendors } = await supabaseAdmin
+    .from("clients")
+    .select("id, name")
+    .in("id", vendorIds);
+
+  const vendorMap = new Map((vendors || []).map((v: any) => [v.id, v.name]));
+
+  const poIds = orders.map((o: any) => o.id);
+  const { data: items } = await supabaseAdmin
+    .from("purchase_order_items")
+    .select("id, po_id, description, quantity, unit_price, subtotal")
+    .in("po_id", poIds);
+
+  const itemsByPo = new Map<string, PurchaseOrderItemData[]>();
+  (items || []).forEach((it: any) => {
+    const list = itemsByPo.get(it.po_id) || [];
+    list.push(it);
+    itemsByPo.set(it.po_id, list);
+  });
+
+  return orders.map((o: any) => ({
+    id: o.id,
+    code: o.code,
+    vendor_id: o.vendor_id,
+    vendor_name: vendorMap.get(o.vendor_id) || "—",
+    status: o.status,
+    total_amount: Number(o.total_amount),
+    notes: o.notes,
+    created_at: o.created_at,
+    items: itemsByPo.get(o.id) || [],
+  }));
 }
 
 // ==========================================
