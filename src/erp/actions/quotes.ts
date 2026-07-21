@@ -179,3 +179,65 @@ export async function updateQuoteStatus(quoteId: string, status: string) {
 
   return data;
 }
+
+export async function convertQuoteToJob(quoteId: string) {
+  const ctx = await requireAction("quotes.approve");
+  const tenantId = await getCallerTenantId();
+
+  // Obtener cotización + requerimiento asociado
+  const { data: quote, error: qErr } = await supabaseAdmin
+    .from("quotes")
+    .select("id, status, requirement_id, client_id, total_amount")
+    .eq("id", quoteId)
+    .eq("tenant_id", tenantId)
+    .maybeSingle();
+
+  if (qErr || !quote) throw new Error("Cotización no encontrada");
+  if (quote.status !== "APROBADA") throw new Error("La cotización debe estar APROBADA para generar una OT");
+  if (!quote.requirement_id) throw new Error("La cotización no tiene un requerimiento asociado");
+
+  // Verificar requerimiento
+  const { data: req, error: rErr } = await supabaseAdmin
+    .from("requirements")
+    .select("id, status, description")
+    .eq("id", quote.requirement_id)
+    .eq("tenant_id", tenantId)
+    .maybeSingle();
+
+  if (rErr || !req) throw new Error("Requerimiento asociado no encontrado");
+  if (req.status !== "APROBACION") throw new Error(`El requerimiento debe estar en APROBACION (actual: ${req.status})`);
+
+  // Transicionar a OT_GENERADA — el trigger valida documentos y crea el Job automáticamente
+  const { error: updateErr } = await supabaseAdmin
+    .from("requirements")
+    .update({
+      status: "OT_GENERADA",
+      updated_at: new Date().toISOString(),
+      updated_by: ctx.userId,
+    })
+    .eq("id", quote.requirement_id)
+    .eq("tenant_id", tenantId);
+
+  if (updateErr) {
+    console.error("Error converting quote to job:", updateErr);
+    throw new Error(updateErr.message);
+  }
+
+  // Obtener el Job que el trigger creó
+  const { data: job } = await supabaseAdmin
+    .from("jobs")
+    .select("id, job_code, status, title")
+    .eq("requirement_id", quote.requirement_id)
+    .eq("tenant_id", tenantId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .single();
+
+  return {
+    success: true,
+    job: job || null,
+    message: job
+      ? `OT ${job.job_code} generada desde la cotización`
+      : "Requerimiento actualizado a OT_GENERADA (el trigger debe crear el Job)",
+  };
+}
