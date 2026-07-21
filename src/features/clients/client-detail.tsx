@@ -45,6 +45,8 @@ import {
   addClientContact,
   deleteClientContact,
 } from "@/portal/actions/contacts";
+import { getQuotes, type QuoteRow } from "@/erp/actions/quotes";
+import { getInvoices, getJobs } from "@/erp/actions/core";
 import { StatusPill } from "@/erp/components/data-list/status-pill";
 import type { StatusVariant } from "@/erp/components/data-list/status-dot";
 import { cn } from "@/platform/utils/cn";
@@ -173,7 +175,10 @@ export function ClientDetail({
           <main className="p-5 space-y-6">
             {tab === "contexto" && <ContextoTab client={client} />}
             {tab === "contactos" && <ContactosTab client={client} />}
-            {tab !== "contexto" && tab !== "contactos" && <TabPlaceholder tab={tab} />}
+            {tab === "cotizaciones" && <CotizacionesTab clientId={client.id} />}
+            {tab === "facturas" && <FacturasTab clientId={client.id} />}
+            {tab === "ordenes" && <OrdenesTab clientId={client.id} />}
+            {(tab === "archivos" || tab === "relaciones") && <TabPlaceholder tab={tab} />}
           </main>
 
           <aside className="border-t lg:border-t-0 lg:border-l border-line bg-bg-elevated-1 p-5 space-y-5">
@@ -307,6 +312,186 @@ function ContextoTab({ client }: { client: ClientListItem }) {
         </div>
       </dl>
     </section>
+  );
+}
+
+function CotizacionesTab({ clientId }: { clientId: string }) {
+  const [quotes, setQuotes] = React.useState<QuoteRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    getQuotes(null, clientId)
+      .then((data) => { if (!cancelled) setQuotes(data || []); })
+      .catch(() => { if (!cancelled) setQuotes([]); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [clientId]);
+
+  if (loading) return <TabLoader label="cotizaciones" />;
+  if (quotes.length === 0) return <EmptyState icon={FileText} label="Sin cotizaciones para este cliente" />;
+
+  const quoteStatusVariant: Record<string, StatusVariant> = {
+    BORRADOR: "neutral",
+    EN_REVISION: "warning",
+    ENVIADA: "info",
+    APROBADA: "success",
+    RECHAZADA: "danger",
+    VENCIDA: "danger",
+  };
+
+  return (
+    <section>
+      <h3 className="font-mono text-[10px] uppercase tracking-widest text-ink-muted mb-3">
+        Cotizaciones ({quotes.length})
+      </h3>
+      <ul className="space-y-2">
+        {quotes.map((q) => (
+          <li key={q.id} className="flex items-center justify-between rounded-lg border border-line bg-bg-elevated-2 px-4 py-3">
+            <div className="min-w-0">
+              <p className="text-[13px] font-medium text-ink font-mono">{q.quote_code}</p>
+              <p className="text-[11px] text-ink-muted mt-0.5">
+                {new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(q.total_amount)}
+              </p>
+            </div>
+            <StatusPill variant={quoteStatusVariant[q.status] || "neutral"} label={q.status} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function FacturasTab({ clientId }: { clientId: string }) {
+  const [invoices, setInvoices] = React.useState<Array<{
+    id: string;
+    code: string;
+    totalAmount: number;
+    paidAmount: number;
+    status: string;
+    date: string;
+  }>>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    getInvoices(null, clientId)
+      .then((data) => { if (!cancelled) setInvoices(data || []); })
+      .catch(() => { if (!cancelled) setInvoices([]); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [clientId]);
+
+  if (loading) return <TabLoader label="facturas" />;
+  if (invoices.length === 0) return <EmptyState icon={Receipt} label="Sin facturas para este cliente" />;
+
+  const invoiceStatusVariant: Record<string, StatusVariant> = {
+    BORRADOR: "neutral",
+    EMITIDA: "info",
+    PAGADA: "success",
+    ANULADA: "danger",
+    PARCIALMENTE_PAGADA: "warning",
+  };
+
+  return (
+    <section>
+      <h3 className="font-mono text-[10px] uppercase tracking-widest text-ink-muted mb-3">
+        Facturas ({invoices.length})
+      </h3>
+      <ul className="space-y-2">
+        {invoices.map((inv) => (
+          <li key={inv.id} className="flex items-center justify-between rounded-lg border border-line bg-bg-elevated-2 px-4 py-3">
+            <div className="min-w-0">
+              <p className="text-[13px] font-medium text-ink font-mono">{inv.code}</p>
+              <p className="text-[11px] text-ink-muted mt-0.5">
+                {new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(inv.totalAmount)}
+                {inv.paidAmount < inv.totalAmount && (
+                  <span className="text-state-danger ml-2">
+                    (Pendiente: {new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(inv.totalAmount - inv.paidAmount)})
+                  </span>
+                )}
+              </p>
+            </div>
+            <StatusPill variant={invoiceStatusVariant[inv.status] || "neutral"} label={inv.status} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function OrdenesTab({ clientId }: { clientId: string }) {
+  const [jobs, setJobs] = React.useState<Array<{
+    id: string;
+    code: string;
+    description: string;
+    assignedTech: string;
+    priority: string;
+    startDate: string;
+    endDate: string;
+    status: string;
+  }>>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    getJobs(null, clientId)
+      .then((data) => { if (!cancelled) setJobs(data || []); })
+      .catch(() => { if (!cancelled) setJobs([]); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [clientId]);
+
+  if (loading) return <TabLoader label="ordenes de trabajo" />;
+  if (jobs.length === 0) return <EmptyState icon={Briefcase} label="Sin ordenes de trabajo para este cliente" />;
+
+  const jobStatusVariant: Record<string, StatusVariant> = {
+    PENDIENTE: "warning",
+    PROGRAMADO: "info",
+    EN_EJECUCION: "info",
+    SUSPENDIDO: "danger",
+    FINALIZADO: "success",
+    ENTREGADO: "success",
+    CERRADO: "neutral",
+    CANCELADO: "danger",
+  };
+
+  return (
+    <section>
+      <h3 className="font-mono text-[10px] uppercase tracking-widest text-ink-muted mb-3">
+        Ordenes de Trabajo ({jobs.length})
+      </h3>
+      <ul className="space-y-2">
+        {jobs.map((j) => (
+          <li key={j.id} className="flex items-center justify-between rounded-lg border border-line bg-bg-elevated-2 px-4 py-3">
+            <div className="min-w-0">
+              <p className="text-[13px] font-medium text-ink font-mono">{j.code}</p>
+              <p className="text-[11px] text-ink-muted mt-0.5 truncate max-w-[250px]">{j.description}</p>
+            </div>
+            <StatusPill variant={jobStatusVariant[j.status] || "neutral"} label={j.status} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function TabLoader({ label }: { label: string }) {
+  return (
+    <div className="flex items-center justify-center py-10">
+      <span className="text-[11px] font-mono text-ink-muted animate-pulse uppercase tracking-widest">
+        Cargando {label}...
+      </span>
+    </div>
+  );
+}
+
+function EmptyState({ icon: Icon, label }: { icon: React.ComponentType<{ className?: string; strokeWidth?: number }>; label: string }) {
+  return (
+    <div className="rounded-lg border border-dashed border-line p-6 text-center">
+      <Icon className="h-6 w-6 text-ink-muted mx-auto mb-2" strokeWidth={1.5} />
+      <p className="text-[13px] text-ink-soft">{label}</p>
+    </div>
   );
 }
 

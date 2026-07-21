@@ -188,17 +188,21 @@ export async function createClient(
 // JOBS ACTIONS
 // ==========================================
 
-export async function getJobs(tenantCode?: string | null) {
+export async function getJobs(tenantCode?: string | null, clientId?: string) {
   const ctx = await getAuthContext();
   if (!ctx) throw new Error("No autenticado");
   const tenantId = await getTenantId(tenantCode);
   await validateTenantAccess(ctx.userId, ctx.role, tenantId);
 
-  const { data, error } = await supabaseAdmin
+  const query = supabaseAdmin
     .from("jobs")
-    .select("id, job_code, title, priority, status, planned_start_date, planned_end_date, assigned_user_id")
+    .select("id, job_code, title, priority, status, planned_start_date, planned_end_date, assigned_user_id, client_id")
     .eq("tenant_id", tenantId)
     .order("created_at", { ascending: false });
+
+  if (clientId) query.eq("client_id", clientId);
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("Error fetching jobs:", error);
@@ -553,13 +557,13 @@ export async function createInventoryMovement(
 // INVOICES ACTIONS
 // ==========================================
 
-export async function getInvoices(tenantCode?: string | null) {
+export async function getInvoices(tenantCode?: string | null, clientId?: string) {
   const ctx = await getAuthContext();
   if (!ctx) throw new Error("No autenticado");
   const tenantId = await getTenantId(tenantCode);
   await validateTenantAccess(ctx.userId, ctx.role, tenantId);
 
-  const { data, error } = await supabaseAdmin
+  const query = supabaseAdmin
     .from("invoices")
     .select(`
       id,
@@ -574,6 +578,10 @@ export async function getInvoices(tenantCode?: string | null) {
     .eq("tenant_id", tenantId)
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
+
+  if (clientId) query.eq("client_id", clientId);
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("Error fetching invoices:", error);

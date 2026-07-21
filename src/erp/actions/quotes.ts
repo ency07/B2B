@@ -25,12 +25,12 @@ export interface QuoteRow {
   client: { legal_name: string } | null;
 }
 
-export async function getQuotes(tenantCode?: string | null): Promise<QuoteRow[]> {
+export async function getQuotes(tenantCode?: string | null, clientId?: string): Promise<QuoteRow[]> {
   const ctx = await getAuthContext();
   if (!ctx) throw new Error("No autenticado");
   const tenantId = await getTenantId(tenantCode ?? null);
 
-  const { data, error } = await supabaseAdmin
+  const query = supabaseAdmin
     .from("quotes")
     .select(`
       id, quote_code, client_id, requirement_id, assigned_user_id, valid_until, subtotal, total_amount, status, created_at,
@@ -39,17 +39,19 @@ export async function getQuotes(tenantCode?: string | null): Promise<QuoteRow[]>
     .eq("tenant_id", tenantId)
     .order("created_at", { ascending: false });
 
+  if (clientId) query.eq("client_id", clientId);
+
+  const { data, error } = await query;
+
   if (error) {
     console.error("Error fetching quotes:", error);
-    return [];
+    throw new Error(error.message);
   }
 
-  const rows = (data ?? []).map((row: any) => ({
-    ...row,
-    client: Array.isArray(row.client) ? row.client[0] ?? null : row.client
-  }));
-
-  return rows as QuoteRow[];
+  return (data || []).map((q: any) => ({
+    ...q,
+    client: Array.isArray(q.client) ? q.client[0] ?? null : q.client ?? null,
+  })) as QuoteRow[];
 }
 
 export async function createQuote(
