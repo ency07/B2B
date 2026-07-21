@@ -298,19 +298,24 @@ function extractFromCatalog(
   projectRef: string
 ): CapacityItem[] {
   const items: CapacityItem[] = [];
+  const seenProductIds = new Set<string>();
   for (const cat of catalog) {
     for (const sub of cat.subcategories) {
       for (const fam of sub.families) {
         for (const ser of fam.series) {
           for (const prod of ser.products) {
-            if (items.length >= 9) return items;
+            // La jerarquía de catálogo puede traer el mismo producto embebido más
+            // de una vez (registros de subcategoría/categoría duplicados en BD);
+            // se deduplica por id para no mostrar la misma ficha dos veces.
+            if (seenProductIds.has(prod.id)) continue;
+            seenProductIds.add(prod.id);
             const specs = prod.specifications || {};
             const img = prod.images?.[0]?.filePath;
             items.push({
               id: prod.id,
               code: prod.productCode,
               name: prod.name,
-              category: cat.name,
+              category: sub.name,
               image: img ?? "/industrial_plant_ventilation.webp",
               status: "DISPONIBLE",
               shortDescription:
@@ -353,6 +358,20 @@ export function EngineeringCapabilities({ catalog, tenantCode, branding }: Props
   }, [catalog, projectRef]);
 
   const [openItem, setOpenItem] = React.useState<CapacityItem | null>(null);
+  const [activeCategory, setActiveCategory] = React.useState<string | null>(null);
+
+  const categories = React.useMemo(
+    () => Array.from(new Set(items.map((item) => item.category))),
+    [items]
+  );
+
+  const visibleItems = React.useMemo(
+    () =>
+      activeCategory
+        ? items.filter((item) => item.category === activeCategory)
+        : items.slice(0, 9),
+    [items, activeCategory]
+  );
 
   return (
     <section
@@ -384,17 +403,58 @@ export function EngineeringCapabilities({ catalog, tenantCode, branding }: Props
           </div>
         </div>
 
+        {/* === FILTRO POR CATEGORÍA === */}
+        {categories.length > 1 && (
+          <div className="flex flex-wrap items-center gap-2 mb-8">
+            <button
+              type="button"
+              onClick={() => setActiveCategory(null)}
+              aria-pressed={activeCategory === null}
+              className={`px-4 py-2 rounded-sm font-mono text-[10px] tracking-widest uppercase transition-colors ${
+                activeCategory === null
+                  ? "bg-ink text-paper"
+                  : "border border-line text-fg-muted hover:bg-paper-warm hover:text-ink"
+              }`}
+            >
+              Todos
+            </button>
+            {categories.map((category) => (
+              <button
+                key={category}
+                type="button"
+                onClick={() => setActiveCategory(category)}
+                aria-pressed={activeCategory === category}
+                className={`px-4 py-2 rounded-sm font-mono text-[10px] tracking-widest uppercase transition-colors ${
+                  activeCategory === category
+                    ? "bg-ink text-paper"
+                    : "border border-line text-fg-muted hover:bg-paper-warm hover:text-ink"
+                }`}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* === GRID 3-4 COLUMNAS — Cards clickeables (simple, centrado) === */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-px bg-line border border-line reveal-stagger">
-          {items.slice(0, 9).map((item, idx) => (
-            <ProductCard
-              key={item.id}
-              item={item}
-              idx={idx}
-              onOpen={() => setOpenItem(item)}
-            />
-          ))}
-        </div>
+        {visibleItems.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-px bg-line border border-line reveal-stagger">
+            {visibleItems.map((item, idx) => (
+              <ProductCard
+                key={item.id}
+                item={item}
+                idx={idx}
+                onOpen={() => setOpenItem(item)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="border border-line bg-paper-warm px-6 py-12 text-center">
+            <p className="font-sans text-sm text-ink-soft">
+              No hay equipos disponibles en esta categoría por ahora.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* === MODAL DE DETALLE TÉCNICO === */}

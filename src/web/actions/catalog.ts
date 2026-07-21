@@ -110,6 +110,7 @@ async function fetchRawCatalogFromDB(): Promise<CatalogCategory[]> {
               description,
               status,
               series_id,
+              deleted_at,
               product_specifications (
                 spec_name,
                 spec_value
@@ -194,39 +195,41 @@ async function fetchRawCatalogFromDB(): Promise<CatalogCategory[]> {
     const subcategories = (cat.product_subcategories ?? []).map((sub: any) => {
       const families = (sub.product_families ?? []).map((fam: any) => {
         const series = (fam.product_series ?? []).map((ser: any) => {
-          const products = (ser.products ?? []).map((prod: any) => {
-            const specifications: Record<string, string> = {};
-            for (const spec of prod.product_specifications ?? []) {
-              specifications[spec.spec_name] = spec.spec_value;
-            }
+          const products = (ser.products ?? [])
+            .filter((prod: any) => !prod.deleted_at)
+            .map((prod: any) => {
+              const specifications: Record<string, string> = {};
+              for (const spec of prod.product_specifications ?? []) {
+                specifications[spec.spec_name] = spec.spec_value;
+              }
 
-            const images = (prod.product_images ?? [])
-              .filter((img: any) => img.media_assets)
-              .map((img: any) => toMedia(img.media_assets));
+              const images = (prod.product_images ?? [])
+                .filter((img: any) => img.media_assets)
+                .map((img: any) => toMedia(img.media_assets));
 
-            const documents = (prod.product_documents ?? [])
-              .filter((doc: any) => doc.media_assets)
-              .map((doc: any) => toMedia(doc.media_assets));
+              const documents = (prod.product_documents ?? [])
+                .filter((doc: any) => doc.media_assets)
+                .map((doc: any) => toMedia(doc.media_assets));
 
-            const cadFiles = (prod.product_files ?? [])
-              .filter((cad: any) => cad.media_assets)
-              .map((cad: any) => toMedia(cad.media_assets));
+              const cadFiles = (prod.product_files ?? [])
+                .filter((cad: any) => cad.media_assets)
+                .map((cad: any) => toMedia(cad.media_assets));
 
-            const seo = seoMap.get(prod.id);
+              const seo = seoMap.get(prod.id);
 
-            return {
-              id: prod.id,
-              productCode: prod.product_code,
-              name: prod.name,
-              description: prod.description || "",
-              status: prod.status,
-              specifications,
-              images,
-              documents,
-              cadFiles,
-              seo,
-            };
-          });
+              return {
+                id: prod.id,
+                productCode: prod.product_code,
+                name: prod.name,
+                description: prod.description || "",
+                status: prod.status,
+                specifications,
+                images,
+                documents,
+                cadFiles,
+                seo,
+              };
+            });
 
           return {
             id: ser.id,

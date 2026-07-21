@@ -34,7 +34,7 @@
 
 | ID | Hallazgo | Archivos | FR violado |
 |----|----------|----------|------------|
-| W-001 | **Catálogo sin filtro por categoría**. Los 9 productos se muestran en grilla estática sin selector de tipo de ventilador. | `EngineeringCapabilities.tsx` | FR-003 |
+| W-001 | ✅ **CERRADO (2026-07-21, `feat/001-web-catalog-category-filter`)** — ~~Catálogo sin filtro por categoría~~. Filtro por subcategoría agregado (ver `specs/001-web-catalog-category-filter/`); de paso se corrigió un leak de productos soft-eliminados duplicados en `fetchRawCatalogFromDB`. | `EngineeringCapabilities.tsx`, `catalog.ts` | FR-003 |
 | W-002 | **Chatbot no captura leads**. Solo es ayuda contextual. No persiste datos ni crea entradas en BD. | `ChatbotWidget.tsx` | FR-009 |
 | W-003 | **290 líneas de datos hardcodeados como fallback** en catálogo. Si la BD falla, se usan datos estáticos inconsistentes. | `EngineeringCapabilities.tsx` | FR-003 |
 | W-004 | **ACH hardcodeados en SummaryStep** en vez de leer de `ACH_BY_ENVIRONMENT` en `engineering.ts`. Riesgo de desincronización. | `SummaryStep.tsx:26-34` | FR-005 |
