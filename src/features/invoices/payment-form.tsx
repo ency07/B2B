@@ -10,20 +10,13 @@
 
 import * as React from "react";
 import { CreditCard, X } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/platform/ui/button";
 import { Input } from "@/platform/ui/input";
 import { Spinner } from "@/platform/ui/spinner";
 import { StatusPill } from "@/erp/components/data-list/status-pill";
 import type { StatusVariant } from "@/erp/components/data-list/status-dot";
-
-const PAYMENT_METHODS = [
-  "Transferencia",
-  "Efectivo",
-  "Cheque",
-  "Tarjeta",
-  "PSE",
-  "Otro",
-] as const;
+import { getPaymentMethods } from "@/erp/actions/core";
 
 const statusToVariant: Record<string, StatusVariant> = {
   EMITIDA: "info",
@@ -86,6 +79,8 @@ export function PaymentForm({
   onPaymentSuccess,
   registerPaymentAction,
 }: PaymentFormProps) {
+  const searchParams = useSearchParams();
+  const tenantParam = searchParams.get("tenant");
   const [amount, setAmount] = React.useState(balanceAmount.toString());
   const [method, setMethod] = React.useState<string>("Transferencia");
   const [reference, setReference] = React.useState("");
@@ -94,6 +89,15 @@ export function PaymentForm({
   );
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [paymentMethods, setPaymentMethods] = React.useState<string[]>(["Transferencia", "Efectivo", "Cheque", "Tarjeta", "PSE", "Otro"]);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    getPaymentMethods(tenantParam)
+      .then((methods) => { if (!cancelled) setPaymentMethods(methods); })
+      .catch(() => { /* keep defaults */ });
+    return () => { cancelled = true; };
+  }, [tenantParam]);
 
   const parsedAmount = Number(amount);
   const isAmountValid = !isNaN(parsedAmount) && parsedAmount > 0 && parsedAmount <= balanceAmount;
@@ -113,7 +117,7 @@ export function PaymentForm({
         invoiceId,
         clientId,
         amount: parsedAmount,
-        paymentMethod: method as typeof PAYMENT_METHODS[number],
+        paymentMethod: method as "Transferencia" | "Efectivo" | "Cheque" | "Tarjeta" | "PSE" | "Otro",
         referenceNumber: reference.trim() || undefined,
         paymentDate,
       });
@@ -229,7 +233,7 @@ export function PaymentForm({
                 className="w-full h-9 rounded-md border border-border bg-background px-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                 required
               >
-                {PAYMENT_METHODS.map((m) => (
+                {paymentMethods.map((m) => (
                   <option key={m} value={m}>
                     {m}
                   </option>

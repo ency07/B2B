@@ -26,6 +26,7 @@ import { Button } from "@/platform/ui/button";
 import { cn } from "@/platform/utils/cn";
 import type { InvoiceListItem } from "./invoice-list";
 import { useBranding } from "@/hooks/use-branding";
+import { getTaxRate } from "@/erp/actions/core";
 
 const statusToVariant: Record<InvoiceListItem["status"], StatusVariant> = {
   BORRADOR: "neutral",
@@ -79,8 +80,17 @@ export function InvoiceDetail({
   const searchParams = useSearchParams();
   const tenantParam = searchParams.get("tenant");
   const branding = useBranding(tenantParam);
+  const [taxRate, setTaxRate] = React.useState(0.19);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    getTaxRate(tenantParam)
+      .then((rate) => { if (!cancelled) setTaxRate(rate); })
+      .catch(() => { /* keep default 0.19 */ });
+    return () => { cancelled = true; };
+  }, [tenantParam]);
+
   const subtotal = items.reduce((s, it) => s + it.subtotal, 0);
-  const taxRate = 0.19;
   const tax = Math.round(subtotal * taxRate);
   const total = subtotal + tax;
   const isPending =

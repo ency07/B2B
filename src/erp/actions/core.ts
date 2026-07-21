@@ -1129,6 +1129,62 @@ export async function deleteEntity(
 }
 
 // ==========================================
+// TAX RATE (configurable per tenant)
+// ==========================================
+
+/**
+ * Returns the IVA tax rate for the tenant (default 0.19 = 19%).
+ * Stored in tenant_settings as module='finance', config_key='tax_rate'.
+ */
+export async function getTaxRate(tenantCode?: string | null): Promise<number> {
+  const tenantId = await getTenantId(tenantCode);
+
+  const { data } = await supabaseAdmin
+    .from("tenant_settings")
+    .select("config_value")
+    .eq("tenant_id", tenantId)
+    .eq("module", "finance")
+    .eq("config_key", "tax_rate")
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  if (data?.config_value) {
+    const rate = parseFloat(data.config_value);
+    if (!isNaN(rate) && rate >= 0 && rate <= 1) return rate;
+  }
+  return 0.19; // Default 19%
+}
+
+// ==========================================
+// PAYMENT METHODS (configurable per tenant)
+// ==========================================
+
+const DEFAULT_PAYMENT_METHODS = ["Transferencia", "Efectivo", "Cheque", "Tarjeta", "PSE", "Otro"];
+
+/**
+ * Returns payment methods for the tenant.
+ * Stored in tenant_settings as module='finance', config_key='payment_methods' (comma-separated).
+ */
+export async function getPaymentMethods(tenantCode?: string | null): Promise<string[]> {
+  const tenantId = await getTenantId(tenantCode);
+
+  const { data } = await supabaseAdmin
+    .from("tenant_settings")
+    .select("config_value")
+    .eq("tenant_id", tenantId)
+    .eq("module", "finance")
+    .eq("config_key", "payment_methods")
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  if (data?.config_value) {
+    const methods = data.config_value.split(",").map((m: string) => m.trim()).filter(Boolean);
+    if (methods.length > 0) return methods;
+  }
+  return DEFAULT_PAYMENT_METHODS;
+}
+
+// ==========================================
 // TENANT SETTINGS ACTIONS
 // ==========================================
 
