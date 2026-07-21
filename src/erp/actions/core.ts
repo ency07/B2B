@@ -799,6 +799,33 @@ export async function createCreditNote(
 }
 
 // ==========================================
+// DUNNING ACTIONS
+// ==========================================
+
+export async function runDunningCheck(
+  tenantCode: string | null
+): Promise<{ affectedCount: number; totalAmount: number } | null> {
+  const ctx = await getAuthContext();
+  if (!ctx) throw new Error("No autenticado");
+  const tenantId = await getTenantId(tenantCode);
+  await validateTenantAccess(ctx.userId, ctx.role, tenantId);
+
+  const { data, error } = await supabaseAdmin.rpc("run_dunning_check", {
+    p_tenant_id: tenantId,
+  });
+
+  if (error) throw new Error(error.message);
+
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) return null;
+
+  return {
+    affectedCount: Number(row.affected_count) || 0,
+    totalAmount: Number(row.total_amount) || 0,
+  };
+}
+
+// ==========================================
 // PURCHASES ACTIONS
 // ==========================================
 

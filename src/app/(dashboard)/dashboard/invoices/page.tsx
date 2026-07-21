@@ -14,10 +14,11 @@
 import * as React from "react";
 import { useSearchParams } from "next/navigation";
 import { Sparkles, Plus } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/platform/ui/button";
 import { Input } from "@/platform/ui/input";
 import { Spinner } from "@/platform/ui/spinner";
-import { getInvoices, getClients, createInvoice, registerPayment } from "@/erp/actions/core";;
+import { getInvoices, getClients, createInvoice, registerPayment, runDunningCheck } from "@/erp/actions/core";;
 import {
   Sheet,
   SheetContent,
@@ -325,10 +326,31 @@ export default function InvoicesPage() {
               Emision, seguimiento y pago de facturas a clientes.
             </p>
           </div>
-          <Button onClick={() => setIsCreateOpen(true)} className="cursor-pointer">
-            <Plus className="w-4 h-4" />
-            Emitir Factura
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => setIsCreateOpen(true)} className="cursor-pointer">
+              <Plus className="w-4 h-4" />
+              Emitir Factura
+            </Button>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                try {
+                  const result = await runDunningCheck(tenantParam);
+                  if (result && result.affectedCount > 0) {
+                    toast.success(`${result.affectedCount} factura(s) marcada(s) como VENCIDA por $${result.totalAmount.toLocaleString()}`);
+                    loadData();
+                  } else {
+                    toast.info("Sin facturas vencidas pendientes");
+                  }
+                } catch {
+                  toast.error("Error al ejecutar cobranza");
+                }
+              }}
+              className="cursor-pointer"
+            >
+              Cobranza
+            </Button>
+          </div>
         </div>
       </div>
 
