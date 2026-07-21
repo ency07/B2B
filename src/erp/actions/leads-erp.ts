@@ -1,9 +1,20 @@
 "use server";
 
 import { supabaseAdmin } from "@/platform/auth/clients";
-import { getTenantId, getCallerTenantId } from "@/erp/actions/core";
-import { requireAction } from "@/platform/auth/server-guards";
+import { getTenantId, getCallerTenantId, emitBusinessEvent } from "@/erp/actions/core";
+import { requireAction, getAuthContext } from "@/platform/auth/server-guards";
 import { validate, updateLeadStatusSchema } from "@/lib/validations/erp";
+
+const TRANSITIONS: Record<string, string[]> = {
+  NUEVO: ["EN_SEGUIMIENTO", "RECHAZADO"],
+  EN_SEGUIMIENTO: ["CALIFICADO", "RECHAZADO"],
+  CALIFICADO: ["CONVERTIDO", "RECHAZADO"],
+  CONVERTIDO: [],
+  RECHAZADO: [],
+};
+
+const VALID_TRANSITION = (from: string, to: string) =>
+  (TRANSITIONS[from] || []).includes(to);
 
 export interface LeadRow {
   id: string;
@@ -74,17 +85,81 @@ export async function updateLeadStatus(
   newStatus: "NUEVO" | "EN_SEGUIMIENTO" | "CALIFICADO" | "RECHAZADO" | "CONVERTIDO"
 ): Promise<void> {
   ({ leadId, newStatus } = validate(updateLeadStatusSchema, { leadId, newStatus }));
+  const ctx = await getAuthContext();
+  if (!ctx) throw new Error("No autenticado");
   await requireAction("leads");
   const tenantId = await getCallerTenantId();
 
-  const { error } = await supabaseAdmin
+  // Obtener lead actual para validar transición
+  const { data: lead, error: fetchErr } = await supabaseAdmin
     .from("leads")
-    .update({ status: newStatus, updated_at: new Date().toISOString() })
+    .select("id, status, company_name, name, email, phone, city, client_id, assigned_user_id")
+    .eq("id", leadId)
+    .eq("tenant_id", tenantId)
+    .maybeSingle();
+
+  if (fetchErr || !lead) throw new Error("Lead no encontrado");
+
+  if (!VALID_TRANSITION(lead.status, newStatus)) {
+    throw new Error(`Transición inválida: ${lead.status} → ${newStatus}`);
+  }
+
+  const updatePayload: Record<string, unknown> = {
+    status: newStatus,
+    updated_at: new Date().toISOString(),
+    updated_by: ctx.userId,
+  };
+
+  // Al calificar, auto-asignar cliente/contacto si existe info
+  if (newStatus === "CALIFICADO" && !lead.client_id && lead.company_name) {
+    const { data: existingClient } = await supabaseAdmin
+      .from("clients")
+      .select("id")
+      .eq("tenant_id", tenantId)
+      .eq("legal_name", lead.company_name)
+      .maybeSingle();
+
+    if (existingClient) {
+      updatePayload.client_id = existingClient.id;
+    } else {
+      const { data: newClient } = await supabaseAdmin
+        .from("clients")
+        .insert({
+          tenant_id: tenantId,
+          legal_name: lead.company_name,
+          city: lead.city,
+          email: lead.email,
+          phone: lead.phone,
+          status: "ACTIVO",
+          created_by: ctx.userId,
+        })
+        .select()
+        .single();
+
+      if (newClient) {
+        updatePayload.client_id = newClient.id;
+      }
+    }
+  }
+
+  const { error: updateErr } = await supabaseAdmin
+    .from("leads")
+    .update(updatePayload)
     .eq("id", leadId)
     .eq("tenant_id", tenantId);
 
-  if (error) {
-    console.error("Error updating lead status:", error);
-    throw new Error(error.message);
+  if (updateErr) {
+    console.error("Error updating lead status:", updateErr);
+    throw new Error(updateErr.message);
   }
+
+  // Emitir business event
+  emitBusinessEvent(
+    tenantId,
+    "LEAD_STATUS_CHANGED",
+    "LEAD",
+    leadId,
+    { old_status: lead.status, new_status: newStatus },
+    ctx.userId
+  );
 }

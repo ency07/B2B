@@ -53,9 +53,10 @@ const EVENT_CODES = {
   PO_APPROVED: "PO_APPROVED",
   PO_RECEIVED: "PO_RECEIVED",
   INVENTORY_MOVEMENT: "INVENTORY_MOVEMENT",
+  LEAD_STATUS_CHANGED: "LEAD_STATUS_CHANGED",
 } as const;
 
-async function emitBusinessEvent(
+export async function emitBusinessEvent(
   tenantId: string,
   eventCode: string,
   entityType: string,
