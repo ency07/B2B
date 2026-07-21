@@ -24,6 +24,8 @@ export default defineConfig({
       NEXT_PUBLIC_SUPABASE_ANON_KEY: "placeholder-anon-key",
       SUPABASE_URL: "https://placeholder.supabase.co",
       SUPABASE_ANON_KEY: "placeholder-anon-key",
+      SUPABASE_SERVICE_ROLE_KEY: "placeholder-service-key",
+      SUPPRESS_TENANT_WARNINGS: "true",
     },
     setupFiles: [],
     testTimeout: 15000,
