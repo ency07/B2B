@@ -1,8 +1,19 @@
 # Gap Analysis — AeroMax Industrial ERP
 
-**Fecha**: 2026-07-20
+**Fecha**: 2026-07-20 (última verificación de estado: 2026-07-21)
 **Metodología**: Spec-Driven Development (SDD) vía spec-kit
 **Alcance**: Web, ERP, Portal, Seguridad, Base de Datos — análisis retrospectivo spec vs. código
+
+> **Actualización 2026-07-21**: se re-auditó el estado real del código contra este documento antes
+> de iniciar la remediación (Principio IX de la constitución — no duplicar trabajo ya hecho). Todos
+> los gaps **E-001 a E-015** (módulo ERP) ya estaban cerrados por commits posteriores a este análisis
+> (`registerPayment`, `updateJobStatus`/FACTURADA-CERRADO, `createCreditNote`, `approvePurchaseOrder`,
+> emisión de `business_events`, dunning, CRM pipeline, quote-to-job, Client 360, alertas de reorden
+> reales, `deleteEntity()` genérico, IVA/método de pago configurables, mirror a `audit_log`). Ver
+> `git log --oneline -- src/erp/actions/core.ts` para el detalle. La sección ERP se deja abajo como
+> registro histórico pero **no representa el estado actual** — no relanzar `/speckit.specify` sobre
+> estos IDs sin re-verificar primero. Los gaps de **Web** (W-001 a W-012) y **Portal** (P-001 a P-008)
+> siguen abiertos salvo que se indique lo contrario.
 
 ---
 
@@ -171,12 +182,12 @@ Para cada uno de los 12 gaps críticos:
 ### Gaps prioritarios para remediación inmediata:
 
 ```
-P1-01: /speckit.specify "Implementar registerPayment() en ERP Core - Registrar pagos de facturas con actualización de estado y business_event"
-P1-02: /speckit.specify "Implementar completeJob() en ERP Core - Cerrar OT con validación de checklist mínimo"
-P1-03: /speckit.specify "Implementar filtro por categoría en catálogo web - Selector de tipo de ventilador con data de Supabase"
-P1-04: /speckit.specify "Implementar módulo de cotizaciones en Portal Cliente - CRUD completo con PDF y flujo de aceptación"
-P1-05: /speckit.specify "Implementar flujo de aprobación de compras en ERP - Aprobaciones por monto y recepción contra OC"
-P1-06: /speckit.specify "Integrar Wompi/PSE en Portal Cliente - Pasarela de pagos con webhook y actualización de estado"
+P1-01: ✅ CERRADO (2026-07-21) — registerPayment() en ERP Core
+P1-02: ✅ CERRADO (2026-07-21) — cierre de OT vía updateJobStatus (FACTURADA/CERRADO)
+P1-03: 🔴 ABIERTO — /speckit.specify "Implementar filtro por categoría en catálogo web - Selector de tipo de ventilador con data de Supabase"
+P1-04: 🔴 ABIERTO — /speckit.specify "Implementar módulo de cotizaciones en Portal Cliente - CRUD completo con PDF y flujo de aceptación"
+P1-05: ✅ CERRADO (2026-07-21) — approvePurchaseOrder() en ERP Core
+P1-06: 🔴 ABIERTO — /speckit.specify "Integrar Wompi/PSE en Portal Cliente - Pasarela de pagos con webhook y actualización de estado"
 ```
 
 ---
