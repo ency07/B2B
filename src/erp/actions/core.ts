@@ -909,6 +909,16 @@ export async function approvePurchaseOrder(
   const tenantId = await getTenantId(tenantCode);
   await validateTenantAccess(ctx.userId, ctx.role, tenantId);
 
+  const { data: existing, error: fetchErr } = await supabaseAdmin
+    .from("purchase_orders")
+    .select("id, status, deleted_at")
+    .eq("id", poId)
+    .eq("tenant_id", tenantId)
+    .maybeSingle();
+
+  if (fetchErr || !existing || existing.deleted_at) throw new Error("Orden de compra no encontrada.");
+  if (existing.status !== "BORRADOR") throw new Error(`La orden de compra debe estar en BORRADOR para aprobarla. Estado actual: ${existing.status}`);
+
   const { data: po, error: poErr } = await supabaseAdmin
     .from("purchase_orders")
     .update({
@@ -921,7 +931,7 @@ export async function approvePurchaseOrder(
     .select()
     .single();
 
-  if (poErr) throw new Error(poErr.message);
+  if (poErr || !po) throw new Error("Error al aprobar la orden de compra.");
   emitBusinessEvent(tenantId, EVENT_CODES.PO_APPROVED, "PURCHASE_ORDER", poId, { po_id: poId }, ctx.userId);
   return po;
 }
@@ -934,6 +944,16 @@ export async function receivePurchaseOrder(
   const tenantId = await getTenantId(tenantCode);
   await validateTenantAccess(ctx.userId, ctx.role, tenantId);
 
+  const { data: existing, error: fetchErr } = await supabaseAdmin
+    .from("purchase_orders")
+    .select("id, status, deleted_at")
+    .eq("id", poId)
+    .eq("tenant_id", tenantId)
+    .maybeSingle();
+
+  if (fetchErr || !existing || existing.deleted_at) throw new Error("Orden de compra no encontrada.");
+  if (existing.status !== "APROBADA") throw new Error(`La orden de compra debe estar APROBADA para recibir. Estado actual: ${existing.status}`);
+
   const { data: po, error: poErr } = await supabaseAdmin
     .from("purchase_orders")
     .update({ status: "RECIBIDA" })
@@ -942,7 +962,7 @@ export async function receivePurchaseOrder(
     .select()
     .single();
 
-  if (poErr) throw new Error(poErr.message);
+  if (poErr || !po) throw new Error("Error al recibir la orden de compra.");
   emitBusinessEvent(tenantId, EVENT_CODES.PO_RECEIVED, "PURCHASE_ORDER", poId, { po_id: poId }, ctx.userId);
   return po;
 }
