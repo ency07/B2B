@@ -1008,6 +1008,127 @@ export async function getPurchaseOrders(
 }
 
 // ==========================================
+// SOFT DELETE ACTIONS
+// ==========================================
+
+/** Tablas permitidas para soft-delete y sus dependencias activas que bloquean la eliminación */
+const DELETABLE_TABLES: Record<string, { entityName: string; permission: string; blockConditions: Array<{ table: string; fk: string; label: string }> }> = {
+  clients: {
+    entityName: "Cliente",
+    permission: "clients.manage",
+    blockConditions: [
+      { table: "invoices", fk: "client_id", label: "facturas activas" },
+      { table: "jobs", fk: "client_id", label: "ordenes de trabajo activas" },
+      { table: "quotes", fk: "client_id", label: "cotizaciones activas" },
+    ],
+  },
+  client_sites: {
+    entityName: "Sede",
+    permission: "clients.manage",
+    blockConditions: [
+      { table: "jobs", fk: "site_id", label: "ordenes de trabajo en esta sede" },
+    ],
+  },
+  quotes: {
+    entityName: "Cotización",
+    permission: "quotes.create",
+    blockConditions: [],
+  },
+  jobs: {
+    entityName: "Orden de Trabajo",
+    permission: "jobs.manage",
+    blockConditions: [
+      { table: "job_activities", fk: "job_id", label: "actividades asociadas" },
+    ],
+  },
+  invoices: {
+    entityName: "Factura",
+    permission: "invoices.manage",
+    blockConditions: [
+      { table: "payments", fk: "invoice_id", label: "pagos registrados" },
+      { table: "credit_notes", fk: "invoice_id", label: "notas de crédito" },
+    ],
+  },
+  inventory_items: {
+    entityName: "Item de Inventario",
+    permission: "items.manage",
+    blockConditions: [
+      { table: "inventory_stock", fk: "item_id", label: "stock registrado" },
+    ],
+  },
+  purchase_orders: {
+    entityName: "Orden de Compra",
+    permission: "purchases.create",
+    blockConditions: [],
+  },
+};
+
+export async function deleteEntity(
+  table: string,
+  entityId: string,
+  tenantCode?: string | null,
+  reason?: string
+) {
+  const config = DELETABLE_TABLES[table];
+  if (!config) throw new Error(`Tabla "${table}" no es eliminable.`);
+
+  const ctx = await requireAction(config.permission as any);
+  const tenantId = await getTenantId(tenantCode);
+  await validateTenantAccess(ctx.userId, ctx.role, tenantId);
+
+  // 1. Verify entity exists and belongs to tenant
+  const { data: entity, error: fetchErr } = await supabaseAdmin
+    .from(table)
+    .select("id, deleted_at")
+    .eq("id", entityId)
+    .eq("tenant_id", tenantId)
+    .maybeSingle();
+
+  if (fetchErr || !entity) throw new Error(`${config.entityName} no encontrada.`);
+  if (entity.deleted_at) throw new Error(`${config.entityName} ya está eliminada.`);
+
+  // 2. Check blocking dependencies
+  for (const dep of config.blockConditions) {
+    const { count } = await supabaseAdmin
+      .from(dep.table)
+      .select("id", { count: "exact", head: true })
+      .eq(dep.fk, entityId)
+      .eq("tenant_id", tenantId)
+      .is("deleted_at", null);
+
+    if (count && count > 0) {
+      throw new Error(`No se puede eliminar: ${config.entityName} tiene ${dep.label} (${count}).`);
+    }
+  }
+
+  // 3. Perform soft delete — triggers handle deleted_by automatically
+  const { error: delErr } = await supabaseAdmin
+    .from(table)
+    .update({
+      deleted_at: new Date().toISOString(),
+      updated_by: ctx.userId,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", entityId)
+    .eq("tenant_id", tenantId);
+
+  if (delErr) throw new Error(`Error eliminando ${config.entityName}: ${delErr.message}`);
+
+  // 4. Emit business event
+  const eventCode = `${table.toUpperCase()}_DELETED`;
+  emitBusinessEvent(
+    tenantId,
+    eventCode,
+    table.toUpperCase(),
+    entityId,
+    { entity_id: entityId, reason: reason || "Soft delete" },
+    ctx.userId
+  );
+
+  return { success: true, entityName: config.entityName };
+}
+
+// ==========================================
 // TENANT SETTINGS ACTIONS
 // ==========================================
 
