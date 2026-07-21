@@ -66,6 +66,7 @@ export async function emitBusinessEvent(
   userId?: string
 ) {
   try {
+    // Write to business_events (dashboard Pulse Feed)
     const { error } = await supabaseAdmin.from("business_events").insert({
       tenant_id: tenantId,
       event_code: eventCode,
@@ -75,6 +76,17 @@ export async function emitBusinessEvent(
       created_by: userId || null,
     });
     if (error) console.warn("emitBusinessEvent:", error.message);
+
+    // Mirror to audit_log (unified audit trail)
+    await supabaseAdmin.from("audit_log").insert({
+      tenant_id: tenantId,
+      event_code: eventCode,
+      entity_type: entityType,
+      entity_id: entityId,
+      action: "BUSINESS_EVENT",
+      new_values: payload || {},
+      user_id: userId || null,
+    });
   } catch (err) {
     console.warn("emitBusinessEvent failed:", err);
   }
