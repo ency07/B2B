@@ -25,6 +25,14 @@ const createLeadSchema = z.object({
   email: z.string().email("Email inválido")
 });
 
+const chatbotLeadSchema = z.object({
+  email: z.string().email("Email inválido"),
+  phone: z.string().optional(),
+  // Ruta que siguió dentro del árbol del chatbot (ver ChatbotWidget.tsx) —
+  // da contexto de qué necesitaba el visitante sin pedirle que lo escriba.
+  context: z.string().min(1, "Contexto requerido"),
+});
+
 const contactFormSchema = z.object({
   name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
   companyName: z.string().min(2, "La empresa debe tener al menos 2 caracteres"),
@@ -231,7 +239,10 @@ export async function submitContactForm(
       lead_score: score,
       risk_level: riskLevel,
       notes: leadData.description,
-      lead_source: "WEBSITE",
+      // "WEBSITE" nunca fue un valor válido de leads_lead_source_check (solo
+      // acepta una lista fija: Google Ads, SEO, ..., Cotizador Web, Otro) —
+      // todo envío de este formulario fallaba con una violación de constraint.
+      lead_source: "Directo",
       status: "NUEVO",
       assigned_user_id: userId,
       created_by: userId
@@ -242,6 +253,74 @@ export async function submitContactForm(
   if (error) {
     console.error("Error submitting contact lead:", error);
     throw new Error("Error al enviar el formulario de contacto. Intente nuevamente.");
+  }
+
+  return data;
+}
+
+/**
+ * Registra un Lead capturado desde el asistente conversacional (ChatbotWidget)
+ * cuando el visitante pide ser contactado por un ingeniero. El chatbot es un
+ * árbol de opciones sin campo de texto libre, así que solo se piden email y
+ * teléfono (opcional) — sin nombre/empresa/urgencia, sin inventar datos que
+ * el visitante no dio. role/urgency usan el mismo default neutral que
+ * submitContactForm ("Otro" / "media") ya que el chat no los captura.
+ */
+export async function submitChatbotLead(
+  tenantCode: string | null,
+  rawLeadData: { email: string; phone?: string; context: string }
+) {
+  const parsed = chatbotLeadSchema.safeParse(rawLeadData);
+  if (!parsed.success) {
+    throw new Error(
+      `Datos inválidos: ${parsed.error.issues.map((e) => e.message).join(", ")}`
+    );
+  }
+  const leadData = sanitizeObject(parsed.data as Record<string, unknown>) as z.infer<typeof chatbotLeadSchema>;
+
+  const { allowed } = await checkRateLimit(`chatbot-lead:${leadData.email}`);
+  if (!allowed) {
+    throw new Error("Demasiadas solicitudes. Intente nuevamente en un minuto.");
+  }
+
+  const tenantId = await getTenantId(tenantCode);
+
+  const { data: tenantInfo, error: tenantErr } = await db
+    .from("tenants")
+    .select("status")
+    .eq("id", tenantId)
+    .maybeSingle();
+
+  if (tenantErr || !tenantInfo || tenantInfo.status !== "Activo") {
+    console.error("Tenant validation error:", tenantErr, tenantInfo);
+    throw new Error("El servicio no está disponible para este tenant.");
+  }
+
+  const { score, riskLevel } = await calculateLeadScore(leadData.email, "Otro", "media");
+  const userId = await resolveTenantOwnerUserIdAsync(tenantId);
+
+  const { data, error } = await db
+    .from("leads")
+    .insert({
+      tenant_id: tenantId,
+      phone: leadData.phone || null,
+      email: leadData.email,
+      urgency: "media",
+      score,
+      lead_score: score,
+      risk_level: riskLevel,
+      notes: `Contacto vía chatbot web. ${leadData.context}`,
+      lead_source: "Chatbot Web",
+      status: "NUEVO",
+      assigned_user_id: userId,
+      created_by: userId
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error submitting chatbot lead:", error);
+    throw new Error("No se pudo registrar tu solicitud. Intenta de nuevo.");
   }
 
   return data;

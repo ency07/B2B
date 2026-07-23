@@ -20,279 +20,6 @@ interface CapacityItem {
   applications: string[];
 }
 
-const FALLBACK_CAPACITIES: CapacityItem[] = [
-  {
-    id: "blower",
-    code: "BLW-IND",
-    name: "Blower",
-    category: "Sopladores · Alta presión",
-    image: "/axial_duct_fan.webp",
-    status: "DISPONIBLE",
-    shortDescription:
-      "Soplador industrial de alta presión para sistemas de transporte neumático, ventilación de hornos y procesos que requieren caudales medios con presiones elevadas.",
-    projectRef: "REF-2024-BLW-001",
-    specs: [
-      { parametro: "Velocidad / Frecuencia", valor: "3,450 RPM · 60 Hz", cumplimiento: "Verificado" },
-      { parametro: "Caudal Nominal", valor: "2,800 — 18,500 CFM", cumplimiento: "DIN / ISO" },
-      { parametro: "Presión Máxima", valor: "6,000 Pa · 24.0 in w.g.", cumplimiento: "Estática" },
-      { parametro: "Potencia", valor: "20 — 200 HP · 15 — 150 kW", cumplimiento: "440 V · IE4" },
-      { parametro: "Protección Envolvente", valor: "IP55 · Clase F", cumplimiento: "Clasificado" },
-      { parametro: "Material Constructivo", valor: "Acero ASTM A36 + Recubrimiento Epóxico", cumplimiento: "Esp. Marina" },
-      { parametro: "Normativas Aplicadas", valor: "AMCA 300 · RETIE · ISO 1940 G2.5", cumplimiento: "RETIE Ok" },
-      { parametro: "Nivel de Ruido", valor: "85 dBA @ 1m", cumplimiento: "OSHAs compliant" },
-      { parametro: "Peso", valor: "320 — 850 kg", cumplimiento: "Verificado" },
-      { parametro: "Diámetro Impeller", valor: "14 — 32 in", cumplimiento: "Standard" },
-    ],
-    certifications: ["AMCA 300", "RETIE", "ISO 1940 G2.5"],
-    applications: [
-      "Transporte neumático de materiales",
-      "Ventilación de hornos y calderas",
-      "Procesos de combustión",
-      "Soplado de piezas y limpieza industrial",
-    ],
-  },
-  {
-    id: "hongo-inox",
-    code: "HON-IX",
-    name: "Extractor Tipo Hongo Inoxidable",
-    category: "Extractores · Acero Inoxidable",
-    image: "/extractor_hongo_inox.webp",
-    status: "DISPONIBLE",
-    shortDescription:
-      "Extractor de techo en acero inoxidable 304/316 para ambientes corrosivos, vapores químicos o procesamiento de alimentos. Diseño sanitario de fácil limpieza.",
-    projectRef: "REF-2024-HNX-002",
-    specs: [
-      { parametro: "Velocidad / Frecuencia", valor: "1,750 RPM · 60 Hz", cumplimiento: "Verificado" },
-      { parametro: "Caudal Nominal", valor: "1,200 — 12,000 CFM", cumplimiento: "DIN / ISO" },
-      { parametro: "Presión Máxima", valor: "300 Pa · 1.2 in w.g.", cumplimiento: "Estática" },
-      { parametro: "Potencia", valor: "1 — 10 HP · 0.75 — 7.5 kW", cumplimiento: "220/440 V · IE3" },
-      { parametro: "Protección Envolvente", valor: "IP65 · Clase F", cumplimiento: "Sanitario" },
-      { parametro: "Material Constructivo", valor: "Acero Inoxidable 304 / 316L", cumplimiento: "HACCP" },
-      { parametro: "Normativas Aplicadas", valor: "AMCA 300 · INVIMA · FDA · 3-A", cumplimiento: "INVIMA Ok" },
-      { parametro: "Nivel de Ruido", valor: "68 dBA @ 1m", cumplimiento: "OSHAs compliant" },
-      { parametro: "Peso", valor: "45 — 180 kg", cumplimiento: "Verificado" },
-      { parametro: "Diámetro", valor: "12 — 36 in", cumplimiento: "Standard" },
-    ],
-    certifications: ["AMCA 300", "INVIMA", "FDA", "3-A", "HACCP"],
-    applications: [
-      "Procesamiento de alimentos",
-      "Industria farmacéutica",
-      "Laboratorios y química fina",
-      "Ambientes corrosivos (vapores, sales)",
-    ],
-  },
-  {
-    id: "multiusos",
-    code: "MLT-IND",
-    name: "Extractor Multiusos",
-    category: "Extractores · Polivalentes",
-    image: "/industrial_centrifugal_fan.webp",
-    status: "DISPONIBLE",
-    shortDescription:
-      "Extractor polivalente para aplicaciones generales de ventilación, extracción de aire viciado y renovación ambiental en planta. Robusto y de fácil instalación.",
-    projectRef: "REF-2024-MLT-003",
-    specs: [
-      { parametro: "Velocidad / Frecuencia", valor: "Variable · 900 — 1,750 RPM", cumplimiento: "Verificado" },
-      { parametro: "Caudal Nominal", valor: "3,500 — 45,000 CFM", cumplimiento: "DIN / ISO" },
-      { parametro: "Presión Máxima", valor: "750 Pa · 3.0 in w.g.", cumplimiento: "Estática" },
-      { parametro: "Potencia", valor: "3 — 50 HP · 2.2 — 37 kW", cumplimiento: "220/440 V · IE3" },
-      { parametro: "Protección Envolvente", valor: "IP54 · Clase F", cumplimiento: "Clasificado" },
-      { parametro: "Material Constructivo", valor: "Acero al carbono + pintura epóxica", cumplimiento: "Standard" },
-      { parametro: "Normativas Aplicadas", valor: "AMCA 300 · RETIE · ISO 1940", cumplimiento: "RETIE Ok" },
-      { parametro: "Nivel de Ruido", valor: "72 dBA @ 1m", cumplimiento: "OSHAs compliant" },
-      { parametro: "Peso", valor: "85 — 420 kg", cumplimiento: "Verificado" },
-      { parametro: "Montaje", valor: "Pared · Techno · Conducto", cumplimiento: "Universal" },
-    ],
-    certifications: ["AMCA 300", "RETIE", "ISO 1940"],
-    applications: [
-      "Ventilación general de planta",
-      "Talleres mecánicos",
-      "Renovación de aire en bodegas",
-      "Extracción de aire viciado",
-    ],
-  },
-  {
-    id: "axial-malla",
-    code: "AX-ML",
-    name: "Ventilador Axial con Malla",
-    category: "Ventiladores · Axiales",
-    image: "/axial_duct_fan.webp",
-    status: "DISPONIBLE",
-    shortDescription:
-      "Ventilador axial de pared con malla de protección, ideal para ventilación general de naves industriales, establos y galpones. Bajo perfil de instalación.",
-    projectRef: "REF-2024-AXM-004",
-    specs: [
-      { parametro: "Velocidad / Frecuencia", valor: "1,450 RPM · 60 Hz", cumplimiento: "Verificado" },
-      { parametro: "Caudal Nominal", valor: "4,200 — 32,000 CFM", cumplimiento: "DIN / ISO" },
-      { parametro: "Presión Máxima", valor: "180 Pa · 0.7 in w.g.", cumplimiento: "Estática" },
-      { parametro: "Potencia", valor: "1.5 — 15 HP · 1.1 — 11 kW", cumplimiento: "220/440 V · IE3" },
-      { parametro: "Protección Envolvente", valor: "IP55 · Clase F", cumplimiento: "Clasificado" },
-      { parametro: "Material Constructivo", valor: "Acero galvanizado + álabes aluminio", cumplimiento: "Standard" },
-      { parametro: "Normativas Aplicadas", valor: "AMCA 300 · RETIE · ISO 1940", cumplimiento: "RETIE Ok" },
-      { parametro: "Nivel de Ruido", valor: "65 dBA @ 1m", cumplimiento: "OSHAs compliant" },
-      { parametro: "Peso", valor: "35 — 180 kg", cumplimiento: "Verificado" },
-      { parametro: "Diámetro", valor: "18 — 48 in", cumplimiento: "Standard" },
-    ],
-    certifications: ["AMCA 300", "RETIE", "ISO 1940"],
-    applications: [
-      "Naves industriales y galpones",
-      "Establos y granjas avícolas",
-      "Almacenes y depósitos",
-      "Ventilación de galpones industriales",
-    ],
-  },
-  {
-    id: "centrifugo-cp",
-    code: "CP-IND",
-    name: "Ventilador Centrífugo",
-    category: "Ventiladores · Centrífugos",
-    image: "/industrial_centrifugal_fan.webp",
-    status: "DISPONIBLE",
-    shortDescription:
-      "Ventilador centrífugo de simple aspiración para sistemas con ductos, filtros o pérdidas de carga significativas. Construcción robusta en acero al carbono.",
-    projectRef: "REF-2024-CPI-005",
-    specs: [
-      { parametro: "Velocidad / Frecuencia", valor: "Variable · 1,750 — 3,500 RPM", cumplimiento: "Verificado" },
-      { parametro: "Caudal Nominal", valor: "2,500 — 65,000 CFM", cumplimiento: "DIN / ISO" },
-      { parametro: "Presión Máxima", valor: "4,500 Pa · 18.0 in w.g.", cumplimiento: "Estática" },
-      { parametro: "Potencia", valor: "10 — 250 HP · 7.5 — 185 kW", cumplimiento: "440 V · IE4" },
-      { parametro: "Protección Envolvente", valor: "IP55 · Clase F", cumplimiento: "Clasificado" },
-      { parametro: "Material Constructivo", valor: "Acero al carbono ASTM A36", cumplimiento: "Esp. Marina" },
-      { parametro: "Normativas Aplicadas", valor: "AMCA 300 · RETIE · API 673", cumplimiento: "RETIE Ok" },
-      { parametro: "Nivel de Ruido", valor: "82 dBA @ 1m", cumplimiento: "OSHAs compliant" },
-      { parametro: "Peso", valor: "180 — 950 kg", cumplimiento: "Verificado" },
-      { parametro: "Impeller", valor: "Álabes curvos · Antiadherente", cumplimiento: "Standard" },
-    ],
-    certifications: ["AMCA 300", "RETIE", "API 673"],
-    applications: [
-      "Sistemas con filtros de mangas",
-      "Procesos térmicos y siderúrgicos",
-      "Transporte neumático",
-      "Ventilación de túneles y socavones",
-    ],
-  },
-  {
-    id: "encajonado",
-    code: "ENC-IND",
-    name: "Ventilador Encajonado",
-    category: "Ventiladores · Insonorizados",
-    image: "/ventilador_encajonado.webp",
-    status: "DISPONIBLE",
-    shortDescription:
-      "Ventilador centrífugo dentro de gabinete acústico. Atenuación de 12 dBA sobre el estándar. Para entornos con restricción de ruido o zonas urbanas.",
-    projectRef: "REF-2024-ENC-006",
-    specs: [
-      { parametro: "Velocidad / Frecuencia", valor: "1,800 RPM · 60 Hz", cumplimiento: "Verificado" },
-      { parametro: "Caudal Nominal", valor: "5,000 — 35,000 CFM", cumplimiento: "DIN / ISO" },
-      { parametro: "Presión Máxima", valor: "1,800 Pa · 7.2 in w.g.", cumplimiento: "Estática" },
-      { parametro: "Potencia", valor: "5 — 75 HP · 3.7 — 55 kW", cumplimiento: "440 V · IE4" },
-      { parametro: "Atenuación Acústica", valor: "−12 dBA sobre estándar", cumplimiento: "OSHAs" },
-      { parametro: "Material del Gabinete", valor: "Acero galvanizado + lana mineral", cumplimiento: "Esp. Acústica" },
-      { parametro: "Normativas Aplicadas", valor: "AMCA 300 · RETIE · ISO 1940", cumplimiento: "RETIE Ok" },
-      { parametro: "Nivel de Ruido", valor: "58 — 66 dBA @ 1m", cumplimiento: "OSHAs compliant" },
-      { parametro: "Peso", valor: "220 — 680 kg", cumplimiento: "Verificado" },
-      { parametro: "Dimensiones", valor: "1,200 — 2,000 mm largo", cumplimiento: "Standard" },
-    ],
-    certifications: ["AMCA 300", "RETIE", "ISO 1940", "OSHAs"],
-    applications: [
-      "Plantas en zonas urbanas",
-      "Hospitales y centros comerciales",
-      "Restaurantes y cocinas industriales",
-      "Cualquier entorno con restricción acústica",
-    ],
-  },
-  {
-    id: "axial-aspas",
-    code: "AX-AS",
-    name: "Ventilador Axial de Aspas",
-    category: "Ventiladores · Axiales",
-    image: "/axial_duct_fan.webp",
-    status: "DISPONIBLE",
-    shortDescription:
-      "Ventilador axial de alto rendimiento con aspas de perfil aerodinámico optimizado. Para extracción industrial continua en ambientes agresivos.",
-    projectRef: "REF-2024-AXA-007",
-    specs: [
-      { parametro: "Velocidad / Frecuencia", valor: "1,450 RPM · 60 Hz", cumplimiento: "Verificado" },
-      { parametro: "Caudal Nominal", valor: "8,000 — 75,000 CFM", cumplimiento: "DIN / ISO" },
-      { parametro: "Presión Máxima", valor: "350 Pa · 1.4 in w.g.", cumplimiento: "Estática" },
-      { parametro: "Potencia", valor: "5 — 60 HP · 3.7 — 45 kW", cumplimiento: "440 V · IE4" },
-      { parametro: "Protección Envolvente", valor: "IP55 · Clase F", cumplimiento: "Clasificado" },
-      { parametro: "Material Constructivo", valor: "Acero al carbono + álabes aluminio", cumplimiento: "Esp. Marina" },
-      { parametro: "Normativas Aplicadas", valor: "AMCA 300 · RETIE · ISO 1940 G2.5", cumplimiento: "RETIE Ok" },
-      { parametro: "Nivel de Ruido", valor: "75 dBA @ 1m", cumplimiento: "OSHAs compliant" },
-      { parametro: "Peso", valor: "120 — 380 kg", cumplimiento: "Verificado" },
-      { parametro: "Diámetro", valor: "24 — 60 in", cumplimiento: "Standard" },
-    ],
-    certifications: ["AMCA 300", "RETIE", "ISO 1940 G2.5"],
-    applications: [
-      "Extracción industrial continua",
-      "Ventilación de túneles",
-      "Minería subterránea",
-      "Plantas con alta carga térmica",
-    ],
-  },
-  {
-    id: "tubo-axial",
-    code: "TX-IND",
-    name: "Ventilador Tubo Axial",
-    category: "Ventiladores · Tubo Axial",
-    image: "/axial_duct_fan.webp",
-    status: "BAJO PEDIDO",
-    shortDescription:
-      "Ventilador axial en formato tubular para instalación en línea de conducto. Ideal para ventilación de espacios confinados y túneles largos.",
-    projectRef: "REF-2024-TXA-008",
-    specs: [
-      { parametro: "Velocidad / Frecuencia", valor: "1,500 — 2,900 RPM · 60 Hz", cumplimiento: "Verificado" },
-      { parametro: "Caudal Nominal", valor: "5,000 — 80,000 CFM", cumplimiento: "DIN / ISO" },
-      { parametro: "Presión Máxima", valor: "800 Pa · 3.2 in w.g.", cumplimiento: "Estática" },
-      { parametro: "Potencia", valor: "3 — 100 HP · 2.2 — 75 kW", cumplimiento: "440 V · IE4" },
-      { parametro: "Protección Envolvente", valor: "IP55 · Clase F", cumplimiento: "Clasificado" },
-      { parametro: "Material Constructivo", valor: "Acero al carbono con tubo envolvente", cumplimiento: "Esp. Marina" },
-      { parametro: "Normativas Aplicadas", valor: "AMCA 300 · RETIE · ISO 1940", cumplimiento: "RETIE Ok" },
-      { parametro: "Nivel de Ruido", valor: "78 dBA @ 1m", cumplimiento: "OSHAs compliant" },
-      { parametro: "Peso", valor: "95 — 450 kg", cumplimiento: "Verificado" },
-      { parametro: "Diámetro", valor: "18 — 54 in", cumplimiento: "Standard" },
-    ],
-    certifications: ["AMCA 300", "RETIE", "ISO 1940"],
-    applications: [
-      "Ventilación en línea de conducto",
-      "Túneles mineros",
-      "Estaciones subterráneas",
-      "Sistemas de presurización",
-    ],
-  },
-  {
-    id: "blower-centrifugo",
-    code: "BLW-CP",
-    name: "Extractor Centrífugo Blower",
-    category: "Sopladores · Centrífugos",
-    image: "/industrial_centrifugal_fan.webp",
-    status: "SERIE ESPECIAL",
-    shortDescription:
-      "Combinación de blower y centrífugo. Caudal medio con presión muy alta. Para procesos industriales de exigencia elevada.",
-    projectRef: "REF-2024-BLW-009",
-    specs: [
-      { parametro: "Velocidad / Frecuencia", valor: "3,200 RPM · 60 Hz", cumplimiento: "Verificado" },
-      { parametro: "Caudal Nominal", valor: "4,000 — 28,000 CFM", cumplimiento: "DIN / ISO" },
-      { parametro: "Presión Máxima", valor: "8,000 Pa · 32.0 in w.g.", cumplimiento: "Estática" },
-      { parametro: "Potencia", valor: "30 — 300 HP · 22 — 220 kW", cumplimiento: "440 V · IE4" },
-      { parametro: "Protección Envolvente", valor: "IP55 · Clase F", cumplimiento: "Clasificado" },
-      { parametro: "Material Constructivo", valor: "Acero ASTM A36 + Antiadherente", cumplimiento: "Esp. Marina" },
-      { parametro: "Normativas Aplicadas", valor: "AMCA 300 · RETIE · API 673", cumplimiento: "RETIE Ok" },
-      { parametro: "Nivel de Ruido", valor: "88 dBA @ 1m", cumplimiento: "OSHAs compliant" },
-      { parametro: "Peso", valor: "380 — 1,200 kg", cumplimiento: "Verificado" },
-      { parametro: "Impeller", valor: "Abierto · Alta presión", cumplimiento: "Custom" },
-    ],
-    certifications: ["AMCA 300", "RETIE", "API 673"],
-    applications: [
-      "Procesos de combustión industrial",
-      "Transporte neumático de alta densidad",
-      "Soplado de hornos",
-      "Sistemas de limpieza con aire comprimido",
-    ],
-  },
-];
-
 function extractFromCatalog(
   catalog: CatalogCategory[],
   projectRef: string
@@ -352,10 +79,14 @@ interface Props {
 
 export function EngineeringCapabilities({ catalog, tenantCode, branding }: Props) {
   const projectRef = branding?.prefijo_referencias || "REF-CYH";
-  const items = React.useMemo(() => {
-    const fromDb = extractFromCatalog(catalog, projectRef);
-    return fromDb.length > 0 ? fromDb : FALLBACK_CAPACITIES;
-  }, [catalog, projectRef]);
+  // Sin fallback estático: si la BD no devuelve productos (falla de conexión o
+  // catálogo vacío), se muestra un estado honesto en vez de fichas técnicas
+  // fabricadas (certificaciones, referencias de proyecto y specs que antes eran
+  // datos de ejemplo, no reales, y podían desincronizarse del catálogo real).
+  const items = React.useMemo(
+    () => extractFromCatalog(catalog, projectRef),
+    [catalog, projectRef]
+  );
 
   const [openItem, setOpenItem] = React.useState<CapacityItem | null>(null);
   const [activeCategory, setActiveCategory] = React.useState<string | null>(null);
@@ -451,7 +182,9 @@ export function EngineeringCapabilities({ catalog, tenantCode, branding }: Props
         ) : (
           <div className="border border-line bg-paper-warm px-6 py-12 text-center">
             <p className="font-sans text-sm text-ink-soft">
-              No hay equipos disponibles en esta categoría por ahora.
+              {activeCategory
+                ? "No hay equipos disponibles en esta categoría por ahora."
+                : "Catálogo temporalmente no disponible. Contáctenos para conocer nuestra línea completa de equipos."}
             </p>
           </div>
         )}
@@ -749,4 +482,3 @@ function TechnicalDetailModal({
     </AnimatePresence>
   );
 }
-

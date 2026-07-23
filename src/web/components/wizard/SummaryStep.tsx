@@ -5,6 +5,7 @@
 import React from "react";
 import { Wind, Cpu, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
+import { getAchForEnvironment } from "@/utils/engineering";
 
 interface SummaryStepProps {
   form: any;
@@ -22,16 +23,13 @@ export function SummaryStep({
   severityScore,
   siteName,
 }: SummaryStepProps) {
-  const achValue =
-    form.environment === "heavy_plant"
-      ? 35
-      : form.environment === "data_center"
-        ? 25
-        : form.environment === "mining"
-          ? 55
-          : form.environment === "warehouse"
-            ? 12
-            : 10;
+  // ACH se lee siempre de ACH_BY_ENVIRONMENT (ver src/utils/engineering.ts) —
+  // es la misma fuente que generateEngineeringReport() usa para calcular el
+  // CFM mostrado abajo. Antes este valor estaba hardcodeado aquí con números
+  // distintos a los reales (heavy_plant mostraba 35 pero el cálculo usaba 45,
+  // data_center 25 vs 30 real, warehouse 12 vs 8 real), así que el ACH que
+  // veía el cliente no correspondía al que se usó para el CFM en pantalla.
+  const achValue = getAchForEnvironment(form.environment);
 
   const recommendation =
     form.environment === "heavy_plant" || form.environment === "mining"
