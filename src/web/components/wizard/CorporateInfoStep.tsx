@@ -9,6 +9,7 @@ import { AlertTriangle } from "lucide-react";
 export interface WizardFormState {
   nombre: string;
   empresa: string;
+  taxId: string;
   cargo: string;
   telefono: string;
   email: string;
@@ -107,6 +108,19 @@ export function CorporateInfoStep({ form, handleChange, errors, exampleDomain }:
                 {errors.empresa}
               </p>
             )}
+          </div>
+
+          <div>
+            <label className="editorial-mono text-fg-muted mb-4 block">
+              NIT / RUC <span className="text-fg-muted normal-case">(opcional)</span>
+            </label>
+            <input
+              type="text"
+              placeholder="900.123.456-7"
+              value={form.taxId}
+              onChange={(e) => handleChange("taxId", e.target.value)}
+              className="w-full h-14 px-5 bg-paper-warm border-0 text-ink text-base placeholder:text-fg-muted focus:bg-paper focus:ring-1 focus:ring-ink focus:outline-none transition-colors font-sans font-mono"
+            />
           </div>
 
           <div>

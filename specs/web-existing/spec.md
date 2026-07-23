@@ -33,9 +33,19 @@ El visitante completa un formulario multi-step para recibir diagnóstico y cotiz
 
 **Acceptance Scenarios**:
 
-1. **Given** un visitante inicia el wizard, **When** completa Step 1 (Corporate Info), **Then** valida RUC, email, teléfono con Zod antes de avanzar
-2. **Given** el Step 2 (Service Selection), **When** selecciona servicios, **Then** muestra precios estimados en vivo
-3. **Given** el Step 3 (Technical Analysis), **When** ingresa datos técnicos, **Then** calcula CFM requerido usando `engineering.ts`
+> **Nota (2026-07-23, cierre de W-005)**: el orden de pasos de esta spec se
+> actualizó para reflejar el código real (Service → Technical → Corporate),
+> en vez de reordenar el código para que coincida con la versión anterior de
+> esta spec (Corporate → Service → Technical). Decisión del usuario:
+> preguntar por la necesidad del visitante ANTES de pedirle sus datos de
+> contacto es un patrón de conversión establecido, y reordenar el código
+> habría sido invasivo (afecta validación por paso y las asociaciones
+> `forWizardStep` del chatbot) sin evidencia de que el orden anterior de la
+> spec fuera la decisión correcta.
+
+1. **Given** un visitante inicia el wizard, **When** completa Step 1 (Service Selection), **Then** valida el tipo de servicio y prioridad antes de avanzar
+2. **Given** el Step 2 (Technical Analysis), **When** ingresa dimensiones y entorno, **Then** calcula CFM requerido en vivo usando `engineering.ts`
+3. **Given** el Step 3 (Corporate Info), **When** completa sus datos, **Then** valida nombre, empresa, NIT (opcional), email y teléfono con Zod antes de avanzar
 4. **Given** el Step 4 (Summary), **When** revisa y confirma, **Then** envía via `submitWizardData()` → crea Client + Contact + Lead + Diagnostic Report
 5. **Given** el Step 5 (Success), **When** la cotización se envía, **Then** muestra confirmación con número de seguimiento
 

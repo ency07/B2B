@@ -82,6 +82,46 @@ export async function updateClientPassword(
   return { ok: true };
 }
 
+/**
+ * Actualiza el nombre del CONTACTO (persona) que tiene la sesión — nunca la
+ * razón social ni el NIT de la empresa (esos son datos de facturación/legales
+ * de la empresa, no de la persona, y no se editan desde acá). El email
+ * tampoco es editable aquí: es también la credencial de login de Supabase
+ * Auth y cambiarlo requiere un flujo de reverificación que no existe todavía.
+ */
+export async function updateClientContactName(
+  firstName: string,
+  lastName: string
+): Promise<{ ok: boolean; error?: string }> {
+  const client = await getCurrentClient();
+  if (!client || !client.isClientContact) {
+    return { ok: false, error: "No autorizado" };
+  }
+
+  const trimmedFirst = firstName.trim();
+  if (trimmedFirst.length < 2) {
+    return { ok: false, error: "El nombre debe tener al menos 2 caracteres" };
+  }
+
+  const authClient = await getPortalAuthenticatedClient();
+  if (!authClient) return { ok: false, error: "Sesión inválida" };
+
+  const { data: { user } } = await authClient.auth.getUser();
+  if (!user?.id) return { ok: false, error: "Sesión inválida" };
+
+  const { error } = await authClient
+    .from("client_contacts")
+    .update({ first_name: trimmedFirst, last_name: lastName.trim() || null })
+    .eq("auth_user_id", user.id);
+
+  if (error) {
+    console.error("Error updating client contact name:", error);
+    return { ok: false, error: "No se pudo actualizar el nombre. Intenta de nuevo." };
+  }
+
+  return { ok: true };
+}
+
 export async function getClientContactInfo(): Promise<{
   firstName: string;
   lastName: string | null;

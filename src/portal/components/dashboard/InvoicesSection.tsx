@@ -168,7 +168,7 @@ export function InvoicesSection({
                                     <p className="text-xs text-muted-foreground font-sans">
                                       {wompiCheckout && !("unavailable" in wompiCheckout)
                                         ? "Paga en línea de forma segura con tarjeta o PSE."
-                                        : "Coordina el pago directamente con tu ejecutivo. El pago en línea estará disponible pronto."}
+                                        : "El pago en línea no está disponible en este momento."}
                                     </p>
                                   </div>
 
@@ -185,8 +185,25 @@ export function InvoicesSection({
                                   ) : wompiCheckout && !("unavailable" in wompiCheckout) ? (
                                     <WompiWidgetButton checkout={wompiCheckout} />
                                   ) : (
-                                    <div className="rounded-xl border border-border bg-background/40 p-4 text-xs text-muted-foreground font-mono">
-                                      Contacto: {supportEmail} · {telefono}
+                                    // Plan de contingencia (P-005): pasos concretos usando los
+                                    // datos que ya están en pantalla, sin inventar canales de
+                                    // pago (transferencia, link manual) que no están confirmados.
+                                    <div className="rounded-xl border border-border bg-background/40 p-4 space-y-2 text-xs font-sans">
+                                      <p className="text-foreground font-semibold">Cómo completar tu pago mientras tanto:</p>
+                                      <ol className="list-decimal list-inside text-muted-foreground space-y-1">
+                                        <li>Escríbenos a {supportEmail} o llama al {telefono}.</li>
+                                        {selectedInvoice && (
+                                          <li>
+                                            Menciona el número de factura{" "}
+                                            <span className="font-mono text-foreground font-bold">{selectedInvoice.code}</span>{" "}
+                                            y el saldo{" "}
+                                            <span className="font-mono text-foreground font-bold">
+                                              {formatCurrency(selectedInvoice.total - selectedInvoice.paid)}
+                                            </span>.
+                                          </li>
+                                        )}
+                                        <li>Tu ejecutivo te confirma el método y la aplicación del pago.</li>
+                                      </ol>
                                     </div>
                                   )}
 
