@@ -198,13 +198,21 @@ E-016: 🟡 PARCIAL (2026-07-23, rama fix/004-server-action-identity-bridge) —
        escrituras vía supabaseAdmin (service_role sin auth.uid()). Los triggers
        enforce_*_permissions rechazan (o rechazarían, si is_platform_super_admin()
        no cortocircuitara con session_user='postgres' en pruebas) toda escritura
-       real. registerPayment() ya arreglado + mecanismo genérico
-       (get_current_user_id() + set_erp_actor_context()) que corrige las 16 tablas
-       de un solo golpe a nivel de resolución de identidad. PENDIENTE: aplicar el
-       wrapping RPC (mismo patrón que register_payment_for_invoice) a
-       create_invoice_with_item, create_inventory_item_with_stock y ~13 escrituras
-       más en src/erp/actions/core.ts que hoy usan supabaseAdmin.from().insert()/
-       .update() directo sobre tablas con trigger de permisos.
+       real. Mecanismo genérico ya arreglado (get_current_user_id() +
+       set_erp_actor_context()), corrige las 16 tablas de un solo golpe a nivel de
+       resolución de identidad. RPCs ya migrados al puente: registerPayment(),
+       create_invoice_with_item(), create_inventory_item_with_stock() — estos dos
+       últimos solo necesitaron una línea (PERFORM set_erp_actor_context(...))
+       porque ya eran RPCs SECURITY DEFINER que insertan internamente; no hizo
+       falta tocar TypeScript. PENDIENTE (confirmado vía information_schema.triggers,
+       11 tablas gateadas sin arreglar): jobs, credit_notes, quotes, requirements,
+       warehouses, inventory_batches, inventory_serials, approval_flows,
+       approval_rules, approval_steps, y el 2º insert de inventory_movements
+       (registro de movimientos fuera del alta inicial). Cada una usa
+       supabaseAdmin.from().insert()/.update() directo (sin RPC intermedio) —
+       a diferencia de las dos ya arregladas, cada una necesita un RPC nuevo
+       dedicado (no es una línea, hay que envolver el insert/update en una
+       función SQL nueva, igual que register_payment_for_invoice).
 ```
 
 ---
