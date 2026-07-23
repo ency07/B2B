@@ -36,7 +36,7 @@ import { Label } from "@/platform/ui/label";
 import { Textarea } from "@/platform/ui/textarea";
 import { submitWizardData, WizardResult } from "@/web/actions/wizard";
 import { TenantLogo } from "@/design-system/components/TenantLogo";
-import { generateEngineeringReport, ENVIRONMENT_OPTIONS } from "@/utils/engineering";
+import { generateEngineeringReport, ENVIRONMENT_OPTIONS, getAchForEnvironment } from "@/utils/engineering";
 import { estimatePrice } from "@/utils/pricing";
 import { getTenantConfig } from "@/platform/tenant/tenant";
 import ChatbotWidget from "./marketing-v2/ChatbotWidget";
@@ -436,7 +436,7 @@ export default function WizardStepper({
 
       doc.text("Entorno de Trabajo", 20, 98);
       doc.text(`${form.environment === "heavy_plant" ? "Planta Pesada" : form.environment === "data_center" ? "Data Center" : form.environment === "mining" ? "Minería" : form.environment === "warehouse" ? "Bodega" : "Área Común"}`, 90, 98);
-      doc.text(`${form.environment === "heavy_plant" ? "35 ACH" : form.environment === "data_center" ? "25 ACH" : form.environment === "mining" ? "55 ACH" : form.environment === "warehouse" ? "12 ACH" : "10 ACH"} Renovaciones/Hora`, 140, 98);
+      doc.text(`${getAchForEnvironment(form.environment)} ACH Renovaciones/Hora`, 140, 98);
       doc.line(15, 102, 195, 102);
 
       doc.setFont("Helvetica", "bold");
