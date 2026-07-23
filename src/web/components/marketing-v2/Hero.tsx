@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import * as React from "react";
@@ -6,12 +5,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { getTenantConfig } from "@/platform/tenant/tenant";
 import { CertBadgeRow } from "./primitives/CertBadge";
 import { CinematicPhoto } from "./primitives/CinematicPhoto";
-import type { HeroSlideContent } from "@/platform/branding/branding-defaults";
+import type { HeroSlideContent, BrandingConfig } from "@/platform/branding/branding-defaults";
 
 interface HeroProps {
   siteName: string;
   tenantCode: string;
-  branding?: any;
+  branding: BrandingConfig;
 }
 
 const SLIDE_STYLE = [
@@ -30,11 +29,11 @@ const DEFAULT_SLIDES: HeroSlideContent[] = [
 
 const AUTOPLAY_MS = 7000;
 
-export function Hero({ tenantCode, branding = {} }: HeroProps) {
+export function Hero({ tenantCode, branding }: HeroProps) {
   const slides: HeroSlideContent[] = branding.hero_slides?.length ? branding.hero_slides : DEFAULT_SLIDES;
-  const ctaPrimarioLabel = (branding.hero_cta_primario_label as string) || "Iniciar Cotización Industrial";
-  const ctaSecundarioLabel = (branding.hero_cta_secundario_label as string) || "Conocer el proceso";
-  const certificaciones: string[] = (branding.certificaciones as string[]) || ["AMCA", "ISO 1940 G2.5", "ASHRAE 62.1"];
+  const ctaPrimarioLabel = branding.hero_cta_primario_label || "Iniciar Cotización Industrial";
+  const ctaSecundarioLabel = branding.hero_cta_secundario_label || "Conocer el proceso";
+  const certificaciones: string[] = branding.certificaciones || ["AMCA", "ISO 1940 G2.5", "ASHRAE 62.1"];
 
   const [idx, setIdx] = React.useState(0);
   const [paused, setPaused] = React.useState(false);

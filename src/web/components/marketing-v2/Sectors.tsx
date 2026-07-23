@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/jsx-no-comment-textnodes */
 "use client";
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import { Mountain, Server, Factory, Beaker } from "lucide-react";
+import { Mountain, Server, Factory, Beaker, type LucideIcon } from "lucide-react";
 
 interface Sector {
   name: string;
@@ -15,7 +14,7 @@ interface Sector {
   // Identidad visual distinta por sector
   accent: string;          // color principal
   accentSoft: string;      // color del fondo gradient
-  Icon: React.ComponentType<any>;
+  Icon: LucideIcon;
   pattern: "mountain" | "grid" | "waves" | "dots"; // patrón gráfico único
   dataPoint: { label: string; value: string };     // dato técnico hard
 }

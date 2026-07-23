@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/jsx-no-comment-textnodes */
 "use client";
 
@@ -6,9 +5,10 @@ import React from "react";
 import { Wind, Cpu, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { getAchForEnvironment } from "@/utils/engineering";
+import type { WizardFormState } from "./types";
 
 interface SummaryStepProps {
-  form: any;
+  form: WizardFormState;
   realtimeCfm: {
     cubicMeters: number;
     cfm: number;

@@ -70,5 +70,5 @@ export default async function Home(props: { searchParams: Promise<{ tenant?: str
   // Catálogo: crítico — si falla, Next.js muestra error.tsx con botón Reintentar
   const catalog: CatalogCategory[] = await getIndustrialCatalog(tenant);
 
-  return <MarketingShell catalog={catalog} branding={branding as unknown as Record<string, unknown>} tenantCode={tenant} />;
+  return <MarketingShell catalog={catalog} branding={branding} tenantCode={tenant} />;
 }
