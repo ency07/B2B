@@ -190,6 +190,23 @@ P1-05: ✅ CERRADO (2026-07-21) — approvePurchaseOrder() en ERP Core
 P1-06: 🔴 ABIERTO — /speckit.specify "Integrar Wompi/PSE en Portal Cliente - Pasarela de pagos con webhook y actualización de estado"
 ```
 
+### Gap crítico adicional encontrado en remediación (no estaba en el análisis original)
+
+```
+E-016: 🟡 PARCIAL (2026-07-23, rama fix/004-server-action-identity-bridge) — Puente de
+       identidad roto entre Server Actions (requireAction/getAuthContext) y las
+       escrituras vía supabaseAdmin (service_role sin auth.uid()). Los triggers
+       enforce_*_permissions rechazan (o rechazarían, si is_platform_super_admin()
+       no cortocircuitara con session_user='postgres' en pruebas) toda escritura
+       real. registerPayment() ya arreglado + mecanismo genérico
+       (get_current_user_id() + set_erp_actor_context()) que corrige las 16 tablas
+       de un solo golpe a nivel de resolución de identidad. PENDIENTE: aplicar el
+       wrapping RPC (mismo patrón que register_payment_for_invoice) a
+       create_invoice_with_item, create_inventory_item_with_stock y ~13 escrituras
+       más en src/erp/actions/core.ts que hoy usan supabaseAdmin.from().insert()/
+       .update() directo sobre tablas con trigger de permisos.
+```
+
 ---
 
 *Generado con spec-kit (SDD) — Julio 2026*
