@@ -12,8 +12,12 @@
 > reales, `deleteEntity()` genérico, IVA/método de pago configurables, mirror a `audit_log`). Ver
 > `git log --oneline -- src/erp/actions/core.ts` para el detalle. La sección ERP se deja abajo como
 > registro histórico pero **no representa el estado actual** — no relanzar `/speckit.specify` sobre
-> estos IDs sin re-verificar primero. Los gaps de **Web** (W-001 a W-012) y **Portal** (P-001 a P-008)
-> siguen abiertos salvo que se indique lo contrario.
+> estos IDs sin re-verificar primero.
+>
+> **Actualización 2026-07-23**: los gaps de **Web** (W-001 a W-012) y **Portal** (P-001 a P-008)
+> quedaron todos cerrados a lo largo de 8 rondas de remediación (ver las entradas con fecha
+> 2026-07-23 en cada tabla, y las narrativas al final del documento para el detalle de cada ronda).
+> De los 41 gaps + 6 hallazgos de Constitution del análisis original, ninguno queda abierto.
 
 ---
 
@@ -126,21 +130,21 @@
 
 | ID | Principio | Violación | Módulo |
 |----|-----------|-----------|--------|
-| C-001 | Pilar VIII — Logger estructurado | 🟡 **PARCIAL (2026-07-23)** — ~~`console.error()` en vez de `logger.error()`~~. Cerrado para **Web** (ver W-009: `wizard.ts`, `leads.ts`, `catalog.ts`, `branding.ts`). **ERP sigue abierto**: 9 archivos en `src/erp` todavía usan `console.*` directo, 0 usan `createLogger` (confirmado por grep). No estaba nombrado por ningún gap específico de la sección ERP — se documenta aquí en vez de asumirlo cerrado. | Web ✅ / ERP ❌ |
+| C-001 | Pilar VIII — Logger estructurado | ✅ **CERRADO (2026-07-23, `feat/011-erp-observabilidad`)** — ~~`console.error()` en vez de `logger.error()`~~. Cerrado para Web (ver W-009) y ahora también ERP: los 7 archivos de `src/erp/actions/` con `console.*` (`core.ts` — 20 llamadas, el resto entre 2 y 6) migrados a `createLogger("erp:<módulo>")`. Los 2 archivos restantes de los "9" originalmente contados (`dashboard-header.tsx`, `dashboard-shell.tsx`) son componentes cliente (`"use client"`), no Server Actions — excluidos a propósito, mismo criterio ya aplicado a `WizardStepper.tsx` en la ronda Web (el logger es para observabilidad de servidor, no para catch blocks del navegador). | Web ✅ / ERP ✅ |
 | C-002 | Pilar VI — Tipado estricto | ✅ **CERRADO (2026-07-23, `feat/009-w010-tipado-web`)** — ver W-010 arriba para el detalle completo. Los 10 archivos originalmente marcados con `eslint-disable @typescript-eslint/no-explicit-any` ya no lo tienen; la cadena completa (wizard + marketing/branding + las 2 Server Actions) type-checkea sin `any`. | Web |
 | C-003 | Pilar IV — UI Defensiva | ✅ **CERRADO (2026-07-23, `feat/008-medios-observabilidad`)** — ~~Sin timeout handling en wizard~~. `handleSubmit` en `WizardStepper.tsx` envuelve `submitWizardData()` en un `Promise.race` con timeout de 20s: si el servidor no responde, el usuario ve un error claro en vez de un botón deshabilitado indefinidamente. | Web |
 | C-004 | Pilar VII — Reutilización | ✅ **YA CERRADO (2026-07-23, `feat/006-web-criticos-w002-w003-w004`)** — ~~ACH hardcodeados~~. Mismo hallazgo que W-004 (ver arriba): `SummaryStep.tsx` y el PDF de `WizardStepper.tsx` ya leen `getAchForEnvironment()`. No requirió trabajo nuevo esta ronda, solo faltaba reflejarlo aquí. | Web |
-| C-005 | Pilar VIII — Timing | 🟡 **PARCIAL (2026-07-23)** — ~~Sin `startTimer()` en Server Actions lentas~~. Cerrado para **Web** (ver W-011). **ERP sigue sin instrumentar** (mismos 9 archivos de C-001). | Web ✅ / ERP ❌ |
+| C-005 | Pilar VIII — Timing | ✅ **CERRADO (2026-07-23, `feat/011-erp-observabilidad`)** — ~~Sin `startTimer()` en Server Actions lentas~~. Cerrado para Web (ver W-011) y ahora también ERP: `startTimer()` agregado a las funciones que hacen llamadas RPC o múltiples round-trips (no a cada getter simple) — `getDashboardCommandCenter` (~11 round-trips, la más costosa del ERP), `createJob`, `updateJobStatus`, `createInventoryMovement`, `createInvoice`, `registerPayment`, `createCreditNote`, `createInventoryItem`, `runDunningCheck`, `createQuote`, `addQuoteItem`, `updateQuoteStatus`, `convertQuoteToJob`, `createRequirement`, `updateRequirementStatus`, `listUsers`, `createUser`, `updateLeadStatus`. | Web ✅ / ERP ✅ |
 | C-006 | Portal FR-007 — Modo claro | ✅ **YA CERRADO (2026-07-23, `feat/007-web-portal-altos`)** — ~~Dark mode toggle pese a spec~~. Mismo hallazgo que P-003 (ver arriba): tab "Apariencia" eliminado + `initialThemeId="minimal-white"` fuerza modo claro real. No requirió trabajo nuevo esta ronda. | Portal |
 
 ### Recomendaciones
 
 | ID | Recomendación |
 |----|---------------|
-| C-007 | 🟡 Migrar todos los `console.error` a `logger.error` con tag de módulo — hecho en Web (C-001), pendiente en ERP (9 archivos) |
+| C-007 | ✅ Migrar todos los `console.error` a `logger.error` con tag de módulo — hecho en Web y ERP (C-001) |
 | C-008 | ✅ Eliminar `eslint-disable any` y tipar correctamente — hecho (C-002/W-010) |
 | C-009 | ✅ Centralizar ACH en `ACH_BY_ENVIRONMENT` y eliminar hardcode — hecho (C-004/W-004) |
-| C-010 | 🟡 Agregar `startTimer()` en Server Actions con warning >300ms — hecho en Web (C-005), pendiente en ERP |
+| C-010 | ✅ Agregar `startTimer()` en Server Actions con warning >300ms — hecho en Web y ERP (C-005) |
 | C-011 | ✅ Remover toggle dark mode del portal o actualizar spec — se removió el toggle (C-006/P-003) |
 
 ---
@@ -343,6 +347,43 @@ junto al resto de secciones de la landing, cero errores de consola).
 W-012 pasa de ⏸️ DIFERIDO a ✅ CERRADO. De los 41 gaps originales, solo queda abierta la
 mitad ERP de C-001/C-005 (logger/timing en 9 archivos de src/erp, sin gap propio que los
 nombrara en la sección ERP del análisis original).
+```
+
+---
+
+### C-001/C-005 cerrados en ERP (2026-07-23, rama `feat/011-erp-observabilidad`)
+
+```
+El usuario pidió migrar src/erp a logger/timing también, cerrando la mitad que había
+quedado abierta en la ronda de los 13 medios. De los 9 archivos originalmente contados
+con console.*, 7 son Server Actions (src/erp/actions/*.ts) y se migraron; los otros 2
+(dashboard-header.tsx, dashboard-shell.tsx) son componentes cliente y se excluyeron a
+propósito — mismo criterio ya aplicado a WizardStepper.tsx en la ronda Web: el logger
+estructurado es para observabilidad de servidor, no para catch blocks del navegador.
+
+console.error/warn → logger.error/warn: mecánico, exhaustivo, en los 7 archivos (38
+llamadas en total, 20 solo en core.ts). startTimer(): no se instrumentó cada función
+— solo las que hacen una llamada RPC (los "puentes de identidad" de E-016, con cascadas
+de triggers) o múltiples round-trips secuenciales. Regla objetiva, no subjetiva por
+archivo: RPC o 2+ queries = timer; getter de una sola query = solo logger. 17 funciones
+instrumentadas, incluyendo getDashboardCommandCenter (~11 round-trips, la más costosa).
+
+Aprovechando que se tocaban estos archivos, se agregó logger.error también a 4 puntos
+que nunca habían tenido ningún log (ni siquiera console.error) — runDunningCheck,
+updateUser, assignRole, removeRole en users.ts — para no dejar huecos de visibilidad
+junto a código que ahora sí loggea. Un error de lint pre-existente y no relacionado
+(notifications.ts:33, any sin eslint-disable de archivo) se corrigió tipando la fila
+real de la consulta en vez de suprimir la regla.
+
+Verificado: tsc/eslint/vitest/build limpios contra el baseline de siempre (0 errores/
+warnings nuevos en los 7 archivos). Sin verificación en navegador — cambio backend puro
+sin diferencia de UI, usando los mismos logger.ts/timing.ts ya confirmados funcionando
+en vivo en la ronda Web (server logs reales con datos de producción).
+
+C-001 y C-005 pasan de 🟡 PARCIAL a ✅ CERRADO. De los 41 gaps originales del análisis,
+no queda ninguno abierto salvo W-010/C-002 y W-012 si se los considerara diferidos —
+pero ambos también se cerraron en rondas posteriores (ver arriba). GAP_ANALYSIS.md
+queda, a esta fecha, sin gaps abiertos.
 ```
 
 ---

@@ -26,6 +26,10 @@ import {
   updateUserSchema,
   userRoleSchema,
 } from "@/lib/validations/erp";
+import createLogger from "@/lib/utils/logger";
+import { startTimer } from "@/lib/utils/timing";
+
+const logger = createLogger("erp:users");
 
 export interface UserListItem {
   id: string;
@@ -54,6 +58,8 @@ export async function listUsers(
   const tenantId = await getTenantId(tenantCode);
   await validateTenantAccess(ctx.userId, ctx.role, tenantId);
 
+  const timer = startTimer("listUsers");
+
   const { data: usersData, error: usersErr } = await supabaseAdmin
     .from("users")
     .select("id, first_name, last_name, email, phone")
@@ -61,10 +67,14 @@ export async function listUsers(
     .order("first_name", { ascending: true });
 
   if (usersErr) {
-    console.error("Error listando usuarios:", usersErr);
+    logger.error("Error listando usuarios", { data: { error: usersErr } });
+    timer.stop({ ok: false });
     return [];
   }
-  if (!usersData || usersData.length === 0) return [];
+  if (!usersData || usersData.length === 0) {
+    timer.stop({ ok: true, count: 0 });
+    return [];
+  }
 
   const userIds = usersData.map((u: any) => u.id);
 
@@ -74,7 +84,7 @@ export async function listUsers(
     .in("user_id", userIds);
 
   if (assignErr) {
-    console.error("Error listando asignaciones:", assignErr);
+    logger.error("Error listando asignaciones", { data: { error: assignErr } });
   }
 
   const rolesByCode: Record<string, { id: string; code: string; name: string; description: string | null }> = {};
@@ -97,6 +107,7 @@ export async function listUsers(
     });
   }
 
+  timer.stop({ ok: true, count: usersData.length });
   return usersData.map((u: any) => {
     const assignments = assignmentsByUser[u.id] || [];
     return {
@@ -129,7 +140,7 @@ export async function listRoles(
     .order("name", { ascending: true });
 
   if (error) {
-    console.error("Error listando roles:", error);
+    logger.error("Error listando roles", { data: { error } });
     return [];
   }
 
@@ -161,6 +172,8 @@ export async function createUser(
   const tenantId = await getTenantId(tenantCode);
   await validateTenantAccess(ctx.userId, ctx.role, tenantId);
 
+  const timer = startTimer("createUser");
+
   // 1. Crear usuario en Supabase Auth.
   const { data: authData, error: authErr } =
     await supabaseAdmin.auth.admin.createUser({
@@ -168,6 +181,8 @@ export async function createUser(
       email_confirm: true,
     });
   if (authErr || !authData.user) {
+    logger.error("Error creando usuario en Auth", { data: { error: authErr } });
+    timer.stop({ ok: false });
     return {
       success: false,
       error: authErr?.message || "Error creando usuario en Auth",
@@ -189,8 +204,10 @@ export async function createUser(
     .single();
 
   if (userErr || !user) {
+    logger.error("Error creando fila de usuario", { data: { error: userErr } });
     // Rollback: borrar el auth user.
     await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+    timer.stop({ ok: false });
     return {
       success: false,
       error: userErr?.message || "Error creando fila de usuario",
@@ -205,6 +222,8 @@ export async function createUser(
       role_id: data.roleId,
     });
     if (roleErr) {
+      logger.error("Usuario creado pero no se pudo asignar el rol", { data: { error: roleErr } });
+      timer.stop({ ok: true, roleAssigned: false });
       return {
         success: true,
         userId: user.id,
@@ -213,6 +232,7 @@ export async function createUser(
     }
   }
 
+  timer.stop({ ok: true, roleAssigned: !!data.roleId });
   return { success: true, userId: user.id };
 }
 
@@ -248,6 +268,7 @@ export async function updateUser(
     .eq("tenant_id", tenantId);
 
   if (error) {
+    logger.error("Error updating user", { data: { error } });
     return { success: false, error: error.message };
   }
   return { success: true };
@@ -279,6 +300,7 @@ export async function assignRole(
     if (error.code === "23505") {
       return { success: true };
     }
+    logger.error("Error assigning role", { data: { error } });
     return { success: false, error: error.message };
   }
   return { success: true };
@@ -307,6 +329,7 @@ export async function removeRole(
     .eq("tenant_id", tenantId);
 
   if (error) {
+    logger.error("Error removing role", { data: { error } });
     return { success: false, error: error.message };
   }
   return { success: true };

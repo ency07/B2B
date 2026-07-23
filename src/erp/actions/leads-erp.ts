@@ -4,6 +4,10 @@ import { supabaseAdmin } from "@/platform/auth/clients";
 import { getTenantId, getCallerTenantId, emitBusinessEvent } from "@/erp/actions/core";
 import { requireAction, getAuthContext } from "@/platform/auth/server-guards";
 import { validate, updateLeadStatusSchema } from "@/lib/validations/erp";
+import createLogger from "@/lib/utils/logger";
+import { startTimer } from "@/lib/utils/timing";
+
+const logger = createLogger("erp:leads");
 
 const TRANSITIONS: Record<string, string[]> = {
   NUEVO: ["EN_SEGUIMIENTO", "RECHAZADO"],
@@ -63,7 +67,7 @@ export async function getLeads(tenantCode?: string | null): Promise<LeadRow[]> {
     .limit(200);
 
   if (error) {
-    console.error("Error fetching leads:", error);
+    logger.error("Error fetching leads", { data: { error } });
     throw new Error(error.message);
   }
 
@@ -90,6 +94,8 @@ export async function updateLeadStatus(
   await requireAction("leads");
   const tenantId = await getCallerTenantId();
 
+  const timer = startTimer("updateLeadStatus");
+
   // Obtener lead actual para validar transición
   const { data: lead, error: fetchErr } = await supabaseAdmin
     .from("leads")
@@ -98,9 +104,13 @@ export async function updateLeadStatus(
     .eq("tenant_id", tenantId)
     .maybeSingle();
 
-  if (fetchErr || !lead) throw new Error("Lead no encontrado");
+  if (fetchErr || !lead) {
+    timer.stop({ ok: false });
+    throw new Error("Lead no encontrado");
+  }
 
   if (!VALID_TRANSITION(lead.status, newStatus)) {
+    timer.stop({ ok: false });
     throw new Error(`Transición inválida: ${lead.status} → ${newStatus}`);
   }
 
@@ -149,10 +159,12 @@ export async function updateLeadStatus(
     .eq("tenant_id", tenantId);
 
   if (updateErr) {
-    console.error("Error updating lead status:", updateErr);
+    logger.error("Error updating lead status", { data: { error: updateErr } });
+    timer.stop({ ok: false });
     throw new Error(updateErr.message);
   }
 
+  timer.stop({ ok: true });
   // Emitir business event
   emitBusinessEvent(
     tenantId,

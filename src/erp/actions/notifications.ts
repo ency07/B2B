@@ -1,6 +1,9 @@
 "use server";
 
 import { supabaseAdmin } from "@/platform/auth/clients";
+import createLogger from "@/lib/utils/logger";
+
+const logger = createLogger("erp:notifications");
 
 export interface NotificationItem {
   id: string;
@@ -9,6 +12,16 @@ export interface NotificationItem {
   isRead: boolean;
   isDanger: boolean;
   created_at: string;
+}
+
+interface RawNotificationRow {
+  id: string;
+  subject: string | null;
+  body: string | null;
+  event_type: string | null;
+  read_at: string | null;
+  created_at: string;
+  status: string;
 }
 
 export async function getUnreadNotifications(userId: string): Promise<NotificationItem[]> {
@@ -23,11 +36,11 @@ export async function getUnreadNotifications(userId: string): Promise<Notificati
       .limit(5);
 
     if (error) {
-      console.error("Error fetching notifications:", error);
+      logger.error("Error fetching notifications", { data: { error } });
       return [];
     }
 
-    return (data || []).map((notif: any) => ({
+    return ((data as RawNotificationRow[]) || []).map((notif) => ({
       id: notif.id,
       title: notif.subject ?? "(sin asunto)",
       description: notif.body ?? "",
@@ -39,7 +52,7 @@ export async function getUnreadNotifications(userId: string): Promise<Notificati
       created_at: notif.created_at,
     }));
   } catch (error) {
-    console.error("Exception fetching notifications:", error);
+    logger.error("Exception fetching notifications", { error: error instanceof Error ? error : undefined, data: { raw: error } });
     return [];
   }
 }

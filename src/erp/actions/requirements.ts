@@ -9,6 +9,10 @@ import {
   createRequirementSchema,
   updateRequirementStatusSchema,
 } from "@/lib/validations/erp";
+import createLogger from "@/lib/utils/logger";
+import { startTimer } from "@/lib/utils/timing";
+
+const logger = createLogger("erp:requirements");
 
 export interface RequirementRow {
   id: string;
@@ -40,7 +44,7 @@ export async function getRequirements(tenantCode?: string | null): Promise<Requi
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Error fetching requirements:", error);
+    logger.error("Error fetching requirements", { data: { error } });
     return [];
   }
 
@@ -78,6 +82,8 @@ export async function createRequirement(
   const tenantId = await getTenantId(tenantCode);
   await validateTenantAccess(ctx.userId, ctx.role, tenantId);
 
+  const timer = startTimer("createRequirement");
+
   // RPC (puente de identidad): ver supabase/migrations/*_identity_bridge_remaining_erp_write_paths.sql
   const { data, error } = await supabaseAdmin.rpc("create_requirement_bridged", {
     p_tenant_id: tenantId,
@@ -89,10 +95,12 @@ export async function createRequirement(
   });
 
   if (error) {
-    console.error("Error creating requirement:", error);
+    logger.error("Error creating requirement", { data: { error } });
+    timer.stop({ ok: false });
     throw new Error(error.message);
   }
 
+  timer.stop({ ok: true });
   return data;
 }
 
@@ -104,6 +112,8 @@ export async function updateRequirementStatus(
   const ctx = await requireAction("requirements");
   ({ reqId, newStatus } = validate(updateRequirementStatusSchema, { reqId, newStatus }));
   const tenantId = await getCallerTenantId();
+
+  const timer = startTimer("updateRequirementStatus");
 
   // Whitelist anti mass-assignment: `extra` solo puede setear estas columnas
   // (asignación de ingeniería/ventas). Evita que un caller inyecte columnas
@@ -122,9 +132,11 @@ export async function updateRequirementStatus(
   });
 
   if (error) {
-    console.error("Error updating requirement:", error);
+    logger.error("Error updating requirement", { data: { error } });
+    timer.stop({ ok: false });
     throw new Error(error.message);
   }
 
+  timer.stop({ ok: true });
   return data;
 }
