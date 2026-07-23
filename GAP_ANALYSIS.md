@@ -190,11 +190,63 @@ P1-05: ✅ CERRADO (2026-07-21) — approvePurchaseOrder() en ERP Core
 P1-06: ✅ CERRADO EN CÓDIGO (2026-07-22, `feat/003-portal-wompi-payments`) — Widget + webhook Wompi, probado con credenciales de prueba locales; falta prueba de cobro real (ver detalle arriba en P-002)
 ```
 
-**Estado tras la fusión de `feat/001`, `feat/002` y `feat/003` a `main` (2026-07-23)**: de los 6 gaps
-P1 originales, los 6 están cerrados en código. P1-06 (Wompi/PSE) es el único con una verificación
-pendiente que no depende de código: cobro real contra `comercios.wompi.co` con credenciales
-reales (ver P-002 arriba). Ver además **E-016** más abajo — un gap crítico de seguridad encontrado
-durante la remediación, no parte del análisis original de 41 gaps, con fix parcial ya fusionado.
+**Estado tras la fusión de `feat/001`, `feat/002`, `feat/003` y `fix/004` a `main` (2026-07-23)**: de
+los 6 gaps P1 originales, los 6 están cerrados en código. P1-06 (Wompi/PSE) es el único con una
+verificación pendiente que no depende de código: cobro real contra `comercios.wompi.co` con
+credenciales reales (ver P-002 arriba). Ver además **E-016** abajo — un gap crítico de seguridad
+encontrado durante la remediación, no parte del análisis original de 41 gaps, con fix parcial ya
+fusionado.
+
+### Gap crítico adicional encontrado en remediación (no estaba en el análisis original)
+
+```
+E-016: 🟡 PARCIAL (2026-07-23, rama fix/004-server-action-identity-bridge) — Puente de
+       identidad roto entre Server Actions (requireAction/getAuthContext) y las
+       escrituras vía supabaseAdmin (service_role sin auth.uid()). Los triggers
+       enforce_*_permissions rechazan (o rechazarían, si is_platform_super_admin()
+       no cortocircuitara con session_user='postgres' en pruebas) toda escritura
+       real. Mecanismo genérico ya arreglado (get_current_user_id() +
+       set_erp_actor_context()), corrige las 16 tablas de un solo golpe a nivel de
+       resolución de identidad. RPCs ya migrados al puente: registerPayment(),
+       create_invoice_with_item(), create_inventory_item_with_stock() — estos dos
+       últimos solo necesitaron una línea (PERFORM set_erp_actor_context(...))
+       porque ya eran RPCs SECURITY DEFINER que insertan internamente; no hizo
+       falta tocar TypeScript. PENDIENTE (confirmado vía information_schema.triggers,
+       11 tablas gateadas sin arreglar): jobs, credit_notes, quotes, requirements,
+       warehouses, inventory_batches, inventory_serials, approval_flows,
+       approval_rules, approval_steps, y el 2º insert de inventory_movements
+       (registro de movimientos fuera del alta inicial). Cada una usa
+       supabaseAdmin.from().insert()/.update() directo (sin RPC intermedio) —
+       a diferencia de las dos ya arregladas, cada una necesita un RPC nuevo
+       dedicado (no es una línea, hay que envolver el insert/update en una
+       función SQL nueva, igual que register_payment_for_invoice).
+```
+
+### E-017: hardening de grants (encontrado y cerrado en la misma remediación)
+
+```
+E-017: ✅ CERRADO (2026-07-23, rama fix/004-server-action-identity-bridge) — REVOKE ALL FROM
+       PUBLIC no quita los grants automáticos de Supabase a anon/authenticated en la creación de
+       una función (mismo patrón detrás del hueco real de wompi_confirm_payment, ya cerrado en
+       P-002). Barrido de las 41 funciones no-trigger del esquema public con
+       information_schema.routine_privileges: 12 RPCs del portal + 8 helpers de identidad
+       dejados solo en authenticated/service_role (defensa en profundidad, ya fallaban cerrado);
+       15 helpers internos (calculate_kpi, get_tenant_setting, execute_automation_rules,
+       dispatch_notification_to_route, update_item_costs, set_tenant_setting, etc.) confirmados
+       sin llamador desde el browser y sin verificación de identidad interna — alcanzables antes
+       vía PostgREST directo con la anon key pública — bloqueados a service_role. Hallazgo aparte:
+       resolve_approval_step tenía un bug real de comparación con NULL
+       (`v_step.user_id <> v_user_id` con v_user_id NULL da NULL, no TRUE, y `IF NULL THEN` no
+       dispara en PL/pgSQL) que dejaba aprobar/rechazar cualquier paso de aprobación sin
+       autorización real — arreglado. 4 RPCs sin llamador confirmado en todo el repo
+       (wizard_submit_atomic, get_white_label_config, get_my_white_label_config,
+       is_active_tenant) bloqueadas a service_role por precaución. Verificado: cero grants
+       anon/PUBLIC restantes en funciones no-trigger. NOTA aparte no resuelta: get_tenant_setting
+       descifra valores is_encrypted con una passphrase de respaldo hardcodeada en el código
+       fuente cuando el GUC app.settings_secret_key no está configurado (no lo está hoy); sin
+       datos en riesgo todavía (0 filas is_encrypted=true), pero antes de guardar cualquier
+       secreto real ahí hace falta decidir de dónde sale la clave real.
+```
 
 ---
 

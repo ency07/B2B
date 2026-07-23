@@ -718,31 +718,35 @@ export async function registerPayment(
     );
   }
 
-  // Insertar pago — el trigger trg_handle_payment_code genera payment_code
-  // y trg_handle_payment_application actualiza invoices.paid_amount + status
+  // Insertar pago vía RPC (puente de identidad): supabaseAdmin es un cliente
+  // service_role sin auth.uid(), así que el INSERT directo no pasaba la
+  // identidad ya validada por requireAction() a los triggers de permisos
+  // (enforce_invoice_permissions rechazaba el pago con "Permiso Denegado").
+  // register_payment_for_invoice fija app.verified_actor_id (SET LOCAL) e
+  // inserta en la misma transacción — ver migración identity_bridge_erp_actor_context.
+  // El trigger trg_handle_payment_code genera payment_code y
+  // trg_handle_payment_application actualiza invoices.paid_amount + status
   // cuando el pago pasa a APLICADO.
-  const { data: payment, error: payErr } = await supabaseAdmin
-    .from("payments")
-    .insert({
-      tenant_id: tenantId,
-      client_id: paymentData.clientId,
-      invoice_id: paymentData.invoiceId,
-      payment_date: paymentData.paymentDate,
-      payment_method: paymentData.paymentMethod,
-      reference_number: paymentData.referenceNumber || null,
-      amount: paymentData.amount,
-      status: "APLICADO",
-      created_by: ctx.userId,
-    })
-    .select()
-    .single();
+  const { data: payment, error: payErr } = await supabaseAdmin.rpc("register_payment_for_invoice", {
+    p_tenant_id: tenantId,
+    p_client_id: paymentData.clientId,
+    p_invoice_id: paymentData.invoiceId,
+    p_amount: paymentData.amount,
+    p_payment_method: paymentData.paymentMethod,
+    p_payment_date: paymentData.paymentDate,
+    p_reference_number: paymentData.referenceNumber || null,
+    p_actor_user_id: ctx.userId,
+  });
 
   if (payErr) {
     console.error("Error registering payment:", payErr);
     throw new Error(payErr.message);
   }
 
-  emitBusinessEvent(tenantId, EVENT_CODES.PAYMENT_RECEIVED, "PAYMENT", payment.id, { invoice_id: paymentData.invoiceId, amount: paymentData.amount }, ctx.userId);
+  const paymentId = typeof payment === "object" && payment !== null ? (payment as any).id : null;
+  if (paymentId) {
+    emitBusinessEvent(tenantId, EVENT_CODES.PAYMENT_RECEIVED, "PAYMENT", paymentId, { invoice_id: paymentData.invoiceId, amount: paymentData.amount }, ctx.userId);
+  }
 
   return payment;
 }
