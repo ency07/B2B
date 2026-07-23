@@ -17,6 +17,10 @@ import {
   updateTenantSettingsSchema,
   createInventoryItemSchema,
 } from "@/lib/validations/erp";
+import createLogger from "@/lib/utils/logger";
+import { startTimer } from "@/lib/utils/timing";
+
+const logger = createLogger("erp:core");
 
 export async function getTenantId(tenantCode?: string | null): Promise<string> {
   return resolveTenantIdAsync(tenantCode);
@@ -75,7 +79,7 @@ export async function emitBusinessEvent(
       payload: payload || {},
       created_by: userId || null,
     });
-    if (error) console.warn("emitBusinessEvent:", error.message);
+    if (error) logger.warn("emitBusinessEvent", { data: { error: error.message } });
 
     // Mirror to audit_log (unified audit trail)
     await supabaseAdmin.from("audit_log").insert({
@@ -88,7 +92,7 @@ export async function emitBusinessEvent(
       user_id: userId || null,
     });
   } catch (err) {
-    console.warn("emitBusinessEvent failed:", err);
+    logger.warn("emitBusinessEvent failed", { data: { raw: err } });
   }
 }
 
@@ -110,7 +114,7 @@ export async function getClients(tenantCode?: string | null) {
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Error fetching clients:", error);
+    logger.error("Error fetching clients", { data: { error } });
     throw new Error(error.message);
   }
 
@@ -188,7 +192,7 @@ export async function createClient(
     .single();
 
   if (error) {
-    console.error("Error creating client:", error);
+    logger.error("Error creating client", { data: { error } });
     throw new Error(error.message);
   }
 
@@ -218,7 +222,7 @@ export async function getJobs(tenantCode?: string | null, clientId?: string) {
   const { data, error } = await query;
 
   if (error) {
-    console.error("Error fetching jobs:", error);
+    logger.error("Error fetching jobs", { data: { error } });
     throw new Error(error.message);
   }
 
@@ -262,7 +266,7 @@ export async function getAssignableUsers(tenantCode: string | null): Promise<{ i
     .order("first_name", { ascending: true });
 
   if (error) {
-    console.error("Error fetching assignable users:", error);
+    logger.error("Error fetching assignable users", { data: { error } });
     return [];
   }
 
@@ -286,6 +290,8 @@ export async function createJob(
   const tenantId = await getTenantId(tenantCode);
   await validateTenantAccess(ctx.userId, ctx.role, tenantId);
 
+  const timer = startTimer("createJob");
+
   // Validar que cliente y requerimiento pertenecen al tenant (evita IDOR)
   const [clientResult, reqResult, siteResult, areaResult] = await Promise.all([
     supabaseAdmin.from("clients").select("id").eq("tenant_id", tenantId).eq("id", jobData.clientId).is("deleted_at", null).maybeSingle(),
@@ -294,10 +300,22 @@ export async function createJob(
     supabaseAdmin.from("areas").select("id").eq("tenant_id", tenantId).limit(1).maybeSingle(),
   ]);
 
-  if (!clientResult.data) throw new Error("Cliente no encontrado en este tenant.");
-  if (!reqResult.data) throw new Error("Requerimiento no encontrado en este tenant.");
-  if (!siteResult.data) throw new Error("El tenant no tiene sitios configurados. Contacta al administrador.");
-  if (!areaResult.data) throw new Error("El tenant no tiene áreas configuradas. Contacta al administrador.");
+  if (!clientResult.data) {
+    timer.stop({ ok: false });
+    throw new Error("Cliente no encontrado en este tenant.");
+  }
+  if (!reqResult.data) {
+    timer.stop({ ok: false });
+    throw new Error("Requerimiento no encontrado en este tenant.");
+  }
+  if (!siteResult.data) {
+    timer.stop({ ok: false });
+    throw new Error("El tenant no tiene sitios configurados. Contacta al administrador.");
+  }
+  if (!areaResult.data) {
+    timer.stop({ ok: false });
+    throw new Error("El tenant no tiene áreas configuradas. Contacta al administrador.");
+  }
 
   // job_code se omite intencionalmente: el trigger handle_job_sequences()
   // lo genera con get_next_tenant_sequence() de forma atómica y sin race conditions.
@@ -318,10 +336,12 @@ export async function createJob(
   });
 
   if (error) {
-    console.error("Error creating job:", error);
+    logger.error("Error creating job", { data: { error } });
+    timer.stop({ ok: false });
     throw new Error(error.message);
   }
 
+  timer.stop({ ok: true });
   emitBusinessEvent(tenantId, EVENT_CODES.JOB_CREATED, "JOB", data.id, { job_id: data.id }, ctx.userId);
 
   return data;
@@ -341,6 +361,8 @@ export async function updateJobStatus(
   const tenantId = await getTenantId(tenantCode);
   await validateTenantAccess(ctx.userId, ctx.role, tenantId);
 
+  const timer = startTimer("updateJobStatus");
+
   // Verificar que la OT pertenece al tenant
   const { data: job, error: jobErr } = await supabaseAdmin
     .from("jobs")
@@ -350,14 +372,17 @@ export async function updateJobStatus(
     .maybeSingle();
 
   if (jobErr || !job || job.deleted_at) {
+    timer.stop({ ok: false });
     throw new Error("Orden de trabajo no encontrada.");
   }
 
   if (job.status === "CERRADO") {
+    timer.stop({ ok: false });
     throw new Error("No se puede modificar una OT con estado final CERRADO.");
   }
 
   if (job.status === data.newStatus) {
+    timer.stop({ ok: false });
     throw new Error(`La OT ya se encuentra en estado ${data.newStatus}.`);
   }
 
@@ -373,10 +398,12 @@ export async function updateJobStatus(
   });
 
   if (updateErr) {
-    console.error("Error updating job status:", updateErr);
+    logger.error("Error updating job status", { data: { error: updateErr } });
+    timer.stop({ ok: false });
     throw new Error(updateErr.message);
   }
 
+  timer.stop({ ok: true });
   emitBusinessEvent(tenantId, EVENT_CODES.JOB_STATUS_CHANGED, "JOB", data.jobId, { old_status: job.status, new_status: data.newStatus }, ctx.userId);
 
   return updated;
@@ -404,7 +431,7 @@ export async function getInventoryStock(tenantCode?: string | null) {
     .eq("tenant_id", tenantId);
 
   if (error) {
-    console.error("Error fetching inventory stock:", error);
+    logger.error("Error fetching inventory stock", { data: { error } });
     throw new Error(error.message);
   }
 
@@ -440,6 +467,8 @@ export async function createInventoryMovement(
   const tenantId = await getTenantId(tenantCode);
   await validateTenantAccess(ctx.userId, ctx.role, tenantId);
 
+  const timer = startTimer("createInventoryMovement");
+
   // Get item_id
   const { data: item } = await supabaseAdmin
     .from("inventory_items")
@@ -450,6 +479,7 @@ export async function createInventoryMovement(
     .single();
 
   if (!item) {
+    timer.stop({ ok: false });
     throw new Error(`Artículo con código ${movement.itemCode} no encontrado.`);
   }
 
@@ -463,6 +493,7 @@ export async function createInventoryMovement(
     .single();
 
   if (!sourceWh) {
+    timer.stop({ ok: false });
     throw new Error(`Bodega origen ${movement.sourceWarehouse} no encontrada.`);
   }
 
@@ -477,6 +508,7 @@ export async function createInventoryMovement(
       .single();
 
     if (!destWh) {
+      timer.stop({ ok: false });
       throw new Error(`Bodega destino ${movement.destWarehouse} no encontrada.`);
     }
     destWhId = destWh.id;
@@ -494,12 +526,14 @@ export async function createInventoryMovement(
       .maybeSingle();
 
     if (stockErr) {
-      console.error("Error checking stock:", stockErr);
+      logger.error("Error checking stock", { data: { error: stockErr } });
+      timer.stop({ ok: false });
       throw new Error("Error al verificar la disponibilidad de stock.");
     }
 
     const available = stock?.available_quantity || 0;
     if (available < movement.quantity) {
+      timer.stop({ ok: false });
       throw new Error(`Stock insuficiente en bodega origen. Disponible: ${available}, Requerido: ${movement.quantity}`);
     }
   }
@@ -521,10 +555,12 @@ export async function createInventoryMovement(
   });
 
   if (error) {
-    console.error("Error creating movement:", error);
+    logger.error("Error creating movement", { data: { error } });
+    timer.stop({ ok: false });
     throw new Error(error.message);
   }
 
+  timer.stop({ ok: true });
   const movementId = typeof data === "object" && data !== null ? (data as any).id : null;
   if (movementId) {
     emitBusinessEvent(tenantId, EVENT_CODES.INVENTORY_MOVEMENT, "INVENTORY_MOVEMENT", movementId, { item_code: movement.itemCode, type: movement.type, quantity: movement.quantity }, ctx.userId);
@@ -564,7 +600,7 @@ export async function getInvoices(tenantCode?: string | null, clientId?: string)
   const { data, error } = await query;
 
   if (error) {
-    console.error("Error fetching invoices:", error);
+    logger.error("Error fetching invoices", { data: { error } });
     throw new Error(error.message);
   }
 
@@ -588,6 +624,8 @@ export async function createInvoice(
   const tenantId = await getTenantId(tenantCode);
   await validateTenantAccess(ctx.userId, ctx.role, tenantId);
 
+  const timer = startTimer("createInvoice");
+
   // Get client matching the legal_name or pick the first client
   let { data: client } = await supabaseAdmin
     .from("clients")
@@ -609,7 +647,10 @@ export async function createInvoice(
     client = firstClient;
   }
 
-  if (!client) throw new Error("No se encontró ningún cliente para este tenant. Crea un cliente antes de emitir una factura.");
+  if (!client) {
+    timer.stop({ ok: false });
+    throw new Error("No se encontró ningún cliente para este tenant. Crea un cliente antes de emitir una factura.");
+  }
   const clientId = client.id;
 
   // Cabecera de factura + primera línea de forma ATÓMICA vía RPC transaccional.
@@ -625,10 +666,12 @@ export async function createInvoice(
   });
 
   if (error) {
-    console.error("Error creating invoice:", error);
+    logger.error("Error creating invoice", { data: { error } });
+    timer.stop({ ok: false });
     throw new Error(error.message);
   }
 
+  timer.stop({ ok: true });
   const invoiceId = typeof invoice === "object" && invoice !== null ? (invoice as any).id : null;
   if (invoiceId) {
     emitBusinessEvent(tenantId, EVENT_CODES.INVOICE_CREATED, "INVOICE", invoiceId, { amount: invoiceData.amount }, ctx.userId);
@@ -658,6 +701,8 @@ export async function registerPayment(
   const tenantId = await getTenantId(tenantCode);
   await validateTenantAccess(ctx.userId, ctx.role, tenantId);
 
+  const timer = startTimer("registerPayment");
+
   // Verificar que la factura pertenece al tenant y está en estado válido
   const { data: invoice, error: invErr } = await supabaseAdmin
     .from("invoices")
@@ -667,19 +712,23 @@ export async function registerPayment(
     .maybeSingle();
 
   if (invErr || !invoice || invoice.deleted_at) {
+    timer.stop({ ok: false });
     throw new Error("Factura no encontrada.");
   }
 
   if (!["EMITIDA", "PARCIALMENTE_PAGADA", "VENCIDA"].includes(invoice.status)) {
+    timer.stop({ ok: false });
     throw new Error(`No se puede registrar un pago para una factura en estado ${invoice.status}.`);
   }
 
   if (invoice.client_id !== paymentData.clientId) {
+    timer.stop({ ok: false });
     throw new Error("El cliente no coincide con la factura.");
   }
 
   const balance = Number(invoice.balance_amount);
   if (paymentData.amount > balance) {
+    timer.stop({ ok: false });
     throw new Error(
       `El monto del pago ($${paymentData.amount}) excede el saldo pendiente ($${balance}).`
     );
@@ -706,10 +755,12 @@ export async function registerPayment(
   });
 
   if (payErr) {
-    console.error("Error registering payment:", payErr);
+    logger.error("Error registering payment", { data: { error: payErr } });
+    timer.stop({ ok: false });
     throw new Error(payErr.message);
   }
 
+  timer.stop({ ok: true });
   const paymentId = typeof payment === "object" && payment !== null ? (payment as any).id : null;
   if (paymentId) {
     emitBusinessEvent(tenantId, EVENT_CODES.PAYMENT_RECEIVED, "PAYMENT", paymentId, { invoice_id: paymentData.invoiceId, amount: paymentData.amount }, ctx.userId);
@@ -739,6 +790,8 @@ export async function createCreditNote(
   const tenantId = await getTenantId(tenantCode);
   await validateTenantAccess(ctx.userId, ctx.role, tenantId);
 
+  const timer = startTimer("createCreditNote");
+
   // Verificar que la factura pertenece al tenant y está en estado válido
   const { data: invoice, error: invErr } = await supabaseAdmin
     .from("invoices")
@@ -748,18 +801,22 @@ export async function createCreditNote(
     .maybeSingle();
 
   if (invErr || !invoice || invoice.deleted_at) {
+    timer.stop({ ok: false });
     throw new Error("Factura no encontrada.");
   }
 
   if (!["EMITIDA", "PARCIALMENTE_PAGADA", "PAGADA", "VENCIDA"].includes(invoice.status)) {
+    timer.stop({ ok: false });
     throw new Error(`No se puede emitir NC para una factura en estado ${invoice.status}.`);
   }
 
   if (invoice.client_id !== data.clientId) {
+    timer.stop({ ok: false });
     throw new Error("El cliente no coincide con la factura.");
   }
 
   if (data.totalAmount > Number(invoice.total_amount)) {
+    timer.stop({ ok: false });
     throw new Error(
       `El monto de la NC ($${data.totalAmount}) no puede exceder el total de la factura ($${invoice.total_amount}).`
     );
@@ -782,10 +839,12 @@ export async function createCreditNote(
   });
 
   if (cnErr) {
-    console.error("Error creating credit note:", cnErr);
+    logger.error("Error creating credit note", { data: { error: cnErr } });
+    timer.stop({ ok: false });
     throw new Error(cnErr.message);
   }
 
+  timer.stop({ ok: true });
   return creditNote;
 }
 
@@ -801,12 +860,18 @@ export async function runDunningCheck(
   const tenantId = await getTenantId(tenantCode);
   await validateTenantAccess(ctx.userId, ctx.role, tenantId);
 
+  const timer = startTimer("runDunningCheck");
   const { data, error } = await supabaseAdmin.rpc("run_dunning_check", {
     p_tenant_id: tenantId,
   });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    logger.error("Error running dunning check", { data: { error } });
+    timer.stop({ ok: false });
+    throw new Error(error.message);
+  }
 
+  timer.stop({ ok: true });
   const row = Array.isArray(data) ? data[0] : data;
   if (!row) return null;
 
@@ -1202,7 +1267,7 @@ export async function getTenantSettings(tenantCode?: string | null) {
     .is("deleted_at", null);
 
   if (error) {
-    console.error("Error fetching settings:", error);
+    logger.error("Error fetching settings", { data: { error } });
     throw new Error(error.message);
   }
 
@@ -1278,7 +1343,7 @@ export async function getPublicTenantSettings(tenantCode?: string | null) {
     .is("deleted_at", null);
 
   if (error) {
-    console.error("Error fetching public settings:", error);
+    logger.error("Error fetching public settings", { data: { error } });
     return {};
   }
 
@@ -1320,7 +1385,7 @@ export async function updateTenantSettings(
     .single();
 
   if (error) {
-    console.error("Error updating settings:", error);
+    logger.error("Error updating settings", { data: { error } });
     throw new Error(error.message);
   }
 
@@ -1344,7 +1409,7 @@ export async function getWarehouses(tenantCode?: string | null) {
     .order("name", { ascending: true });
 
   if (error) {
-    console.error("Error fetching warehouses:", error);
+    logger.error("Error fetching warehouses", { data: { error } });
     throw new Error(error.message);
   }
 
@@ -1376,6 +1441,8 @@ export async function createInventoryItem(
   const tenantId = await getTenantId(tenantCode);
   await validateTenantAccess(ctx.userId, ctx.role, tenantId);
 
+  const timer = startTimer("createInventoryItem");
+
   // Ítem + stock inicial + movimiento de entrada de forma ATÓMICA vía RPC
   // transaccional. Antes eran 3 inserts separados sin transacción: si fallaba
   // el stock/movimiento quedaba el ítem sin inventario coherente. Ahora si
@@ -1398,10 +1465,12 @@ export async function createInventoryItem(
   });
 
   if (error) {
-    console.error("Error creating inventory item:", error);
+    logger.error("Error creating inventory item", { data: { error } });
+    timer.stop({ ok: false });
     throw new Error(error.message);
   }
 
+  timer.stop({ ok: true });
   return item;
 }
 

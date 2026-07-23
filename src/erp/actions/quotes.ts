@@ -10,6 +10,10 @@ import {
   addQuoteItemSchema,
   updateQuoteStatusSchema,
 } from "@/lib/validations/erp";
+import createLogger from "@/lib/utils/logger";
+import { startTimer } from "@/lib/utils/timing";
+
+const logger = createLogger("erp:quotes");
 
 // requirement_id es NOT NULL en la tabla quotes (y convertQuoteToJob() ya
 // exige que exista para poder generar la OT), así que no puede ser
@@ -48,7 +52,7 @@ export async function getQuotes(tenantCode?: string | null, clientId?: string): 
   const { data, error } = await query;
 
   if (error) {
-    console.error("Error fetching quotes:", error);
+    logger.error("Error fetching quotes", { data: { error } });
     throw new Error(error.message);
   }
 
@@ -67,6 +71,8 @@ export async function createQuote(
   const tenantId = await getTenantId(tenantCode);
   await validateTenantAccess(ctx.userId, ctx.role, tenantId);
 
+  const timer = startTimer("createQuote");
+
   // RPC (puente de identidad): ver supabase/migrations/*_identity_bridge_remaining_erp_write_paths.sql
   const { data, error } = await supabaseAdmin.rpc("create_quote_bridged", {
     p_tenant_id: tenantId,
@@ -78,10 +84,12 @@ export async function createQuote(
   });
 
   if (error) {
-    console.error("Error creating quote:", error);
+    logger.error("Error creating quote", { data: { error } });
+    timer.stop({ ok: false });
     throw new Error(error.message);
   }
 
+  timer.stop({ ok: true });
   return data;
 }
 
@@ -98,7 +106,7 @@ export async function getQuoteItems(quoteId: string) {
     .order("item_order", { ascending: true });
 
   if (error) {
-    console.error("Error fetching quote items:", error);
+    logger.error("Error fetching quote items", { data: { error } });
     return [];
   }
 
@@ -123,6 +131,8 @@ export async function addQuoteItem(
   const tenantId = await getTenantId(tenantCode);
   await validateTenantAccess(ctx.userId, ctx.role, tenantId);
 
+  const timer = startTimer("addQuoteItem");
+
   // Verify the target quote belongs to this tenant before inserting items.
   const { data: quoteCheck } = await supabaseAdmin
     .from("quotes")
@@ -131,7 +141,10 @@ export async function addQuoteItem(
     .eq("tenant_id", tenantId)
     .maybeSingle();
 
-  if (!quoteCheck) throw new Error("Cotización no encontrada en este tenant");
+  if (!quoteCheck) {
+    timer.stop({ ok: false });
+    throw new Error("Cotización no encontrada en este tenant");
+  }
 
   const { data, error } = await supabaseAdmin
     .from("quote_items")
@@ -152,10 +165,12 @@ export async function addQuoteItem(
     .single();
 
   if (error) {
-    console.error("Error adding quote item:", error);
+    logger.error("Error adding quote item", { data: { error } });
+    timer.stop({ ok: false });
     throw new Error(error.message);
   }
 
+  timer.stop({ ok: true });
   return data;
 }
 
@@ -166,6 +181,8 @@ export async function updateQuoteStatus(quoteId: string, status: string) {
     : await requireAction("quotes.create");
   const tenantId = await getCallerTenantId();
 
+  const timer = startTimer("updateQuoteStatus");
+
   // RPC (puente de identidad): ver supabase/migrations/*_identity_bridge_remaining_erp_write_paths.sql
   const { data, error } = await supabaseAdmin.rpc("update_quote_status_bridged", {
     p_quote_id: quoteId,
@@ -175,16 +192,20 @@ export async function updateQuoteStatus(quoteId: string, status: string) {
   });
 
   if (error) {
-    console.error("Error updating quote status:", error);
+    logger.error("Error updating quote status", { data: { error } });
+    timer.stop({ ok: false });
     throw new Error(error.message);
   }
 
+  timer.stop({ ok: true });
   return data;
 }
 
 export async function convertQuoteToJob(quoteId: string) {
   const ctx = await requireAction("quotes.approve");
   const tenantId = await getCallerTenantId();
+
+  const timer = startTimer("convertQuoteToJob");
 
   // Obtener cotización + requerimiento asociado
   const { data: quote, error: qErr } = await supabaseAdmin
@@ -194,9 +215,18 @@ export async function convertQuoteToJob(quoteId: string) {
     .eq("tenant_id", tenantId)
     .maybeSingle();
 
-  if (qErr || !quote) throw new Error("Cotización no encontrada");
-  if (quote.status !== "APROBADA") throw new Error("La cotización debe estar APROBADA para generar una OT");
-  if (!quote.requirement_id) throw new Error("La cotización no tiene un requerimiento asociado");
+  if (qErr || !quote) {
+    timer.stop({ ok: false });
+    throw new Error("Cotización no encontrada");
+  }
+  if (quote.status !== "APROBADA") {
+    timer.stop({ ok: false });
+    throw new Error("La cotización debe estar APROBADA para generar una OT");
+  }
+  if (!quote.requirement_id) {
+    timer.stop({ ok: false });
+    throw new Error("La cotización no tiene un requerimiento asociado");
+  }
 
   // Verificar requerimiento
   const { data: req, error: rErr } = await supabaseAdmin
@@ -206,8 +236,14 @@ export async function convertQuoteToJob(quoteId: string) {
     .eq("tenant_id", tenantId)
     .maybeSingle();
 
-  if (rErr || !req) throw new Error("Requerimiento asociado no encontrado");
-  if (req.status !== "APROBACION") throw new Error(`El requerimiento debe estar en APROBACION (actual: ${req.status})`);
+  if (rErr || !req) {
+    timer.stop({ ok: false });
+    throw new Error("Requerimiento asociado no encontrado");
+  }
+  if (req.status !== "APROBACION") {
+    timer.stop({ ok: false });
+    throw new Error(`El requerimiento debe estar en APROBACION (actual: ${req.status})`);
+  }
 
   // Transicionar a OT_GENERADA — el trigger valida documentos y crea el Job automáticamente.
   // RPC (puente de identidad): ver supabase/migrations/*_identity_bridge_remaining_erp_write_paths.sql
@@ -223,7 +259,8 @@ export async function convertQuoteToJob(quoteId: string) {
   });
 
   if (updateErr) {
-    console.error("Error converting quote to job:", updateErr);
+    logger.error("Error converting quote to job", { data: { error: updateErr } });
+    timer.stop({ ok: false });
     throw new Error(updateErr.message);
   }
 
@@ -237,6 +274,7 @@ export async function convertQuoteToJob(quoteId: string) {
     .limit(1)
     .single();
 
+  timer.stop({ ok: true });
   return {
     success: true,
     job: job || null,

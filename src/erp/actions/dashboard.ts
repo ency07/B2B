@@ -5,6 +5,10 @@ import { supabaseAdmin } from "@/platform/auth/clients";
 import { getTenantId } from "@/erp/actions/core";
 import { getBrandingDefaults } from "@/platform/branding/branding-defaults";
 import { getAuthContext, validateTenantAccess } from "@/platform/auth/server-guards";
+import createLogger from "@/lib/utils/logger";
+import { startTimer } from "@/lib/utils/timing";
+
+const logger = createLogger("erp:dashboard");
 
 export interface DashboardCommandCenterData {
   tenantName: string;
@@ -61,6 +65,7 @@ export async function getDashboardCommandCenter(
   if (!ctx) throw new Error("No autenticado");
   const tenantId = await getTenantId(tenantCode);
   await validateTenantAccess(ctx.userId, ctx.role, tenantId);
+  const timer = startTimer("getDashboardCommandCenter");
   const currentPeriod = new Date().toISOString().substring(0, 7); // e.g. "2026-06"
 
   // ── Queries paralelas (Promise.all en lugar de secuencial) ────────────
@@ -111,7 +116,7 @@ export async function getDashboardCommandCenter(
   const invoicesData = invoicesResult.data;
 
   if (invError) {
-    console.error("Error fetching invoices for dashboard:", invError);
+    logger.error("Error fetching invoices for dashboard", { data: { error: invError } });
   }
 
   const invoices: any[] = invoicesData || [];
@@ -199,7 +204,7 @@ export async function getDashboardCommandCenter(
       }
     }
   } catch (err) {
-    console.error("Error executing database calculate_kpi:", err);
+    logger.error("Error executing database calculate_kpi", { data: { raw: err } });
     // Fallback: compute on the fly in JS
     const validInvoices = invoices.filter((i: any) => i.status !== "ANULADA");
     totalInvoiced = validInvoices
@@ -386,6 +391,7 @@ export async function getDashboardCommandCenter(
     }
   }
 
+  timer.stop({ ok: true });
   return {
     tenantName,
     outstanding,
