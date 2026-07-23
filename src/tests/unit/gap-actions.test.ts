@@ -37,6 +37,7 @@ const {
   REQ_ID,
   SITE_ID,
   supabaseAdminFromMock,
+  supabaseAdminRpcMock,
 } = vi.hoisted(() => ({
   TENANT: "5af7e917-eac2-4417-82cb-f88fbfc2db9c",
   USER_ID: "2645ecf1-eca6-4898-abc5-315294a02f15",
@@ -51,6 +52,7 @@ const {
   REQ_ID: "b8c9d0e1-f2a3-4567-9234-678901234567",
   SITE_ID: "c9d0e1f2-a3b4-5678-a345-789012345678",
   supabaseAdminFromMock: vi.fn(),
+  supabaseAdminRpcMock: vi.fn(),
 }));
 
 // ─── Module Mocks ────────────────────────────────────────────────────────────
@@ -70,7 +72,7 @@ vi.mock("@/lib/role-permissions", () => ({
 }));
 
 vi.mock("@/platform/auth/clients", () => ({
-  supabaseAdmin: { from: supabaseAdminFromMock, rpc: vi.fn() },
+  supabaseAdmin: { from: supabaseAdminFromMock, rpc: supabaseAdminRpcMock },
 }));
 
 vi.mock("@/platform/tenant/tenant-resolver", () => ({
@@ -323,24 +325,20 @@ describe("E-001: registerPayment", () => {
       }),
     };
 
-    const paymentInsertChain = {
-      insert: vi.fn().mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({
-            data: { id: "pay-1", amount: 500000 },
-            error: null,
-          }),
-        }),
-      }),
-    };
-
     mockFrom({
       invoices: invoiceChain,
-      payments: paymentInsertChain,
     });
 
     // Mock the invoice update chain
     invoiceChain.update = updateChain.update;
+
+    // register_payment_for_invoice: RPC que fija app.verified_actor_id (puente
+    // de identidad) e inserta el pago en la misma transacción — ver
+    // supabase/migrations/*_identity_bridge_erp_actor_context.sql
+    supabaseAdminRpcMock.mockResolvedValue({
+      data: { id: "pay-1", amount: 500000 },
+      error: null,
+    });
 
     const result = await registerPayment(TENANT, validPayment);
     expect(result).toBeDefined();
