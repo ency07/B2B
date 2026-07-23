@@ -1,5 +1,4 @@
 "use server";
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { supabaseAdmin } from "@/platform/auth/clients";
 import { getTenantId } from "@/erp/actions/core";
@@ -18,6 +17,16 @@ export interface BrandingVersion {
   config_values: BrandingConfig;
   description: string;
   created_at: string;
+}
+
+// Fila de tenant_settings tal como la trae el SELECT de abajo. config_value
+// es jsonb: su forma real depende de config_key y no se puede verificar
+// estáticamente sin un esquema de validación por campo — se trata como
+// unknown hasta el punto de escritura en BrandingConfig.
+interface TenantSettingRow {
+  module: string;
+  config_key: string;
+  config_value: unknown;
 }
 
 
@@ -42,19 +51,17 @@ export async function getTenantBranding(tenantCode?: string | null): Promise<Bra
     return defaults;
   }
 
-  const config = { ...defaults };
+  const config = { ...defaults } as Record<string, unknown>;
   if (data && data.length > 0) {
-    data.forEach((row: any) => {
-      const key = row.config_key as keyof BrandingConfig;
-      if (key in config) {
-        // config_value is stored as jsonb, so we extract the actual value
-        (config as any)[key] = row.config_value;
+    (data as TenantSettingRow[]).forEach((row) => {
+      if (row.config_key in config) {
+        config[row.config_key] = row.config_value;
       }
     });
   }
 
   timer.stop({ ok: true, rows: data?.length ?? 0 });
-  return config;
+  return config as unknown as BrandingConfig;
 }
 
 /**
@@ -144,9 +151,9 @@ export async function saveTenantBranding(
     }
 
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     logger.error("Exception in saveTenantBranding", { error: err instanceof Error ? err : undefined, data: { raw: err } });
-    return { success: false, error: err.message || String(err) };
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
 
@@ -258,9 +265,9 @@ export async function restoreBrandingVersion(
     }
 
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     logger.error("Exception in restoreBrandingVersion", { error: err instanceof Error ? err : undefined, data: { raw: err } });
-    return { success: false, error: err.message || String(err) };
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
 
@@ -294,7 +301,7 @@ export async function uploadBrandingLogo(
     }
 
     const bucketName = "tenant-logos";
-    const bucketExists = buckets?.some((b: any) => b.name === bucketName);
+    const bucketExists = buckets?.some((b) => b.name === bucketName);
 
     if (!bucketExists) {
       const { error: createErr } = await supabaseAdmin.storage.createBucket(bucketName, {
@@ -335,8 +342,8 @@ export async function uploadBrandingLogo(
     }
 
     return { success: true, url: urlData.publicUrl };
-  } catch (err: any) {
+  } catch (err) {
     logger.error("Exception in uploadBrandingLogo", { error: err instanceof Error ? err : undefined, data: { raw: err } });
-    return { success: false, error: err.message || String(err) };
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
   }
 }

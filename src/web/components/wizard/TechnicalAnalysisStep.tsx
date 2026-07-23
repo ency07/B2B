@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/jsx-no-comment-textnodes */
 "use client";
 
@@ -6,6 +5,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Wind, Check } from "lucide-react";
 import { ENVIRONMENT_OPTIONS } from "@/utils/engineering";
+import type { WizardFormState, WizardFormChangeHandler, WizardSymptomsState } from "./types";
 
 interface RealtimePrice {
   rangeMinCop: number;
@@ -15,19 +15,25 @@ interface RealtimePrice {
 }
 
 interface TechnicalAnalysisStepProps {
-  form: any;
-  handleChange: (key: string, val: any) => void;
+  form: WizardFormState;
+  handleChange: WizardFormChangeHandler;
   errors: Record<string, string>;
   animatedCfm: number;
   realtimePrice: RealtimePrice;
-  symptoms: any;
-  handleSymptomToggle: (key: "heat" | "dust" | "humidity" | "gases") => void;
+  symptoms: WizardSymptomsState;
+  handleSymptomToggle: (key: keyof WizardSymptomsState) => void;
   cityInputFocus: boolean;
   setCityInputFocus: (val: boolean) => void;
   filteredCities: { name: string; search: string }[];
 }
 
-const SYMPTOMS = [
+const DIMENSIONS: { key: "length" | "width" | "height"; label: string; min: number; max: number }[] = [
+  { key: "length", label: "Largo", min: 5, max: 200 },
+  { key: "width", label: "Ancho", min: 5, max: 100 },
+  { key: "height", label: "Alto", min: 3, max: 30 },
+];
+
+const SYMPTOMS: { key: keyof WizardSymptomsState; label: string; desc: string }[] = [
   { key: "heat", label: "Alta carga térmica", desc: "Sensación de sofoco o temperaturas > 35°C." },
   { key: "dust", label: "Material particulado", desc: "Polvillo en suspensión, humo denso o virutas." },
   { key: "humidity", label: "Humedad relativa alta", desc: "Vapor acumulado, condensación en techos." },
@@ -119,11 +125,7 @@ export function TechnicalAnalysisStep({
       <div>
         <p className="editorial-mono text-fg-muted mb-8">Dimensiones físicas</p>
         <div className="grid gap-6 sm:grid-cols-3">
-          {[
-            { key: "length", label: "Largo", min: 5, max: 200 },
-            { key: "width", label: "Ancho", min: 5, max: 100 },
-            { key: "height", label: "Alto", min: 3, max: 30 },
-          ].map((dim) => (
+          {DIMENSIONS.map((dim) => (
             <div key={dim.key}>
               <div className="flex justify-between mb-4">
                 <label className="editorial-mono text-fg-muted">{dim.label}</label>
@@ -247,7 +249,7 @@ export function TechnicalAnalysisStep({
               <button
                 key={sym.key}
                 type="button"
-                onClick={() => handleSymptomToggle(sym.key as any)}
+                onClick={() => handleSymptomToggle(sym.key)}
                 className={`
                   flex items-start gap-5 p-6 text-left transition-colors
                   ${isChecked ? "bg-ink text-paper" : "bg-paper-warm hover:bg-paper"}

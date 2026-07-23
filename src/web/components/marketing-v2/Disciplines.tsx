@@ -1,9 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import { DraftingCompass, HardHat, Wrench, ClipboardCheck, ArrowUpRight } from "lucide-react";
+import { DraftingCompass, HardHat, Wrench, ClipboardCheck, ArrowUpRight, type LucideIcon } from "lucide-react";
 
 interface Discipline {
   index: string;
@@ -14,7 +13,7 @@ interface Discipline {
   stat: { value: string; label: string };
   code: string;
   color: string;
-  Icon: React.ComponentType<any>;
+  Icon: LucideIcon;
 }
 
 const DISCIPLINES: Discipline[] = [

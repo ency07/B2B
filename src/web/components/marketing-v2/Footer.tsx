@@ -1,16 +1,15 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
- 
 "use client";
 
 import * as React from "react";
 import { motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import { ROUTES } from "@/lib/routes";
+import type { BrandingConfig } from "@/platform/branding/branding-defaults";
 
 interface FooterProps {
   siteName: string;
   tenantCode?: string;
-  branding?: any;
+  branding: BrandingConfig;
 }
 
 const STATIC_NAV_GROUPS = [
@@ -39,7 +38,7 @@ const OFFICES = [
   { city: "Alicante", country: "ES", address: "—", detail: "Operaciones UE" },
 ];
 
-export function Footer({ siteName, tenantCode, branding = {} }: FooterProps) {
+export function Footer({ siteName, tenantCode, branding }: FooterProps) {
   const year = new Date().getFullYear();
   const tc = tenantCode || "";
   const portalHref = tc ? `${ROUTES.PORTAL}?tenant=${tc}` : ROUTES.PORTAL;

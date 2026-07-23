@@ -5,27 +5,11 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { AlertTriangle } from "lucide-react";
-
-export interface WizardFormState {
-  nombre: string;
-  empresa: string;
-  taxId: string;
-  cargo: string;
-  telefono: string;
-  email: string;
-  ciudad: string;
-  urgencia: string;
-  servicio: string;
-  length: number;
-  width: number;
-  height: number;
-  environment: string;
-  otroDetalle?: string;
-}
+import type { WizardFormState, WizardFormChangeHandler } from "./types";
 
 interface CorporateInfoStepProps {
   form: WizardFormState;
-  handleChange: <K extends keyof WizardFormState>(key: K, val: WizardFormState[K]) => void;
+  handleChange: WizardFormChangeHandler;
   errors: Record<string, string>;
   exampleDomain: string;
 }

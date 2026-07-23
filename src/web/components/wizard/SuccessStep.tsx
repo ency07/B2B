@@ -6,9 +6,10 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ROUTES } from "@/lib/routes";
 import type { WizardResult } from "@/web/actions/wizard";
+import type { WizardFormState } from "./types";
 
 interface SuccessStepProps {
-  form: { ciudad: string; [key: string]: unknown };
+  form: WizardFormState;
   result: WizardResult;
   siteName: string;
   primaryColor: string;

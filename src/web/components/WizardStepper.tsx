@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable prefer-const */
 "use client";
@@ -45,10 +44,8 @@ import { TechnicalAnalysisStep } from "./wizard/TechnicalAnalysisStep";
 import { CorporateInfoStep } from "./wizard/CorporateInfoStep";
 import { SummaryStep } from "./wizard/SummaryStep";
 import { SuccessStep } from "./wizard/SuccessStep";
-
-interface WizardStepperProps {
-  branding: Record<string, any>;
-}
+import type { WizardFormState, WizardSymptomsState } from "./wizard/types";
+import type { BrandingConfig } from "@/platform/branding/branding-defaults";
 
 // Lista oficial de ciudades industriales de Colombia
 const COLOMBIAN_CITIES = [
@@ -82,7 +79,7 @@ export default function WizardStepper({
   branding,
   tenantCode,
 }: {
-  branding: any;
+  branding: BrandingConfig;
   tenantCode: string;
 }) {
   const searchParams = useSearchParams();
@@ -102,14 +99,14 @@ export default function WizardStepper({
   const [result, setResult] = useState<WizardResult | null>(null);
 
   // Formulario
-  const [form, setForm] = useState({
-    servicio: "venta" as "fabricacion" | "venta" | "mantenimiento" | "reparacion" | "otro",
-    urgencia: "media" as "baja" | "media" | "alta",
+  const [form, setForm] = useState<WizardFormState>({
+    servicio: "venta",
+    urgencia: "media",
     length: 10,
     width: 8,
     height: 4,
     altitude: 2640,
-    environment: "default" as string,
+    environment: "default",
     nombre: "",
     empresa: "",
     taxId: "",
@@ -121,7 +118,7 @@ export default function WizardStepper({
   });
 
   // Checklist de Síntomas / Desgaste
-  const [symptoms, setSymptoms] = useState({
+  const [symptoms, setSymptoms] = useState<WizardSymptomsState>({
     heat: false,       // Alta carga térmica
     dust: false,       // Polución
     humidity: false,   // Vapor corrosivo
@@ -239,7 +236,7 @@ export default function WizardStepper({
   }, [form.ciudad]);
 
   // Manejar cambios de inputs
-  const handleChange = (key: string, val: any) => {
+  const handleChange = <K extends keyof WizardFormState>(key: K, val: WizardFormState[K]) => {
     setForm(prev => ({ ...prev, [key]: val }));
     if (errors[key]) {
       setErrors(prev => {
@@ -250,7 +247,7 @@ export default function WizardStepper({
     }
   };
 
-  const handleSymptomToggle = (key: "heat" | "dust" | "humidity" | "gases") => {
+  const handleSymptomToggle = (key: keyof WizardSymptomsState) => {
     setSymptoms(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
@@ -343,9 +340,10 @@ export default function WizardStepper({
       );
       setResult(finalResult);
       setStep(5); // Pantalla de éxito
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      setErrors({ global: err.message || "Error registrando la cotización." });
+      const message = err instanceof Error ? err.message : "Error registrando la cotización.";
+      setErrors({ global: message });
     } finally {
       setIsSubmitting(false);
     }

@@ -1,5 +1,4 @@
 "use server";
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { supabaseAdmin } from "@/platform/auth/clients";
 import { getTenantId } from "@/erp/actions/core";
@@ -70,6 +69,86 @@ export interface CatalogCategory {
   name: string;
   description: string;
   subcategories: CatalogSubcategory[];
+}
+
+// Forma cruda de cada nivel tal como la trae el SELECT anidado de abajo. El
+// cliente Supabase de este proyecto no usa tipos generados (Database), así
+// que esta jerarquía se tipa a mano — un único cast en categoriesData en vez
+// de any disperso por cada .map()/.filter() del árbol.
+interface RawMediaAsset {
+  id: string;
+  file_name: string;
+  file_path: string;
+  file_size: number;
+  mime_type: string;
+  alt_text: string | null;
+}
+
+interface RawProductImage {
+  sort_order: number;
+  media_assets: RawMediaAsset | null;
+}
+
+interface RawProductDocument {
+  media_assets: RawMediaAsset | null;
+}
+
+interface RawProductFile {
+  media_assets: RawMediaAsset | null;
+}
+
+interface RawProductSpecification {
+  spec_name: string;
+  spec_value: string;
+}
+
+interface RawProduct {
+  id: string;
+  product_code: string;
+  name: string;
+  description: string | null;
+  status: string;
+  series_id: string;
+  deleted_at: string | null;
+  product_specifications: RawProductSpecification[] | null;
+  product_images: RawProductImage[] | null;
+  product_documents: RawProductDocument[] | null;
+  product_files: RawProductFile[] | null;
+}
+
+interface RawProductSeries {
+  id: string;
+  series_code: string;
+  name: string;
+  description: string | null;
+  family_id: string;
+  products: RawProduct[] | null;
+}
+
+interface RawProductFamily {
+  id: string;
+  family_code: string;
+  name: string;
+  description: string | null;
+  subcategory_id: string;
+  product_series: RawProductSeries[] | null;
+}
+
+interface RawProductSubcategory {
+  id: string;
+  subcategory_code: string;
+  name: string;
+  description: string | null;
+  category_id: string;
+  product_families: RawProductFamily[] | null;
+}
+
+interface RawProductCategory {
+  id: string;
+  category_code: string;
+  name: string;
+  description: string | null;
+  product_subcategories: RawProductSubcategory[] | null;
 }
 
 /**
@@ -183,7 +262,7 @@ async function fetchRawCatalogFromDB(): Promise<CatalogCategory[]> {
     });
   }
 
-  function toMedia(asset: any): ProductMedia {
+  function toMedia(asset: RawMediaAsset): ProductMedia {
     return {
       id: asset.id,
       fileName: asset.file_name,
@@ -195,29 +274,30 @@ async function fetchRawCatalogFromDB(): Promise<CatalogCategory[]> {
   }
 
   // ── 3. Construcción y mapeo jerárquico ───────────────────────────────────
-  const catalog: CatalogCategory[] = (categoriesData ?? []).map((cat: any) => {
-    const subcategories = (cat.product_subcategories ?? []).map((sub: any) => {
-      const families = (sub.product_families ?? []).map((fam: any) => {
-        const series = (fam.product_series ?? []).map((ser: any) => {
+  const rawCategories = (categoriesData ?? []) as unknown as RawProductCategory[];
+  const catalog: CatalogCategory[] = rawCategories.map((cat) => {
+    const subcategories = (cat.product_subcategories ?? []).map((sub) => {
+      const families = (sub.product_families ?? []).map((fam) => {
+        const series = (fam.product_series ?? []).map((ser) => {
           const products = (ser.products ?? [])
-            .filter((prod: any) => !prod.deleted_at)
-            .map((prod: any) => {
+            .filter((prod) => !prod.deleted_at)
+            .map((prod) => {
               const specifications: Record<string, string> = {};
               for (const spec of prod.product_specifications ?? []) {
                 specifications[spec.spec_name] = spec.spec_value;
               }
 
               const images = (prod.product_images ?? [])
-                .filter((img: any) => img.media_assets)
-                .map((img: any) => toMedia(img.media_assets));
+                .filter((img): img is RawProductImage & { media_assets: RawMediaAsset } => !!img.media_assets)
+                .map((img) => toMedia(img.media_assets));
 
               const documents = (prod.product_documents ?? [])
-                .filter((doc: any) => doc.media_assets)
-                .map((doc: any) => toMedia(doc.media_assets));
+                .filter((doc): doc is RawProductDocument & { media_assets: RawMediaAsset } => !!doc.media_assets)
+                .map((doc) => toMedia(doc.media_assets));
 
               const cadFiles = (prod.product_files ?? [])
-                .filter((cad: any) => cad.media_assets)
-                .map((cad: any) => toMedia(cad.media_assets));
+                .filter((cad): cad is RawProductFile & { media_assets: RawMediaAsset } => !!cad.media_assets)
+                .map((cad) => toMedia(cad.media_assets));
 
               const seo = seoMap.get(prod.id);
 
@@ -432,9 +512,9 @@ export async function saveProduct(
 
     _invalidateCache(tenantCode);
     return { success: true, productId };
-  } catch (err: any) {
+  } catch (err) {
     logger.error("Exception in saveProduct", { error: err instanceof Error ? err : undefined, data: { raw: err } });
-    return { success: false, error: err.message || String(err) };
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
 
@@ -452,9 +532,9 @@ export async function deleteProduct(tenantCode: string | null, productId: string
     if (error) throw new Error(error.message);
     _invalidateCache(tenantCode);
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     logger.error("Exception in deleteProduct", { error: err instanceof Error ? err : undefined, data: { raw: err } });
-    return { success: false, error: err.message || String(err) };
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
 
@@ -500,9 +580,9 @@ export async function saveCategory(
 
     _invalidateCache(tenantCode);
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     logger.error("Exception in saveCategory", { error: err instanceof Error ? err : undefined, data: { raw: err } });
-    return { success: false, error: err.message || String(err) };
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
 
@@ -520,8 +600,8 @@ export async function deleteCategory(tenantCode: string | null, categoryId: stri
     if (error) throw new Error(error.message);
     _invalidateCache(tenantCode);
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     logger.error("Exception in deleteCategory", { error: err instanceof Error ? err : undefined, data: { raw: err } });
-    return { success: false, error: err.message || String(err) };
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
   }
 }

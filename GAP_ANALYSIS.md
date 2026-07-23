@@ -53,7 +53,7 @@
 | ID | Hallazgo |
 |----|----------|
 | W-009 | ✅ **CERRADO (2026-07-23, `feat/008-medios-observabilidad`)** — ~~`console.error()` en vez de `logger.error()`~~. Las 4 Server Actions (`wizard.ts`, `leads.ts`, `catalog.ts`, `branding.ts`) ahora usan `createLogger("web:<módulo>")` con contexto estructurado (`{data, error}`) en cada punto que antes era `console.error`. |
-| W-010 | ⏸️ **DIFERIDO A PROPÓSITO (2026-07-23)** — `any` types extensivos con `eslint-disable @typescript-eslint/no-explicit-any` en 9+ archivos del web. No se aborda esta ronda: el cliente Supabase de este proyecto no usa los tipos generados (`Database`), así que tipar correctamente exige generarlos (`generate_typescript_types`) y luego re-tipar cada `.from()/.rpc()` en 9+ archivos — un refactor mecánico pero de alto volumen y riesgo de regresión silenciosa (un tipo generado mal puede compilar y fallar solo en runtime), sin ningún bug de comportamiento detrás. Es deuda de tipado, no un defecto funcional — se prioriza cerrar los gaps con impacto real primero. Ver C-002. |
+| W-010 | ✅ **CERRADO (2026-07-23, `feat/009-w010-tipado-web`)** — ~~`any` types extensivos en 9+ archivos del web~~. Revertida la decisión de diferir (ver historial: se había marcado ⏸️ en la ronda anterior; el usuario pidió retomarlo). En vez de generar tipos completos de Supabase (`Database`, alto riesgo por el volumen del cambio), se tiparon a mano las formas concretas realmente usadas — mismo enfoque que ya probó funcionar en E-016/E-017. Cadena del Wizard: nuevo `wizard/types.ts` (`WizardFormState`, `WizardSymptomsState`, `WizardFormChangeHandler`) reemplaza 5 declaraciones de `form: any` duplicadas/divergentes entre `WizardStepper.tsx` y sus 5 sub-componentes de paso; **bug real encontrado**: `WizardFormState` ya existía en `CorporateInfoStep.tsx` pero le faltaba el campo `altitude`, que `TechnicalAnalysisStep.tsx` sí usaba — nadie lo había notado porque `any` lo ocultaba. Cadena de branding: `Hero.tsx`/`Footer.tsx`/`EngineeringCapabilities.tsx`/`MarketingShell.tsx` ahora tipan `branding` como `BrandingConfig` (ya existía, nadie lo usaba) en vez de `any`/`Record<string,unknown>`, eliminando 8 casts `as {...}` ad-hoc en `MarketingShell.tsx` y un doble-cast (`as unknown as Record<string,unknown>`) en `(marketing)/page.tsx`. **Bug real encontrado**: `src/app/wizard/page.tsx` usaba `{}` (objeto vacío) como fallback si fallaba la carga de branding, no `getBrandingDefaults()` como sí hace la landing — un fallback silencioso que dejaba `WizardStepper` con un branding "vacío" disfrazado. `catalog.ts`: la jerarquía anidada de Supabase (categoría→subcategoría→familia→serie→producto→specs/imágenes) ahora tiene interfaces `Raw*` explícitas que documentan el `.select()` exacto, con un único cast justificado en el punto de entrada en vez de `any` disperso en cada `.map()`/`.filter()`. `branding.ts`: fila de `tenant_settings` tipada (`TenantSettingRow`), catch blocks migrados a `unknown` + `instanceof Error` (patrón ya usado en el resto del proyecto). También: iconos de `Disciplines.tsx`/`Sectors.tsx`/`ServiceSelectionStep.tsx` tipados como `LucideIcon` en vez de `React.ComponentType<any>`; interfaz `WizardStepperProps` muerta (nunca usada, confirmada por warning de eslint) eliminada. Verificado: tsc/eslint/vitest/build limpios contra el mismo baseline de siempre, más verificación en navegador (server logs 200 OK en `/` y `/wizard`, todos los chunks JS cargando, cero errores de consola — el Browser pane de este proyecto no permite interacción real, limitación ya documentada en rondas anteriores). Ver C-002. |
 | W-011 | ✅ **CERRADO (2026-07-23, `feat/008-medios-observabilidad`)** — ~~Sin `startTimer()` en Server Actions~~. Agregado a las mismas 4 Server Actions de W-009: `getTenantBranding`, `getIndustrialCatalog` (interno, `fetchRawCatalogFromDB`), `createLeadWithScore`, `submitContactForm`, `submitChatbotLead`, `submitWizardData` — cada una mide su duración y loggea "Slow operation" si supera 300ms. |
 | W-012 | ⏸️ **DIFERIDO A PROPÓSITO (2026-07-23)** — Sección "Productos" embebida dentro de `EngineeringCapabilities.tsx` (484 líneas) en vez de componente separado. Es una preferencia de organización de código, no un defecto: no hay bug, dato incorrecto ni problema de seguridad detrás, y el componente fue reescrito por completo hace apenas 2 rondas (W-002/W-003, eliminación de 272 líneas de datos falsos) — separar la sección ahora sin una razón funcional que lo motive es refactor por refactor, con riesgo de regresión en un componente recién estabilizado y cero beneficio para el usuario final. |
 
@@ -127,7 +127,7 @@
 | ID | Principio | Violación | Módulo |
 |----|-----------|-----------|--------|
 | C-001 | Pilar VIII — Logger estructurado | 🟡 **PARCIAL (2026-07-23)** — ~~`console.error()` en vez de `logger.error()`~~. Cerrado para **Web** (ver W-009: `wizard.ts`, `leads.ts`, `catalog.ts`, `branding.ts`). **ERP sigue abierto**: 9 archivos en `src/erp` todavía usan `console.*` directo, 0 usan `createLogger` (confirmado por grep). No estaba nombrado por ningún gap específico de la sección ERP — se documenta aquí en vez de asumirlo cerrado. | Web ✅ / ERP ❌ |
-| C-002 | Pilar VI — Tipado estricto | ⏸️ **DIFERIDO A PROPÓSITO** — ver W-010: mismo hallazgo, mismo razonamiento de por qué se difiere. | Web |
+| C-002 | Pilar VI — Tipado estricto | ✅ **CERRADO (2026-07-23, `feat/009-w010-tipado-web`)** — ver W-010 arriba para el detalle completo. Los 10 archivos originalmente marcados con `eslint-disable @typescript-eslint/no-explicit-any` ya no lo tienen; la cadena completa (wizard + marketing/branding + las 2 Server Actions) type-checkea sin `any`. | Web |
 | C-003 | Pilar IV — UI Defensiva | ✅ **CERRADO (2026-07-23, `feat/008-medios-observabilidad`)** — ~~Sin timeout handling en wizard~~. `handleSubmit` en `WizardStepper.tsx` envuelve `submitWizardData()` en un `Promise.race` con timeout de 20s: si el servidor no responde, el usuario ve un error claro en vez de un botón deshabilitado indefinidamente. | Web |
 | C-004 | Pilar VII — Reutilización | ✅ **YA CERRADO (2026-07-23, `feat/006-web-criticos-w002-w003-w004`)** — ~~ACH hardcodeados~~. Mismo hallazgo que W-004 (ver arriba): `SummaryStep.tsx` y el PDF de `WizardStepper.tsx` ya leen `getAchForEnvironment()`. No requirió trabajo nuevo esta ronda, solo faltaba reflejarlo aquí. | Web |
 | C-005 | Pilar VIII — Timing | 🟡 **PARCIAL (2026-07-23)** — ~~Sin `startTimer()` en Server Actions lentas~~. Cerrado para **Web** (ver W-011). **ERP sigue sin instrumentar** (mismos 9 archivos de C-001). | Web ✅ / ERP ❌ |
@@ -138,7 +138,7 @@
 | ID | Recomendación |
 |----|---------------|
 | C-007 | 🟡 Migrar todos los `console.error` a `logger.error` con tag de módulo — hecho en Web (C-001), pendiente en ERP (9 archivos) |
-| C-008 | ⏸️ Eliminar `eslint-disable any` y tipar correctamente — diferido, ver C-002/W-010 |
+| C-008 | ✅ Eliminar `eslint-disable any` y tipar correctamente — hecho (C-002/W-010) |
 | C-009 | ✅ Centralizar ACH en `ACH_BY_ENVIRONMENT` y eliminar hardcode — hecho (C-004/W-004) |
 | C-010 | 🟡 Agregar `startTimer()` en Server Actions con warning >300ms — hecho en Web (C-005), pendiente en ERP |
 | C-011 | ✅ Remover toggle dark mode del portal o actualizar spec — se removió el toggle (C-006/P-003) |
@@ -287,6 +287,36 @@ De los 41 gaps originales del análisis: 12 críticos cerrados, 12 altos cerrado
 17 medios (13 + 4 de ERP ya cerrados antes de esta remediación) quedan abiertos solo:
 W-010/C-002, W-012, y la mitad ERP de C-001/C-005. Ninguno bloquea funcionalidad ni
 representa un riesgo de datos — son deuda de tipado y de organización de código.
+```
+
+---
+
+### W-010 retomado (2026-07-23, rama `feat/009-w010-tipado-web`)
+
+```
+El usuario pidió retomar W-010/C-002 (any-typing), diferido en la ronda anterior. Se tipó
+a mano (no se generaron tipos completos de Supabase) la forma real de los datos en los 10
+archivos originalmente señalados, más 4 archivos adicionales alcanzados por el efecto
+cascada (MarketingShell.tsx, (marketing)/page.tsx, wizard/page.tsx, SuccessStep.tsx) — no
+tenían `any` propio, pero tipar sus vecinos exigía tiparlos también para no romper el build.
+
+Dos bugs reales encontrados por el camino, ambos ocultos hasta ahora por `any`:
+(a) WizardFormState (ya existía en CorporateInfoStep.tsx) no incluía `altitude`, pese a que
+    TechnicalAnalysisStep.tsx sí lee/escribe form.altitude — nadie lo había notado.
+(b) wizard/page.tsx usaba `{}` como branding de respaldo si fallaba la carga (no
+    getBrandingDefaults(), como sí hace la landing) — un fallback silencioso que dejaba
+    WizardStepper con un branding vacío disfrazado de válido.
+
+Verificado: tsc/eslint/vitest/build limpios contra el baseline de siempre (0 errores
+nuevos), 0 usos de `any` restantes en los 14 archivos tocados (confirmado por grep), y
+verificación en navegador — server logs 200 OK en `/` y `/wizard`, todos los chunks JS de
+marketing-v2 y wizard cargando sin 404/500, cero errores de consola, timing/logger de la
+ronda anterior funcionando en vivo con datos reales. El Browser pane de este proyecto no
+permite interacción real (clicks, lectura de página) — limitación ya documentada en las
+rondas W-001 y P-001, no un problema de esta ronda.
+
+C-002 y W-010 pasan de ⏸️ DIFERIDO a ✅ CERRADO. De los 41 gaps originales, solo quedan
+abiertos: W-012 (diferido a propósito, sin cambios) y la mitad ERP de C-001/C-005.
 ```
 
 ---

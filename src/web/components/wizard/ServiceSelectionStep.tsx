@@ -2,16 +2,24 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Wrench, Activity, Hammer, Wind } from "lucide-react";
+import { Wrench, Activity, Hammer, Wind, type LucideIcon } from "lucide-react";
+import type { WizardFormState, WizardFormChangeHandler } from "./types";
 
 interface ServiceSelectionStepProps {
-  form: any;
-  handleChange: (key: string, val: any) => void;
+  form: WizardFormState;
+  handleChange: WizardFormChangeHandler;
   preselectedProduct: string;
   primaryColor: string;
 }
 
-const SERVICES = [
+const SERVICES: {
+  id: WizardFormState["servicio"];
+  header: string;
+  title: string;
+  subtitle: string;
+  desc: string;
+  Icon: LucideIcon;
+}[] = [
   {
     id: "fabricacion",
     header: "AMCA 210 / ISO 1940",
@@ -63,7 +71,7 @@ export function ServiceSelectionStep({
     >
       {/* === HEADER con breathing === */}
       <div>
-        <p className="editorial-eyebrow mb-6">// 01 — Servicio o equipo</p>
+        <p className="editorial-eyebrow mb-6">{"// 01 — Servicio o equipo"}</p>
         <h2 className="font-display text-4xl lg:text-5xl font-light text-ink tracking-[-0.03em] leading-[1.05] mb-6">
           ¿Qué tipo de requerimiento
           <br />
@@ -185,11 +193,13 @@ export function ServiceSelectionStep({
       <div>
         <p className="editorial-mono text-fg-muted mb-8">Prioridad comercial · SLA</p>
         <div className="grid gap-5 sm:grid-cols-3">
-          {[
-            { value: "baja", label: "Estándar", desc: "En planeación" },
-            { value: "media", label: "Media", desc: "Prioritario · +10%" },
-            { value: "alta", label: "Alta", desc: "Emergencia · +35%" },
-          ].map((u) => {
+          {(
+            [
+              { value: "baja", label: "Estándar", desc: "En planeación" },
+              { value: "media", label: "Media", desc: "Prioritario · +10%" },
+              { value: "alta", label: "Alta", desc: "Emergencia · +35%" },
+            ] as { value: WizardFormState["urgencia"]; label: string; desc: string }[]
+          ).map((u) => {
             const isSelected = form.urgencia === u.value;
             return (
               <button

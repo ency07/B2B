@@ -6,7 +6,7 @@ import dynamic from "next/dynamic";
 import { TopBar } from "./TopBar";
 import { Hero } from "./Hero";
 import { TrustMarquee } from "./TrustMarquee";
-import type { CaseSlideContent } from "@/platform/branding/branding-defaults";
+import type { BrandingConfig } from "@/platform/branding/branding-defaults";
 
 // Skeleton liviano para evitar layout shift mientras cargan las secciones
 const SectionSkeleton = () => (
@@ -71,27 +71,27 @@ const FloatingCta = dynamic(
 
 interface Props {
   catalog: CatalogCategory[];
-  branding: Record<string, unknown>;
+  branding: BrandingConfig;
   tenantCode: string;
 }
 
 export function MarketingShell({ catalog, branding, tenantCode }: Props) {
-  const siteName = branding.nombre_comercial as string;
-  const logoUrl = (branding.logo_claro_url as string) || "";
+  const siteName = branding.nombre_comercial;
+  const logoUrl = branding.logo_claro_url || "";
 
   return (
     <div className="min-h-screen bg-paper text-ink">
       <TopBar siteName={siteName} logoUrl={logoUrl} tenantCode={tenantCode} />
       <main>
         <Hero siteName={siteName} tenantCode={tenantCode} branding={branding} />
-        <TrustMarquee content={branding.trust_marquee as { eyebrow: string; statLine: string; clients: { name: string; logoUrl?: string }[] } | undefined} />
-        <ProblemSolving content={branding.problem_solving as { hook: string; story: string; statBefore: string; statAfter: string; statLabel: string }[] | undefined} />
-        <ProcessPipeline content={branding.process_pipeline as { name: string; headline: string; description: string; duration: string; deliverables: string[] }[] | undefined} />
-        <Disciplines tenantCode={tenantCode} content={branding.disciplines as { name: string; shortDescription: string; statValue: string; statLabel: string; deliverables: string[] }[] | undefined} />
-        <Services tenantCode={tenantCode} content={branding.services as { name: string; shortDescription: string; longDescription: string; deliverable: string }[] | undefined} />
+        <TrustMarquee content={branding.trust_marquee} />
+        <ProblemSolving content={branding.problem_solving} />
+        <ProcessPipeline content={branding.process_pipeline} />
+        <Disciplines tenantCode={tenantCode} content={branding.disciplines} />
+        <Services tenantCode={tenantCode} content={branding.services} />
         <EngineeringCapabilities catalog={catalog} tenantCode={tenantCode} branding={branding} />
-        <Sectors content={branding.sectores as { name: string; shortDescription: string }[] | undefined} />
-        <FeaturedCase content={branding.casos as CaseSlideContent[] | undefined} />
+        <Sectors content={branding.sectores} />
+        <FeaturedCase content={branding.casos} />
         <CfmCalculator />
       </main>
       <Footer siteName={siteName} tenantCode={tenantCode} branding={branding} />

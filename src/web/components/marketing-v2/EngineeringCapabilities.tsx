@@ -1,10 +1,10 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowUpRight, X, FileDown, Wrench, Check } from "lucide-react";
 import type { CatalogCategory } from "@/web/actions/catalog";
+import type { BrandingConfig } from "@/platform/branding/branding-defaults";
 
 interface CapacityItem {
   id: string;
@@ -74,7 +74,7 @@ const statusColor: Record<CapacityItem["status"], string> = {
 interface Props {
   catalog: CatalogCategory[];
   tenantCode: string;
-  branding?: any;
+  branding?: BrandingConfig;
 }
 
 export function EngineeringCapabilities({ catalog, tenantCode, branding }: Props) {

@@ -5,6 +5,7 @@ import React, { Suspense } from "react";
 import { getTenantBranding } from "@/web/actions/branding";
 import WizardStepper from "@/web/components/WizardStepper";
 import { Metadata } from "next";
+import { getBrandingDefaults, type BrandingConfig } from "@/platform/branding/branding-defaults";
 
 export const dynamic = "force-dynamic";
 
@@ -37,10 +38,10 @@ export async function generateMetadata(props: { searchParams: Promise<{ tenant?:
 export default async function WizardPage(props: { searchParams: Promise<{ tenant?: string }> }) {
   const searchParams = await props.searchParams;
   const tenant = searchParams.tenant || "acme";
-  let branding: Record<string, unknown> = {};
+  let branding: BrandingConfig = getBrandingDefaults(tenant);
 
   try {
-    branding = await getTenantBranding(tenant) as unknown as Record<string, unknown>;
+    branding = await getTenantBranding(tenant);
   } catch (error) {
     console.error("Error al cargar branding en el Wizard:", error);
   }
