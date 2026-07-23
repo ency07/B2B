@@ -97,7 +97,7 @@ interface Job {
   priority: "BAJA" | "MEDIA" | "ALTA";
   startDate: string;
   endDate: string;
-  status: "PENDIENTE" | "PROGRAMADO" | "EN_EJECUCION" | "SUSPENDIDO" | "FINALIZADO" | "ENTREGADO" | "CERRADO" | "CANCELADO";
+  status: "PENDIENTE" | "PROGRAMADO" | "EN_EJECUCION" | "SUSPENDIDO" | "FINALIZADO" | "ENTREGADO" | "FACTURADA" | "CERRADO" | "CANCELADO";
 }
 
 // Checklist structure per job

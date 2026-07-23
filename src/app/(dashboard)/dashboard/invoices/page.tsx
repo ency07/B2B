@@ -437,8 +437,8 @@ export default function InvoicesPage() {
                 >
                   <option value="">Selecciona un cliente...</option>
                   {clients.map((c) => (
-                    <option key={c.id} value={c.legal_name}>
-                      {c.legal_name}
+                    <option key={c.id} value={c.name}>
+                      {c.name}
                     </option>
                   ))}
                 </select>
