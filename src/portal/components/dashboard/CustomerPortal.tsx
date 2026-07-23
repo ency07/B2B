@@ -137,7 +137,9 @@ export default function CustomerPortal({
                 invoiceFilter={s.invoiceFilter}
                 setInvoiceFilter={s.setInvoiceFilter}
                 selectedInvoice={s.selectedInvoice}
-                setSelectedInvoice={s.setSelectedInvoice}
+                wompiCheckout={s.wompiCheckout}
+                isLoadingCheckout={s.isLoadingCheckout}
+                onOpenPaymentSheet={s.handleOpenPaymentSheet}
                 clientName={s.clientName}
                 supportEmail={s.supportEmail}
                 telefono={s.telefono}

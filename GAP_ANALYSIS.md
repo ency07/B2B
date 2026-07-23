@@ -100,7 +100,7 @@
 | ID | Hallazgo | FR violado |
 |----|----------|------------|
 | P-001 | **Cotizaciones completamente ausentes** (US-3). No existe entidad `ClientQuote`, RPCs, vista, ni PDF. El dashboard no puede mostrar "cotizaciones pendientes". | FR-003 |
-| P-002 | **Pasarela Wompi no integrada**. Código comenta explícitamente "sin gateway conectado". Clientes no pueden pagar en línea. | FR-004 |
+| P-002 | ✅ **CERRADO en código (2026-07-22, `feat/003-portal-wompi-payments`)** — ~~Pasarela Wompi no integrada~~. Widget de checkout + webhook con verificación de firma + aplicación de pago implementados y probados de extremo a extremo con credenciales de prueba locales (firma, checksum, idempotencia, rechazo de firma inválida, camino DECLINED — todo verificado con peticiones HTTP reales, no solo revisión de código). **Pendiente**: cobro real de tarjeta contra los servidores de Wompi — requiere que el usuario registre una cuenta en `comercios.wompi.co` y agregue las llaves reales a `.env` (ver `specs/003-portal-wompi-payments/quickstart.md`). No marcar como 100% verificado hasta esa prueba. | FR-004 |
 
 ### 🟡 Altos
 
@@ -187,8 +187,17 @@ P1-02: ✅ CERRADO (2026-07-21) — cierre de OT vía updateJobStatus (FACTURADA
 P1-03: 🔴 ABIERTO — /speckit.specify "Implementar filtro por categoría en catálogo web - Selector de tipo de ventilador con data de Supabase"
 P1-04: 🔴 ABIERTO — /speckit.specify "Implementar módulo de cotizaciones en Portal Cliente - CRUD completo con PDF y flujo de aceptación"
 P1-05: ✅ CERRADO (2026-07-21) — approvePurchaseOrder() en ERP Core
-P1-06: 🔴 ABIERTO — /speckit.specify "Integrar Wompi/PSE en Portal Cliente - Pasarela de pagos con webhook y actualización de estado"
+P1-06: ✅ CERRADO EN CÓDIGO (2026-07-22, `feat/003-portal-wompi-payments`) — Widget + webhook Wompi, probado con credenciales de prueba locales; falta prueba de cobro real (ver detalle arriba en P-002)
 ```
+
+**Nota de ramas**: P1-03 y P1-04 muestran "abierto" en ESTA rama porque `feat/003-portal-wompi-payments`
+se creó desde `redesign/hero-pilot` (antes de esos cierres), igual que `feat/001` y `feat/002` se
+crearon cada una de forma independiente — cada rama solo tiene su propio trabajo. Los 3 branches
+(`feat/001-web-catalog-category-filter`, `feat/002-portal-client-quotes`,
+`feat/003-portal-wompi-payments`) actualizan esta misma sección de forma independiente; al
+fusionarlas, este archivo va a necesitar una resolución de conflicto manual para consolidar las 3
+actualizaciones — no es un error, es consecuencia de trabajar los 3 gaps en paralelo sobre ramas
+separadas.
 
 ---
 

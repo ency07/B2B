@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { CreditCard, Download } from "lucide-react";
 import { Button } from "@/platform/ui/button";
 import { Badge } from "@/platform/ui/badge";
@@ -7,6 +8,43 @@ import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/platform/ui/she
 import { capture } from "@/lib/analytics";
 import { formatCurrency } from "@/portal/components/dashboard/usePortalClientState";
 import type { PortalInvoice, PortalReceipt, PortalInvoiceFilter } from "@/portal/components/dashboard/types";
+import type { WompiCheckoutResult } from "@/portal/actions/payments";
+
+/**
+ * Inserta el <script> del Widget de Wompi de forma imperativa. El widget
+ * necesita atributos data-* (incluyendo "data-signature:integrity", que
+ * lleva dos puntos y no es expresable como prop JSX normal) y espera vivir
+ * como un <script> real dentro de un <form>, no como un nodo React montado.
+ */
+function WompiWidgetButton({ checkout }: { checkout: Exclude<WompiCheckoutResult, { unavailable: true }> }) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    container.innerHTML = "";
+
+    const script = document.createElement("script");
+    script.src = "https://checkout.wompi.co/widget.js";
+    script.setAttribute("data-render", "button");
+    script.setAttribute("data-public-key", checkout.publicKey);
+    script.setAttribute("data-currency", checkout.currency);
+    script.setAttribute("data-amount-in-cents", String(checkout.amountInCents));
+    script.setAttribute("data-reference", checkout.reference);
+    script.setAttribute("data-signature:integrity", checkout.signature);
+    script.setAttribute("data-redirect-url", checkout.redirectUrl);
+
+    const form = document.createElement("form");
+    form.appendChild(script);
+    container.appendChild(form);
+
+    return () => {
+      container.innerHTML = "";
+    };
+  }, [checkout]);
+
+  return <div ref={containerRef} className="flex justify-center py-2" />;
+}
 
 interface InvoicesSectionProps {
   invoices: PortalInvoice[];
@@ -14,7 +52,9 @@ interface InvoicesSectionProps {
   invoiceFilter: PortalInvoiceFilter;
   setInvoiceFilter: (filter: PortalInvoiceFilter) => void;
   selectedInvoice: PortalInvoice | null;
-  setSelectedInvoice: (invoice: PortalInvoice | null) => void;
+  wompiCheckout: WompiCheckoutResult | null;
+  isLoadingCheckout: boolean;
+  onOpenPaymentSheet: (invoice: PortalInvoice) => void;
   clientName: string;
   supportEmail: string;
   telefono: string;
@@ -27,7 +67,9 @@ export function InvoicesSection({
   invoiceFilter,
   setInvoiceFilter,
   selectedInvoice,
-  setSelectedInvoice,
+  wompiCheckout,
+  isLoadingCheckout,
+  onOpenPaymentSheet,
   clientName,
   supportEmail,
   telefono,
@@ -112,21 +154,21 @@ export function InvoicesSection({
                             <Sheet>
                               <SheetTrigger asChild>
                                 <Button
-                                  onClick={() => { setSelectedInvoice(inv); capture("portal_invoice_viewed", { code: inv.code, balance: inv.total - inv.paid }); }}
+                                  onClick={() => { onOpenPaymentSheet(inv); capture("portal_invoice_viewed", { code: inv.code, balance: inv.total - inv.paid }); }}
                                   className="bg-success hover:bg-success/90 text-success-foreground text-[10px] font-mono h-8 px-3 flex items-center gap-1 cursor-pointer"
                                 >
                                   <CreditCard className="w-3.5 h-3.5" /> Ver detalle de factura
                                 </Button>
                               </SheetTrigger>
 
-                              {/* Sin gateway de pago conectado todavía (no hay credenciales de
-                                  Wompi/PSE configuradas). Estado honesto, no se simula un pago. */}
                               <SheetContent className="bg-card border-l border-border max-w-[85vw] sm:max-w-[480px]">
                                 <div className="space-y-6 pt-6 font-sans">
                                   <div className="space-y-1">
                                     <p className="text-base font-semibold text-foreground">Detalle de factura</p>
                                     <p className="text-xs text-muted-foreground font-sans">
-                                      Coordina el pago directamente con tu ejecutivo. El pago en línea estará disponible pronto.
+                                      {wompiCheckout && !("unavailable" in wompiCheckout)
+                                        ? "Paga en línea de forma segura con tarjeta o PSE."
+                                        : "Coordina el pago directamente con tu ejecutivo. El pago en línea estará disponible pronto."}
                                     </p>
                                   </div>
 
@@ -138,9 +180,15 @@ export function InvoicesSection({
                                     </div>
                                   )}
 
-                                  <div className="rounded-xl border border-border bg-background/40 p-4 text-xs text-muted-foreground font-mono">
-                                    Contacto: {supportEmail} · {telefono}
-                                  </div>
+                                  {isLoadingCheckout ? (
+                                    <p className="text-xs text-muted-foreground text-center py-4">Preparando el pago...</p>
+                                  ) : wompiCheckout && !("unavailable" in wompiCheckout) ? (
+                                    <WompiWidgetButton checkout={wompiCheckout} />
+                                  ) : (
+                                    <div className="rounded-xl border border-border bg-background/40 p-4 text-xs text-muted-foreground font-mono">
+                                      Contacto: {supportEmail} · {telefono}
+                                    </div>
+                                  )}
 
                                   <SheetClose asChild>
                                     <Button className="w-full bg-muted hover:bg-muted/80 border border-border text-foreground text-xs font-mono cursor-pointer">
