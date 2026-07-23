@@ -65,6 +65,19 @@ const COLOMBIAN_CITIES = [
   { name: "Soledad, Atlántico", search: "soledad atlantico" },
 ];
 
+const WIZARD_SUBMIT_TIMEOUT_MS = 20_000;
+
+// Sin esto, si el servidor se cuelga el botón queda deshabilitado
+// indefinidamente y el usuario no tiene forma de saber que algo falló.
+function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => {
+      setTimeout(() => reject(new Error(message)), ms);
+    }),
+  ]);
+}
+
 export default function WizardStepper({
   branding,
   tenantCode,
@@ -309,21 +322,25 @@ export default function WizardStepper({
 
     setIsSubmitting(true);
     try {
-      const finalResult = await submitWizardData(tenantCode || "acme", {
-        servicio: form.servicio,
-        length: Number(form.length),
-        width: Number(form.width),
-        height: Number(form.height),
-        environment: form.environment as "heavy_plant" | "data_center" | "warehouse" | "mining" | "default",
-        nombre: form.nombre,
-        empresa: form.empresa,
-        taxId: form.taxId || undefined,
-        cargo: form.cargo,
-        telefono: form.telefono,
-        email: form.email,
-        ciudad: form.ciudad,
-        urgencia: form.urgencia
-      });
+      const finalResult = await withTimeout(
+        submitWizardData(tenantCode || "acme", {
+          servicio: form.servicio,
+          length: Number(form.length),
+          width: Number(form.width),
+          height: Number(form.height),
+          environment: form.environment as "heavy_plant" | "data_center" | "warehouse" | "mining" | "default",
+          nombre: form.nombre,
+          empresa: form.empresa,
+          taxId: form.taxId || undefined,
+          cargo: form.cargo,
+          telefono: form.telefono,
+          email: form.email,
+          ciudad: form.ciudad,
+          urgencia: form.urgencia
+        }),
+        WIZARD_SUBMIT_TIMEOUT_MS,
+        "El servidor está tardando más de lo esperado. Por favor intenta de nuevo en unos minutos."
+      );
       setResult(finalResult);
       setStep(5); // Pantalla de éxito
     } catch (err: any) {

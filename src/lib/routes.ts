@@ -17,6 +17,7 @@ export const ROUTES = {
 
   // ── Portal cliente ───────────────────────────────────────────────
   PORTAL:           "/portal",
+  PORTAL_LOGIN:     "/portal/login",
 
   // ── ERP (dashboard) ──────────────────────────────────────────────
   DASHBOARD:              "/dashboard",
