@@ -7,6 +7,10 @@ import { resolveTenantOwnerUserIdAsync } from "@/platform/tenant/tenant-resolver
 import { sanitizeObject } from "@/lib/utils/sanitize";
 import { checkRateLimit } from "@/lib/utils/rate-limiter";
 import { PUBLIC_EMAIL_DOMAINS, KNOWN_DISPOSABLE_DOMAINS } from "@/lib/constants";
+import createLogger from "@/lib/utils/logger";
+import { startTimer } from "@/lib/utils/timing";
+
+const logger = createLogger("web:leads");
 
 // Admin client: Server Action corre en el servidor, service_role nunca llega al cliente
 const db = getSupabaseAdmin();
@@ -136,6 +140,7 @@ export async function createLeadWithScore(
     throw new Error("Demasiadas solicitudes. Intente nuevamente en un minuto.");
   }
 
+  const timer = startTimer("createLeadWithScore");
   const tenantId = await getTenantId(tenantCode);
 
   // 2. Verificar que el tenant está activo
@@ -146,7 +151,8 @@ export async function createLeadWithScore(
     .maybeSingle();
 
   if (tenantErr || !tenantInfo || tenantInfo.status !== "Activo") {
-    console.error("Tenant validation error:", tenantErr, tenantInfo);
+    logger.error("Tenant validation error", { data: { tenantErr, tenantInfo } });
+    timer.stop({ ok: false });
     throw new Error("El servicio no está disponible para este tenant.");
   }
 
@@ -172,10 +178,12 @@ export async function createLeadWithScore(
     .single();
 
   if (error) {
-    console.error("Error creating lead with score:", error);
+    logger.error("Error creating lead with score", { data: { error } });
+    timer.stop({ ok: false });
     throw new Error("Error al registrar el lead. Intente nuevamente.");
   }
 
+  timer.stop({ ok: true });
   return data;
 }
 
@@ -209,6 +217,7 @@ export async function submitContactForm(
     throw new Error("Demasiadas solicitudes. Intente nuevamente en un minuto.");
   }
 
+  const timer = startTimer("submitContactForm");
   const tenantId = await getTenantId(tenantCode);
 
   // 2. Verificar que el tenant está activo
@@ -219,7 +228,8 @@ export async function submitContactForm(
     .maybeSingle();
 
   if (tenantErr || !tenantInfo || tenantInfo.status !== "Activo") {
-    console.error("Tenant validation error:", tenantErr, tenantInfo);
+    logger.error("Tenant validation error", { data: { tenantErr, tenantInfo } });
+    timer.stop({ ok: false });
     throw new Error("El servicio no está disponible para este tenant.");
   }
 
@@ -251,10 +261,12 @@ export async function submitContactForm(
     .single();
 
   if (error) {
-    console.error("Error submitting contact lead:", error);
+    logger.error("Error submitting contact lead", { data: { error } });
+    timer.stop({ ok: false });
     throw new Error("Error al enviar el formulario de contacto. Intente nuevamente.");
   }
 
+  timer.stop({ ok: true });
   return data;
 }
 
@@ -283,6 +295,7 @@ export async function submitChatbotLead(
     throw new Error("Demasiadas solicitudes. Intente nuevamente en un minuto.");
   }
 
+  const timer = startTimer("submitChatbotLead");
   const tenantId = await getTenantId(tenantCode);
 
   const { data: tenantInfo, error: tenantErr } = await db
@@ -292,7 +305,8 @@ export async function submitChatbotLead(
     .maybeSingle();
 
   if (tenantErr || !tenantInfo || tenantInfo.status !== "Activo") {
-    console.error("Tenant validation error:", tenantErr, tenantInfo);
+    logger.error("Tenant validation error", { data: { tenantErr, tenantInfo } });
+    timer.stop({ ok: false });
     throw new Error("El servicio no está disponible para este tenant.");
   }
 
@@ -319,9 +333,11 @@ export async function submitChatbotLead(
     .single();
 
   if (error) {
-    console.error("Error submitting chatbot lead:", error);
+    logger.error("Error submitting chatbot lead", { data: { error } });
+    timer.stop({ ok: false });
     throw new Error("No se pudo registrar tu solicitud. Intenta de nuevo.");
   }
 
+  timer.stop({ ok: true });
   return data;
 }

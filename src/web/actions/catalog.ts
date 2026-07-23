@@ -8,8 +8,10 @@ import { requireAction } from "@/platform/auth/server-guards";
 import {
   invalidateCatalogCache as _invalidateCache,
 } from "@/web/actions/catalog-cache";
+import createLogger from "@/lib/utils/logger";
+import { startTimer } from "@/lib/utils/timing";
 
-
+const logger = createLogger("web:catalog");
 
 export interface ProductMedia {
   id: string;
@@ -77,6 +79,7 @@ export interface CatalogCategory {
  */
 // Definición interna del fetching y procesado jerárquico del catálogo
 async function fetchRawCatalogFromDB(): Promise<CatalogCategory[]> {
+  const timer = startTimer("getIndustrialCatalog");
   // ── 1. Consulta jerárquica unificada en una sola query ────────────────────────
   const { data: categoriesData, error } = await supabaseAdmin
     .from("product_categories")
@@ -155,7 +158,8 @@ async function fetchRawCatalogFromDB(): Promise<CatalogCategory[]> {
     .order("name", { ascending: true });
 
   if (error) {
-    console.error("[catalog] Error al cargar la jerarquía del catálogo de la BD:", error);
+    logger.error("Error al cargar la jerarquía del catálogo de la BD", { data: { error } });
+    timer.stop({ ok: false });
     return [];
   }
 
@@ -267,6 +271,7 @@ async function fetchRawCatalogFromDB(): Promise<CatalogCategory[]> {
     };
   });
 
+  timer.stop({ ok: true, categories: catalog.length });
   return catalog;
 }
 
@@ -327,7 +332,7 @@ export async function addProductImage(
     .single();
 
   if (assetError) {
-    console.error("Error inserting media asset:", assetError);
+    logger.error("Error inserting media asset", { data: { productId, error: assetError } });
     throw new Error(assetError.message);
   }
 
@@ -342,7 +347,7 @@ export async function addProductImage(
     .single();
 
   if (linkError) {
-    console.error("Error linking image to product:", linkError);
+    logger.error("Error linking image to product", { data: { productId, error: linkError } });
     throw new Error(linkError.message);
   }
 
@@ -406,7 +411,7 @@ export async function saveProduct(
         .delete()
         .eq("product_id", productId);
 
-      if (deleteSpecsErr) console.error("Error clearing specs:", deleteSpecsErr);
+      if (deleteSpecsErr) logger.error("Error clearing specs", { data: { productId, error: deleteSpecsErr } });
 
       const specRows = Object.entries(product.specifications || {}).map(
         ([name, val]) => ({
@@ -428,7 +433,7 @@ export async function saveProduct(
     _invalidateCache(tenantCode);
     return { success: true, productId };
   } catch (err: any) {
-    console.error("Exception in saveProduct:", err);
+    logger.error("Exception in saveProduct", { error: err instanceof Error ? err : undefined, data: { raw: err } });
     return { success: false, error: err.message || String(err) };
   }
 }
@@ -448,7 +453,7 @@ export async function deleteProduct(tenantCode: string | null, productId: string
     _invalidateCache(tenantCode);
     return { success: true };
   } catch (err: any) {
-    console.error("Exception in deleteProduct:", err);
+    logger.error("Exception in deleteProduct", { error: err instanceof Error ? err : undefined, data: { raw: err } });
     return { success: false, error: err.message || String(err) };
   }
 }
@@ -496,7 +501,7 @@ export async function saveCategory(
     _invalidateCache(tenantCode);
     return { success: true };
   } catch (err: any) {
-    console.error("Exception in saveCategory:", err);
+    logger.error("Exception in saveCategory", { error: err instanceof Error ? err : undefined, data: { raw: err } });
     return { success: false, error: err.message || String(err) };
   }
 }
@@ -516,7 +521,7 @@ export async function deleteCategory(tenantCode: string | null, categoryId: stri
     _invalidateCache(tenantCode);
     return { success: true };
   } catch (err: any) {
-    console.error("Exception in deleteCategory:", err);
+    logger.error("Exception in deleteCategory", { error: err instanceof Error ? err : undefined, data: { raw: err } });
     return { success: false, error: err.message || String(err) };
   }
 }

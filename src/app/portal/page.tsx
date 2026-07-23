@@ -78,8 +78,11 @@ export default async function PortalPage({ searchParams }: Props) {
     //    estado de error visible, NO redirigir (sino loop infinito).
     if (!(await hasAccessTokenCookie())) {
       // Sin tenant en la URL de login: nunca se expone antes de autenticar.
-      // ROUTES.PORTAL_LOGIN ("/portal/login") no es una ruta real — el login
-      // vive en /login (compartido con ERP) y se distingue por ?redirect=/portal.
+      // Se usa /login (compartido con ERP) con ?redirect=/portal en vez de
+      // ROUTES.PORTAL_LOGIN: el helper de detección de contexto en /login ya
+      // resuelve esto vía el mismo redirect param, así que redirigir aquí no
+      // requiere cambios. PORTAL_LOGIN existe como ruta dedicada para enlaces
+      // externos/marketing que quieran ir directo al login del portal.
       const loginUrl = buildLoginUrl(ROUTES.LOGIN, { redirectTo: ROUTES.PORTAL });
       redirect(loginUrl);
     }

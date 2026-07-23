@@ -331,7 +331,7 @@ export function usePortalClientState({
       doc.setFontSize(18);
       doc.text(`${companyName}`, 20, 30);
       doc.setFontSize(10);
-      doc.text(`Factura: ${inv.code}`, 20, 42);
+      doc.text(`Resumen de Factura: ${inv.code}`, 20, 42);
       doc.text(`Fecha: ${inv.date}`, 20, 50);
       doc.text(`Cliente: ${clientName}`, 20, 58);
       doc.text(`NIT: ${clientNit}`, 20, 66);
@@ -342,7 +342,18 @@ export function usePortalClientState({
       doc.text(`Saldo: ${formatCurrency(inv.total - inv.paid)}`, 20, 106);
       doc.text(`Estado: ${inv.status}`, 20, 116);
 
-      doc.save(`factura-${inv.code}.pdf`);
+      // Este PDF se genera en el navegador del cliente a partir de los datos
+      // que ve en el portal — no lleva CUFE, QR ni resolución DIAN, así que
+      // no es la factura electrónica oficial y no debe presentarse como tal.
+      doc.line(20, 126, 190, 126);
+      doc.setFontSize(8);
+      const disclaimer = doc.splitTextToSize(
+        "Este documento es un resumen informativo generado desde el portal del cliente y no constituye la factura electrónica oficial. Para la factura electrónica válida ante la DIAN, contacta a tu ejecutivo comercial.",
+        170
+      );
+      doc.text(disclaimer, 20, 134);
+
+      doc.save(`resumen-factura-${inv.code}.pdf`);
     } catch (err) {
       console.error("Error generando PDF:", err);
       toast.error("No se pudo generar el PDF.");
