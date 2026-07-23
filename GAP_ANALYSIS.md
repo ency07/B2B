@@ -55,7 +55,7 @@
 | W-009 | ✅ **CERRADO (2026-07-23, `feat/008-medios-observabilidad`)** — ~~`console.error()` en vez de `logger.error()`~~. Las 4 Server Actions (`wizard.ts`, `leads.ts`, `catalog.ts`, `branding.ts`) ahora usan `createLogger("web:<módulo>")` con contexto estructurado (`{data, error}`) en cada punto que antes era `console.error`. |
 | W-010 | ✅ **CERRADO (2026-07-23, `feat/009-w010-tipado-web`)** — ~~`any` types extensivos en 9+ archivos del web~~. Revertida la decisión de diferir (ver historial: se había marcado ⏸️ en la ronda anterior; el usuario pidió retomarlo). En vez de generar tipos completos de Supabase (`Database`, alto riesgo por el volumen del cambio), se tiparon a mano las formas concretas realmente usadas — mismo enfoque que ya probó funcionar en E-016/E-017. Cadena del Wizard: nuevo `wizard/types.ts` (`WizardFormState`, `WizardSymptomsState`, `WizardFormChangeHandler`) reemplaza 5 declaraciones de `form: any` duplicadas/divergentes entre `WizardStepper.tsx` y sus 5 sub-componentes de paso; **bug real encontrado**: `WizardFormState` ya existía en `CorporateInfoStep.tsx` pero le faltaba el campo `altitude`, que `TechnicalAnalysisStep.tsx` sí usaba — nadie lo había notado porque `any` lo ocultaba. Cadena de branding: `Hero.tsx`/`Footer.tsx`/`EngineeringCapabilities.tsx`/`MarketingShell.tsx` ahora tipan `branding` como `BrandingConfig` (ya existía, nadie lo usaba) en vez de `any`/`Record<string,unknown>`, eliminando 8 casts `as {...}` ad-hoc en `MarketingShell.tsx` y un doble-cast (`as unknown as Record<string,unknown>`) en `(marketing)/page.tsx`. **Bug real encontrado**: `src/app/wizard/page.tsx` usaba `{}` (objeto vacío) como fallback si fallaba la carga de branding, no `getBrandingDefaults()` como sí hace la landing — un fallback silencioso que dejaba `WizardStepper` con un branding "vacío" disfrazado. `catalog.ts`: la jerarquía anidada de Supabase (categoría→subcategoría→familia→serie→producto→specs/imágenes) ahora tiene interfaces `Raw*` explícitas que documentan el `.select()` exacto, con un único cast justificado en el punto de entrada en vez de `any` disperso en cada `.map()`/`.filter()`. `branding.ts`: fila de `tenant_settings` tipada (`TenantSettingRow`), catch blocks migrados a `unknown` + `instanceof Error` (patrón ya usado en el resto del proyecto). También: iconos de `Disciplines.tsx`/`Sectors.tsx`/`ServiceSelectionStep.tsx` tipados como `LucideIcon` en vez de `React.ComponentType<any>`; interfaz `WizardStepperProps` muerta (nunca usada, confirmada por warning de eslint) eliminada. Verificado: tsc/eslint/vitest/build limpios contra el mismo baseline de siempre, más verificación en navegador (server logs 200 OK en `/` y `/wizard`, todos los chunks JS cargando, cero errores de consola — el Browser pane de este proyecto no permite interacción real, limitación ya documentada en rondas anteriores). Ver C-002. |
 | W-011 | ✅ **CERRADO (2026-07-23, `feat/008-medios-observabilidad`)** — ~~Sin `startTimer()` en Server Actions~~. Agregado a las mismas 4 Server Actions de W-009: `getTenantBranding`, `getIndustrialCatalog` (interno, `fetchRawCatalogFromDB`), `createLeadWithScore`, `submitContactForm`, `submitChatbotLead`, `submitWizardData` — cada una mide su duración y loggea "Slow operation" si supera 300ms. |
-| W-012 | ⏸️ **DIFERIDO A PROPÓSITO (2026-07-23)** — Sección "Productos" embebida dentro de `EngineeringCapabilities.tsx` (484 líneas) en vez de componente separado. Es una preferencia de organización de código, no un defecto: no hay bug, dato incorrecto ni problema de seguridad detrás, y el componente fue reescrito por completo hace apenas 2 rondas (W-002/W-003, eliminación de 272 líneas de datos falsos) — separar la sección ahora sin una razón funcional que lo motive es refactor por refactor, con riesgo de regresión en un componente recién estabilizado y cero beneficio para el usuario final. |
+| W-012 | ✅ **CERRADO (2026-07-23, `feat/010-w012-productos-refactor`)** — ~~Sección "Productos" embebida dentro de `EngineeringCapabilities.tsx` (484 líneas) en vez de componente separado~~. Revertida la decisión de diferir (el usuario pidió retomarlo). `ProductCard` y `TechnicalDetailModal` — antes funciones internas no exportadas de 55 y 220 líneas respectivamente — ahora son archivos propios (`ProductCard.tsx`, `TechnicalDetailModal.tsx`), siguiendo la misma convención de un-componente-por-archivo ya usada por el resto de `marketing-v2/` (`Hero.tsx`, `Footer.tsx`, etc.) y por la carpeta `primitives/` existente. `CapacityItem` y `statusColor`, compartidos por los 3, se movieron a un nuevo `product-types.ts` — **necesario, no cosmético**: exportarlos desde `EngineeringCapabilities.tsx` (que a su vez importa `ProductCard`/`TechnicalDetailModal`) habría creado un import circular de verdad (`statusColor` es un valor en runtime, no solo un tipo), con riesgo real de quedar `undefined` según el orden de evaluación de módulos de Turbopack. `EngineeringCapabilities.tsx` queda en ~200 líneas (antes 484), solo con la lógica de extracción del catálogo y el grid/filtro. Cero cambio de comportamiento: mismo JSX, mismos estilos, mismas props — código movido, no reescrito. Verificado: tsc/eslint/vitest/build limpios contra el baseline de siempre, y en navegador (chunk de `EngineeringCapabilities` con 200 OK junto al resto de secciones, cero errores de consola). |
 
 ---
 
@@ -317,6 +317,32 @@ rondas W-001 y P-001, no un problema de esta ronda.
 
 C-002 y W-010 pasan de ⏸️ DIFERIDO a ✅ CERRADO. De los 41 gaps originales, solo quedan
 abiertos: W-012 (diferido a propósito, sin cambios) y la mitad ERP de C-001/C-005.
+```
+
+---
+
+### W-012 retomado (2026-07-23, rama `feat/010-w012-productos-refactor`)
+
+```
+El usuario pidió retomar W-012, diferido dos rondas atrás. Refactor puro de organización
+de código, sin cambio de comportamiento: ProductCard y TechnicalDetailModal (funciones
+internas de EngineeringCapabilities.tsx, 55 y 220 líneas) pasan a ser archivos propios,
+más un product-types.ts nuevo para CapacityItem/statusColor compartidos entre los 3.
+
+La razón de mover los tipos a un archivo aparte no fue estética: exportarlos desde
+EngineeringCapabilities.tsx (que importa ProductCard/TechnicalDetailModal) habría creado
+un import circular real — statusColor es un valor de runtime, no solo un tipo, así que el
+ciclo podía dejarlo undefined según el orden de evaluación de módulos de Turbopack. Se
+detectó antes de verificar, no en producción.
+
+EngineeringCapabilities.tsx queda en ~200 líneas (antes 484). Verificado: tsc/eslint/
+vitest/build limpios contra el baseline de siempre, y en navegador (el chunk de
+EngineeringCapabilities, que ahora empaqueta los 3 archivos vía Turbopack, carga 200 OK
+junto al resto de secciones de la landing, cero errores de consola).
+
+W-012 pasa de ⏸️ DIFERIDO a ✅ CERRADO. De los 41 gaps originales, solo queda abierta la
+mitad ERP de C-001/C-005 (logger/timing en 9 archivos de src/erp, sin gap propio que los
+nombrara en la sección ERP del análisis original).
 ```
 
 ---
