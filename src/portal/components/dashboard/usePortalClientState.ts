@@ -21,6 +21,7 @@ import {
   type ClientQuote,
   type ClientQuoteDetail,
 } from "@/portal/actions/quotes";
+import { createWompiCheckout, type WompiCheckoutResult } from "@/portal/actions/payments";
 import { capture } from "@/lib/analytics";
 import type {
   PortalClientInfo,
@@ -189,11 +190,29 @@ export function usePortalClientState({
   const chatToggleRef = React.useRef<HTMLButtonElement>(null);
   const chatCloseRef = React.useRef<HTMLButtonElement>(null);
 
-  // Payment: sin gateway real conectado todavía (no hay credenciales de
-  // Wompi/PSE configuradas). No se simula un pago exitoso — se muestra un
-  // estado honesto en vez de marcar la factura como pagada sin que haya
-  // ocurrido una transacción real.
+  // Payment: el Widget de Wompi se activa solo si hay credenciales
+  // configuradas (WOMPI_PUBLIC_KEY/WOMPI_INTEGRITY_SECRET en .env). Sin
+  // ellas, createWompiCheckout retorna { unavailable: true } y se muestra un
+  // estado honesto — nunca se simula un pago exitoso sin que haya ocurrido
+  // una transacción real.
   const [selectedInvoice, setSelectedInvoice] = React.useState<PortalInvoice | null>(null);
+  const [wompiCheckout, setWompiCheckout] = React.useState<WompiCheckoutResult | null>(null);
+  const [isLoadingCheckout, setIsLoadingCheckout] = React.useState(false);
+
+  const handleOpenPaymentSheet = async (invoice: PortalInvoice) => {
+    setSelectedInvoice(invoice);
+    setWompiCheckout(null);
+    setIsLoadingCheckout(true);
+    try {
+      const result = await createWompiCheckout(previewClientId, invoice.id);
+      setWompiCheckout(result);
+    } catch (err) {
+      console.error("Error iniciando checkout de Wompi:", err);
+      setWompiCheckout({ unavailable: true });
+    } finally {
+      setIsLoadingCheckout(false);
+    }
+  };
 
   const [quotes, setQuotes] = React.useState<ClientQuote[]>(initialQuotes);
   const [selectedQuote, setSelectedQuote] = React.useState<ClientQuote | null>(null);
@@ -491,6 +510,9 @@ export function usePortalClientState({
     setInvoiceFilter,
     selectedInvoice,
     setSelectedInvoice,
+    wompiCheckout,
+    isLoadingCheckout,
+    handleOpenPaymentSheet,
     downloadInvoicePdf,
     quotes,
     selectedQuote,

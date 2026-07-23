@@ -100,7 +100,7 @@
 | ID | Hallazgo | FR violado |
 |----|----------|------------|
 | P-001 | ✅ **CERRADO (2026-07-21, `feat/002-portal-client-quotes`)** — ~~Cotizaciones completamente ausentes~~. Lista, detalle, respuesta (aceptar/rechazar) y PDF agregados (ver `specs/002-portal-client-quotes/`). Reutiliza `quotes`/`quote_items` ya existentes en el ERP — no se creó una entidad `ClientQuote` nueva. La respuesta del cliente se registra por separado de `status` (motor de aprobación interno ya en producción exige rol Gerencia/Dirección Comercial para aprobar/rechazar — decisión confirmada con el usuario, ver spec.md). | FR-003 |
-| P-002 | **Pasarela Wompi no integrada**. Código comenta explícitamente "sin gateway conectado". Clientes no pueden pagar en línea. | FR-004 |
+| P-002 | ✅ **CERRADO en código (2026-07-22, `feat/003-portal-wompi-payments`)** — ~~Pasarela Wompi no integrada~~. Widget de checkout + webhook con verificación de firma + aplicación de pago implementados y probados de extremo a extremo con credenciales de prueba locales (firma, checksum, idempotencia, rechazo de firma inválida, camino DECLINED — todo verificado con peticiones HTTP reales, no solo revisión de código). **Pendiente**: cobro real de tarjeta contra los servidores de Wompi — requiere que el usuario registre una cuenta en `comercios.wompi.co` y agregue las llaves reales a `.env` (ver `specs/003-portal-wompi-payments/quickstart.md`). No marcar como 100% verificado hasta esa prueba. | FR-004 |
 
 ### 🟡 Altos
 
@@ -187,10 +187,14 @@ P1-02: ✅ CERRADO (2026-07-21) — cierre de OT vía updateJobStatus (FACTURADA
 P1-03: ✅ CERRADO (2026-07-21) — filtro por subcategoría en catálogo web (feat/001-web-catalog-category-filter)
 P1-04: ✅ CERRADO (2026-07-21) — cotizaciones en Portal Cliente: lista, detalle, respuesta, PDF (feat/002-portal-client-quotes; NO CRUD completo — ver nota de diseño en GAP P-001 arriba)
 P1-05: ✅ CERRADO (2026-07-21) — approvePurchaseOrder() en ERP Core
-P1-06: 🔴 ABIERTO — /speckit.specify "Integrar Wompi/PSE en Portal Cliente - Pasarela de pagos con webhook y actualización de estado"
+P1-06: ✅ CERRADO EN CÓDIGO (2026-07-22, `feat/003-portal-wompi-payments`) — Widget + webhook Wompi, probado con credenciales de prueba locales; falta prueba de cobro real (ver detalle arriba en P-002)
 ```
 
-**Estado tras esta sesión**: de los 6 gaps P1 originales, solo **P1-06 (Wompi/PSE)** sigue abierto.
+**Estado tras la fusión de `feat/001`, `feat/002` y `feat/003` a `main` (2026-07-23)**: de los 6 gaps
+P1 originales, los 6 están cerrados en código. P1-06 (Wompi/PSE) es el único con una verificación
+pendiente que no depende de código: cobro real contra `comercios.wompi.co` con credenciales
+reales (ver P-002 arriba). Ver además **E-016** más abajo — un gap crítico de seguridad encontrado
+durante la remediación, no parte del análisis original de 41 gaps, con fix parcial ya fusionado.
 
 ---
 
