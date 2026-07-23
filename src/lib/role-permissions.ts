@@ -27,6 +27,7 @@ export type RoleName =
   | "JEFE_MANTENIMIENTO"
   | "ALMACENISTA"
   | "JEFE_INVENTARIO"
+  | "JEFE_COMPRAS"
   | "AUDITOR"
   | "CLIENTE";
 
@@ -106,6 +107,12 @@ export const ROLE_PERMISSIONS: Record<RoleName, string[]> = {
     "/dashboard",
     "/dashboard/inventory",
     "/dashboard/purchases",
+    "/dashboard/settings",
+  ],
+  JEFE_COMPRAS: [
+    "/dashboard",
+    "/dashboard/purchases",
+    "/dashboard/inventory",
     "/dashboard/settings",
   ],
 
@@ -266,6 +273,7 @@ export const DASHBOARD_SECTIONS: Record<RoleName, DashboardSection[]> = {
   //  Requerimientos de compra de insumos."
   ALMACENISTA: ["operations_health", "to_do_queue"],
   JEFE_INVENTARIO: ["operations_health", "to_do_queue"],
+  JEFE_COMPRAS: ["cash_pulse", "to_do_queue"],
 
   // 7. Auditor: trazabilidad y cumplimiento legal.
   // "Trazabilidad y cumplimiento legal. Acceso a los logs de auditoria
@@ -317,8 +325,13 @@ export type Action =
   | "purchases"
   | "audit.view_tenant"
   | "payments.view"
+  | "payments.confirm"
   | "invoices.manage"
   | "invoices.view"
+  | "credit_notes.create"
+  | "purchases.create"
+  | "purchases.approve"
+  | "purchases.view"
   | "branding.manage"
   | "settings.manage"
   | "catalog.manage";
@@ -350,6 +363,11 @@ export const ACTION_PERMISSIONS: Record<RoleName, Action[] | ["*"]> = {
     "audit.view_tenant",
     "invoices.manage",
     "invoices.view",
+    "payments.confirm",
+    "credit_notes.create",
+    "purchases.create",
+    "purchases.approve",
+    "purchases.view",
     "branding.manage",
     "settings.manage",
   ],
@@ -360,8 +378,18 @@ export const ACTION_PERMISSIONS: Record<RoleName, Action[] | ["*"]> = {
     "audit.view_tenant",
     "invoices.manage",
     "invoices.view",
+    "payments.confirm",
+    "credit_notes.create",
+    "purchases.create",
+    "purchases.approve",
+    "purchases.view",
     "branding.manage",
     "settings.manage",
+  ],
+  JEFE_COMPRAS: [
+    "purchases.create",
+    "purchases.approve",
+    "purchases.view",
   ],
 
   // 3. Comercial: leads, clientes, requerimientos, cotizaciones.

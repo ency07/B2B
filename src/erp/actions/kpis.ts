@@ -139,7 +139,7 @@ export async function getKpisForRole(
       .is("deleted_at", null),
     supabaseAdmin
       .from("inventory_stock")
-      .select("id, available_quantity, reserved_quantity, item_id, warehouse_id, inventory_items(name, item_code)")
+      .select("id, available_quantity, reserved_quantity, item_id, warehouse_id, inventory_items(name, item_code, minimum_stock)")
       .eq("tenant_id", tenantId),
     supabaseAdmin
       .from("audit_log")
@@ -189,8 +189,12 @@ export async function getKpisForRole(
     isDanger: true,
   }));
 
-  // 2. Alertas de inventario stock bajo
-  const lowStockList = validStock.filter((s: any) => Number(s.available_quantity) <= 10);
+  // 2. Alertas de inventario stock bajo (usa minimum_stock por item)
+  const lowStockList = validStock.filter((s: any) => {
+    const item = Array.isArray(s.inventory_items) ? s.inventory_items[0] : s.inventory_items;
+    const minStock = Number(item?.minimum_stock ?? 0);
+    return Number(s.available_quantity) <= minStock;
+  });
   const stockNotifs: NotificationItem[] = lowStockList.map((s: any) => {
     const item = Array.isArray(s.inventory_items) ? s.inventory_items[0] : s.inventory_items;
     const qty = Number(s.available_quantity);
@@ -425,10 +429,12 @@ export async function getKpisForRole(
     notifications = [...jobNotifs];
     notificationsCount = notifications.length;
   } else if (cat === "almacenista") {
-    // Vista almacen: stock bajo y movimientos.
-    const lowStock = validStock.filter(
-      (s: any) => Number(s.available_quantity) <= 10
-    );
+    // Vista almacen: stock bajo y movimientos (usa minimum_stock por item).
+    const lowStock = validStock.filter((s: any) => {
+      const item = Array.isArray(s.inventory_items) ? s.inventory_items[0] : s.inventory_items;
+      const minStock = Number(item?.minimum_stock ?? 0);
+      return Number(s.available_quantity) <= minStock;
+    });
     const reserved = validStock.reduce(
       (sum: number, s: any) => sum + Number(s.reserved_quantity || 0), 0
     );

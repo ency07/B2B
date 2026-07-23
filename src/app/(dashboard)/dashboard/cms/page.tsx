@@ -327,7 +327,7 @@ export default function CmsPage() {
           <Button
             onClick={handleSaveBranding}
             disabled={isBrandingSubmitting || isBrandingLoading}
-            className="bg-primary hover:bg-primary/90 text-white text-xs h-9 px-5 cursor-pointer shrink-0"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs h-9 px-5 cursor-pointer shrink-0"
           >
             {isBrandingSubmitting ? (
               <><Spinner className="w-3.5 h-3.5 mr-1.5" /> Publicando...</>
@@ -1005,7 +1005,7 @@ export default function CmsPage() {
 
                     <div className="flex justify-between pt-2 border-t border-border">
                       <Button onClick={() => setEditingProduct(null)} className="bg-secondary/40 border border-border text-muted-foreground text-xs h-8 cursor-pointer hover:bg-secondary/60">Cancelar</Button>
-                      <Button onClick={handleSaveProduct} disabled={isSavingProduct} className="bg-primary hover:bg-primary/90 text-white text-xs h-8 cursor-pointer">
+                      <Button onClick={handleSaveProduct} disabled={isSavingProduct} className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs h-8 cursor-pointer">
                         {isSavingProduct ? <><Spinner className="w-3 h-3 mr-1" /> Guardando...</> : <><Save className="w-3 h-3 mr-1" /> Guardar Producto</>}
                       </Button>
                     </div>
@@ -1029,7 +1029,7 @@ export default function CmsPage() {
                     </div>
                     <div className="flex justify-between pt-2 border-t border-border">
                       <Button onClick={() => setEditingCategory(null)} className="bg-secondary/40 border border-border text-muted-foreground text-xs h-8 cursor-pointer hover:bg-secondary/60">Cancelar</Button>
-                      <Button onClick={handleSaveCategory} className="bg-primary hover:bg-primary/90 text-white text-xs h-8 cursor-pointer">
+                      <Button onClick={handleSaveCategory} className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs h-8 cursor-pointer">
                         <Save className="w-3.5 h-3.5 mr-1" /> Guardar Categoría
                       </Button>
                     </div>
@@ -1149,7 +1149,7 @@ export default function CmsPage() {
                       <Button onClick={() => { setBlogArticles(prev => prev.filter(a => a.id !== editingArticle.id)); setEditingArticle(null); triggerSuccess("Artículo borrado."); }} className="bg-destructive/10 border border-destructive/20 text-destructive hover:bg-destructive/20 text-xs h-8 px-3 cursor-pointer">
                         <Trash2 className="w-3.5 h-3.5" />
                       </Button>
-                      <Button onClick={() => { setBlogArticles(prev => prev.map(a => a.id === editingArticle.id ? {...editingArticle, publishedAt: editingArticle.status === "PUBLICADO" ? new Date().toLocaleDateString() : "--"} : a)); setEditingArticle(null); triggerSuccess("Artículo de blog guardado."); }} className="bg-primary hover:bg-primary/90 text-white text-xs h-8 px-4 cursor-pointer">
+                      <Button onClick={() => { setBlogArticles(prev => prev.map(a => a.id === editingArticle.id ? {...editingArticle, publishedAt: editingArticle.status === "PUBLICADO" ? new Date().toLocaleDateString() : "--"} : a)); setEditingArticle(null); triggerSuccess("Artículo de blog guardado."); }} className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs h-8 px-4 cursor-pointer">
                         <Save className="w-3.5 h-3.5 mr-1" /> Guardar Artículo
                       </Button>
                     </div>
@@ -1342,7 +1342,7 @@ export default function CmsPage() {
                 <Button 
                   onClick={handleSaveBranding}
                   disabled={isBrandingSubmitting}
-                  className="bg-primary hover:bg-primary/95 text-white font-mono text-xs cursor-pointer flex items-center gap-1.5"
+                  className="bg-primary hover:bg-primary/95 text-primary-foreground font-mono text-xs cursor-pointer flex items-center gap-1.5"
                 >
                   {isBrandingSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                   Publicar Flujo del Chatbot

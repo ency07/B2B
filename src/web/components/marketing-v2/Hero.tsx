@@ -172,11 +172,11 @@ export function Hero({ tenantCode, branding = {} }: HeroProps) {
               <span className="w-6 h-px inline-block" style={{ backgroundColor: style.accent }} />
               ETAPA {String(idx + 1).padStart(2, "0")}/{String(count).padStart(2, "0")} · {slide.eyebrow}
             </div>
-            <h1 className="font-display font-light tracking-[-0.03em] leading-[1.05] text-[clamp(36px,4.6vw,60px)] text-white mb-1.5">
-              {slide.titleMain}
-            </h1>
-            <h1 className="font-display italic font-light tracking-[-0.03em] leading-[1.05] text-[clamp(36px,4.6vw,60px)] mb-6" style={{ color: "var(--ds-c-marketing-hero-slide-accent-1)" }}>
-              {slide.titleItalic}
+            <h1 className="font-display font-light tracking-[-0.03em] leading-[1.05] text-[clamp(40px,6vw,84px)] text-white">
+              <span className="block mb-1.5">{slide.titleMain}</span>
+              <span className="block italic mb-6" style={{ color: "var(--ds-c-marketing-hero-slide-accent-1)" }}>
+                {slide.titleItalic}
+              </span>
             </h1>
             <p className="text-[17px] leading-[1.6] text-white/80 max-w-md mb-9">{slide.desc}</p>
 

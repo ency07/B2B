@@ -1,4 +1,5 @@
 import React from "react";
+import { cache } from "react";
 import { getTenantBranding } from "@/web/actions/branding";
 import { getIndustrialCatalog, CatalogCategory } from "@/web/actions/catalog";
 import { MarketingShell } from "@/web/components/marketing-v2/MarketingShell";
@@ -8,6 +9,13 @@ import { getBrandingDefaults, type BrandingConfig } from "@/platform/branding/br
 // Forzar revalidación dinámica
 export const dynamic = "force-dynamic";
 
+// Dedup por request: generateMetadata y Home piden el mismo branding en la
+// misma renderización. React.cache() colapsa ambas llamadas en una sola
+// resolución de tenant + un solo SELECT a tenant_settings (antes eran 2).
+const getTenantBrandingCached = cache(
+  (tenant: string): Promise<BrandingConfig> => getTenantBranding(tenant)
+);
+
 export async function generateMetadata(props: { searchParams: Promise<{ tenant?: string }> }): Promise<Metadata> {
   const searchParams = await props.searchParams;
   const tenant = searchParams.tenant || "acme";
@@ -15,7 +23,7 @@ export async function generateMetadata(props: { searchParams: Promise<{ tenant?:
   // getTenantBranding es de solo lectura (sin auth) y trae el branding real
   // configurado en el CMS — usar siempre esta función, no getPublicTenantSettings,
   // que consulta claves obsoletas que ya no existen en BrandingConfig.
-  const branding = await getTenantBranding(tenant);
+  const branding = await getTenantBrandingCached(tenant);
   const defaults = getBrandingDefaults(tenant);
   const siteTitle =
     branding.titulo_navegador || branding.meta_title || branding.nombre_comercial || defaults.nombre_comercial;
@@ -54,7 +62,7 @@ export default async function Home(props: { searchParams: Promise<{ tenant?: str
   // Branding real del tenant (sin auth) — usa defaults si falla
   let branding: BrandingConfig = getBrandingDefaults(tenant);
   try {
-    branding = await getTenantBranding(tenant);
+    branding = await getTenantBrandingCached(tenant);
   } catch (error) {
     console.error("[Landing] Branding público no disponible, usando defaults:", error);
   }
@@ -64,5 +72,3 @@ export default async function Home(props: { searchParams: Promise<{ tenant?: str
 
   return <MarketingShell catalog={catalog} branding={branding as unknown as Record<string, unknown>} tenantCode={tenant} />;
 }
-
-

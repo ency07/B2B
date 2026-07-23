@@ -1,0 +1,20 @@
+{
+  "version": "0.13.0",
+  "integration_state_schema": 1,
+  "installed_integrations": [
+    "opencode",
+    "claude"
+  ],
+  "integration_settings": {
+    "opencode": {
+      "script": "ps",
+      "invoke_separator": "."
+    },
+    "claude": {
+      "script": "ps",
+      "invoke_separator": "-"
+    }
+  },
+  "integration": "opencode",
+  "default_integration": "opencode"
+}

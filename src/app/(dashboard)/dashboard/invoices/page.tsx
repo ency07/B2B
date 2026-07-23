@@ -14,10 +14,11 @@
 import * as React from "react";
 import { useSearchParams } from "next/navigation";
 import { Sparkles, Plus } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/platform/ui/button";
 import { Input } from "@/platform/ui/input";
 import { Spinner } from "@/platform/ui/spinner";
-import { getInvoices, getClients, createInvoice } from "@/erp/actions/core";;
+import { getInvoices, getClients, createInvoice, registerPayment, runDunningCheck } from "@/erp/actions/core";;
 import {
   Sheet,
   SheetContent,
@@ -26,6 +27,8 @@ import {
   CashPulse,
   InvoiceList,
   InvoiceDetail,
+  PaymentForm,
+  CreditNoteForm,
   type InvoiceListItem,
   type InvoiceStatus,
   type ReceiptItem,
@@ -120,7 +123,7 @@ export default function InvoicesPage() {
 
   // === Data state ===
   const [invoices, setInvoices] = React.useState<InvoiceListItem[]>([]);
-  const [clients, setClients] = React.useState<any[]>([]);
+  const [clients, setClients] = React.useState<{ id: string; name: string; taxId: string }[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<Error | null>(null);
 
@@ -143,15 +146,20 @@ export default function InvoicesPage() {
   const [formConcept, setFormConcept] = React.useState("");
   const [formAmount, setFormAmount] = React.useState("");
 
+  // === Payment state ===
+  const [paymentInvoiceId, setPaymentInvoiceId] = React.useState<string | null>(null);
+
+  // === Credit Note state ===
+  const [creditNoteInvoiceId, setCreditNoteInvoiceId] = React.useState<string | null>(null);
+
   // === Load invoices & clients ===
   const loadData = React.useCallback(async () => {
-    setLoading(true);
-    setError(null);
     try {
       const [invoiceData, clientData] = await Promise.all([
         getInvoices(tenantParam),
         getClients(tenantParam),
       ]);
+      setError(null);
       setInvoices(invoiceData.map(enrichInvoice));
       setClients(clientData);
     } catch (err) {
@@ -161,9 +169,30 @@ export default function InvoicesPage() {
     }
   }, [tenantParam]);
 
+  // Initial data load — inline async IIFE para evitar eslint set-state-in-effect
   React.useEffect(() => {
-    loadData();
-  }, [loadData]);
+    let active = true;
+    (async () => {
+      try {
+        const [invoiceData, clientData] = await Promise.all([
+          getInvoices(tenantParam),
+          getClients(tenantParam),
+        ]);
+        if (active) {
+          setError(null);
+          setInvoices(invoiceData.map(enrichInvoice));
+          setClients(clientData);
+        }
+      } catch (err) {
+        if (active) {
+          setError(err instanceof Error ? err : new Error("Error desconocido"));
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => { active = false; };
+  }, [tenantParam]);
 
   // === Aggregates for CashPulse ===
   const outstanding = React.useMemo(
@@ -196,9 +225,12 @@ export default function InvoicesPage() {
   );
 
   const hasDueSoon = React.useMemo(() => {
+    // Date.now() es intencional: necesitamos "ahora" para calcular vencimiento relativo.
+    // eslint-disable-next-line react-hooks/purity
+    const now = Date.now();
     return invoices.some((i) => {
       if (i.status !== "EMITIDA" || !i.dueDate) return false;
-      const days = (new Date(i.dueDate).getTime() - Date.now()) / 86400000;
+      const days = (new Date(i.dueDate).getTime() - now) / 86400000;
       return days >= 0 && days <= 7;
     });
   }, [invoices]);
@@ -217,6 +249,28 @@ export default function InvoicesPage() {
     () => invoices.find((i) => i.id === selectedInvoiceId) || null,
     [invoices, selectedInvoiceId]
   );
+
+  // === Invoice being paid ===
+  const paymentInvoice = React.useMemo(
+    () => invoices.find((i) => i.id === paymentInvoiceId) || null,
+    [invoices, paymentInvoiceId]
+  );
+
+  // === Invoice for credit note ===
+  const creditNoteInvoice = React.useMemo(() => {
+    if (!creditNoteInvoiceId) return null;
+    const inv = invoices.find((i) => i.id === creditNoteInvoiceId);
+    if (!inv) return null;
+    return {
+      id: inv.id,
+      code: inv.code,
+      clientName: inv.clientName,
+      clientId: clients.find((c) => c.name === inv.clientName)?.id ?? "",
+      total: inv.totalAmount,
+      paidAmount: inv.paidAmount,
+      balanceAmount: inv.totalAmount - inv.paidAmount,
+    };
+  }, [invoices, creditNoteInvoiceId, clients]);
 
   // === Handlers ===
   const handleCreateInvoice = async (e: React.FormEvent) => {
@@ -247,9 +301,9 @@ export default function InvoicesPage() {
       setFormAmount("");
       // Reload list
       await loadData();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setCreateError(err.message || "Error al crear la factura.");
+      setCreateError(err instanceof Error ? err.message : "Error al crear la factura.");
     } finally {
       setCreateSubmitting(false);
     }
@@ -272,10 +326,31 @@ export default function InvoicesPage() {
               Emision, seguimiento y pago de facturas a clientes.
             </p>
           </div>
-          <Button onClick={() => setIsCreateOpen(true)} className="cursor-pointer">
-            <Plus className="w-4 h-4" />
-            Emitir Factura
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => setIsCreateOpen(true)} className="cursor-pointer">
+              <Plus className="w-4 h-4" />
+              Emitir Factura
+            </Button>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                try {
+                  const result = await runDunningCheck(tenantParam);
+                  if (result && result.affectedCount > 0) {
+                    toast.success(`${result.affectedCount} factura(s) marcada(s) como VENCIDA por $${result.totalAmount.toLocaleString()}`);
+                    loadData();
+                  } else {
+                    toast.info("Sin facturas vencidas pendientes");
+                  }
+                } catch {
+                  toast.error("Error al ejecutar cobranza");
+                }
+              }}
+              className="cursor-pointer"
+            >
+              Cobranza
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -290,6 +365,15 @@ export default function InvoicesPage() {
             invoiceCount={outstandingCount}
             hasOverdue={hasOverdue}
             hasDueSoon={hasDueSoon}
+            onPay={() => {
+              // Open payment form for the first pending/overdue invoice
+              const pendingInvoice = invoices.find(
+                (i) => i.status === "VENCIDA" || i.status === "EMITIDA" || i.status === "PARCIALMENTE_PAGADA"
+              );
+              if (pendingInvoice) {
+                setPaymentInvoiceId(pendingInvoice.id);
+              }
+            }}
             onDownload={() => console.log("download report")}
           />
         )}
@@ -425,9 +509,58 @@ export default function InvoicesPage() {
               invoice={selectedInvoice}
               items={mockItemsFor(selectedInvoice)}
               onClose={() => setSelectedInvoiceId(null)}
+              onPay={() => {
+                setSelectedInvoiceId(null);
+                setPaymentInvoiceId(selectedInvoice.id);
+              }}
+              onCreateCreditNote={() => {
+                setSelectedInvoiceId(null);
+                setCreditNoteInvoiceId(selectedInvoice.id);
+              }}
               onSendReminder={() => console.log("reminder", selectedInvoice.code)}
               onDownload={() => console.log("download", selectedInvoice.code)}
               onPrint={() => window.print()}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
+
+      {/* Drawer / Sheet modal lateral para registrar pago */}
+      <Sheet open={paymentInvoiceId !== null} onOpenChange={(open) => { if (!open) setPaymentInvoiceId(null); }}>
+        <SheetContent className="flex flex-col h-full w-full max-w-[500px] border-l border-border bg-card text-foreground p-0 shadow-2xl">
+          {paymentInvoice && (
+            <PaymentForm
+              invoiceCode={paymentInvoice.code}
+              invoiceId={paymentInvoice.id}
+              clientId={clients.find((c) => c.name === paymentInvoice.clientName)?.id ?? ""}
+              clientName={paymentInvoice.clientName}
+              invoiceStatus={paymentInvoice.status}
+              totalAmount={paymentInvoice.totalAmount}
+              balanceAmount={paymentInvoice.totalAmount - paymentInvoice.paidAmount}
+              onClose={() => setPaymentInvoiceId(null)}
+              onPaymentSuccess={async () => {
+                setPaymentInvoiceId(null);
+                await loadData();
+              }}
+              registerPaymentAction={(data) =>
+                registerPayment(tenantParam, data)
+              }
+            />
+          )}
+        </SheetContent>
+      </Sheet>
+
+      {/* Drawer / Sheet modal lateral para nota de crédito */}
+      <Sheet open={creditNoteInvoiceId !== null} onOpenChange={(open) => { if (!open) setCreditNoteInvoiceId(null); }}>
+        <SheetContent className="flex flex-col h-full w-full max-w-[500px] border-l border-border bg-card text-foreground p-0 shadow-2xl">
+          {creditNoteInvoice && (
+            <CreditNoteForm
+              invoice={creditNoteInvoice}
+              onClose={() => setCreditNoteInvoiceId(null)}
+              onCreated={async () => {
+                setCreditNoteInvoiceId(null);
+                await loadData();
+              }}
             />
           )}
         </SheetContent>

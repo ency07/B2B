@@ -10,6 +10,7 @@ import * as z from "zod";
 import { Eye, EyeOff, Lock, Mail, ArrowLeft, ShieldCheck } from "lucide-react";
 import Image from "next/image";
 import { getBrandingDefaults } from "@/platform/branding/branding-defaults";
+import { getTenantBranding } from "@/web/actions/branding";
 import { ROUTES } from "@/lib/routes";
 import { loginPortal } from "@/portal/actions/auth";
 import { isSafeRedirect } from "@/utils/auth-redirect";
@@ -28,11 +29,21 @@ export function PortalLoginFeature() {
   const tenantParam = searchParams.get("tenant");
   const rawRedirect = searchParams.get("redirect") || ROUTES.PORTAL;
   const redirectTo = isSafeRedirect(rawRedirect) ? rawRedirect : ROUTES.PORTAL;
-  const defaults = getBrandingDefaults(tenantParam);
 
+  const [branding, setBranding] = React.useState(() => getBrandingDefaults(tenantParam));
   const [showPassword, setShowPassword] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const [authError, setAuthError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    getTenantBranding(tenantParam).then((real) => {
+      if (!cancelled) setBranding(real);
+    }).catch(() => {
+      // sin conexión o tenant sin config propia — se queda con los defaults
+    });
+    return () => { cancelled = true; };
+  }, [tenantParam]);
 
   React.useEffect(() => {
     document.documentElement.classList.add("dark");
@@ -76,8 +87,8 @@ export function PortalLoginFeature() {
   };
 
   const siteUrl = tenantParam ? `/?tenant=${tenantParam}` : "/";
-  const companyName = defaults.nombre_comercial;
-  const logoLoginUrl = defaults.logo_login_url;
+  const companyName = branding.nombre_comercial;
+  const logoLoginUrl = branding.logo_login_url;
 
   return (
     <div className="min-h-screen bg-[var(--ds-c-marketing-cfm-background)] flex flex-col items-center justify-center p-4 relative overflow-hidden">
@@ -124,34 +135,34 @@ export function PortalLoginFeature() {
         <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 backdrop-blur-sm shadow-2xl shadow-black/40">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {authError && (
-              <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-400">
+              <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg bg-destructive/10 border border-destructive/20 text-xs text-destructive">
                 <span className="mt-px shrink-0">⚠</span>
                 <span>{authError}</span>
               </div>
             )}
 
             <div className="space-y-1.5">
-              <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
+              <label className="text-[11px] font-mono uppercase tracking-wider text-ink-muted">
                 Correo electrónico
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
                 <input
                   type="email"
                   {...register("email")}
                   placeholder="tu@empresa.com"
                   autoComplete="email"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-primary/60 focus:bg-white/[0.07] transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-ink-muted focus:outline-none focus:border-primary/60 focus:bg-white/[0.07] transition-all"
                 />
               </div>
               {errors.email && (
-                <p className="text-[11px] text-red-400">{errors.email.message}</p>
+                <p className="text-[11px] text-destructive">{errors.email.message}</p>
               )}
             </div>
 
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
+                <label className="text-[11px] font-mono uppercase tracking-wider text-ink-muted">
                   Contraseña
                 </label>
                 <Link
@@ -162,25 +173,25 @@ export function PortalLoginFeature() {
                 </Link>
               </div>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
                 <input
                   type={showPassword ? "text" : "password"}
                   {...register("password")}
                   placeholder="••••••••"
                   autoComplete="current-password"
-                  className="w-full pl-10 pr-10 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-primary/60 focus:bg-white/[0.07] transition-all"
+                  className="w-full pl-10 pr-10 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-ink-muted focus:outline-none focus:border-primary/60 focus:bg-white/[0.07] transition-all"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink-soft transition-colors"
                   tabIndex={-1}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
               {errors.password && (
-                <p className="text-[11px] text-red-400">{errors.password.message}</p>
+                <p className="text-[11px] text-destructive">{errors.password.message}</p>
               )}
             </div>
 

@@ -8,37 +8,45 @@
         "baseURL": "http://localhost:11434/v1"
       },
       "models": {
-        "qwen2.5-coder:1.5b": {
-          "name": "Qwen 1.5B (Rápido)",
+        "mistral:7b": {
+          "name": "Mistral 7B (General)",
           "default": true,
           "config": {
             "temperature": 0.2,
-            "maxTokens": 512,
-            "system": "INSTRUCCIÓN OBLIGATORIA: SIEMPRE DEBES RESPONDER EN ESPAÑOL.Eres un asistente ágil y directo. Responde de forma concisa (máximo 150 palabras o 4 párrafos). Si no sabes algo, di 'No lo sé'. Siempre responde en español."
+            "maxTokens": 2048,
+            "system": "INSTRUCCIÓN OBLIGATORIA: SIEMPRE RESPONDE EN ESPAÑOL. Eres un asistente versátil y preciso. Da respuestas claras y bien estructuradas. Si no estás seguro, dilo. Para problemas complejos, ofrece soluciones paso a paso."
           }
         },
-        "deepseek-r1:1.5b": {
-          "name": "DeepSeek R1 (Arquitecto)",
+        "llama3.2:3b": {
+          "name": "Llama 3.2 3B (Rápido)",
+          "config": {
+            "temperature": 0.2,
+            "maxTokens": 1024,
+            "system": "INSTRUCCIÓN OBLIGATORIA: SIEMPRE RESPONDE EN ESPAÑOL. Eres un asistente ágil y directo. Responde de forma concisa (máximo 150 palabras). Si no sabes algo, di 'No lo sé'."
+          }
+        },
+        "gemma3:1b": {
+          "name": "Gemma 3 1B (Ultra-rápido)",
           "config": {
             "temperature": 0.3,
-            "maxTokens": 768,
-            "system": "INSTRUCCIÓN OBLIGATORIA: SIEMPRE DEBES RESPONDER EN ESPAÑOL.Eres un planificador meticuloso. Desglosa los problemas en pasos lógicos y explica tu razonamiento paso a paso. Para tareas grandes, da un resumen inicial y luego pregunta '¿Por dónde quieres que empiece?' antes de continuar. Máximo 200 palabras por respuesta. Siempre responde en español."
+            "maxTokens": 512,
+            "system": "INSTRUCCIÓN OBLIGATORIA: SIEMPRE RESPONDE EN ESPAÑOL. Eres un asistente ligero y rápido. Responde de forma breve y directa."
           }
         },
-        "qwen2.5-coder:7b": {
-          "name": "Qwen 7B (Código avanzado)",
+        "gemma3:4b": {
+          "name": "Gemma 3 4B (Equilibrado)",
           "config": {
             "temperature": 0.2,
-            "maxTokens": 1024,
-            "system": "INSTRUCCIÓN OBLIGATORIA: SIEMPRE DEBES RESPONDER EN ESPAÑOL.Eres un experto en programación. Genera código limpio, eficiente y bien comentado. Explica tu razonamiento detrás de las soluciones. Para tareas grandes, divide el código en partes y pide confirmación antes de continuar. Siempre responde en español."
+            "maxTokens": 1536,
+            "system": "INSTRUCCIÓN OBLIGATORIA: SIEMPRE RESPONDE EN ESPAÑOL. Eres un asistente equilibrado entre velocidad y calidad. Responde de forma clara y concisa."
           }
         },
-        "mistral": {
-          "name": "Mistral (Alternativa)",
+        "phi4-mini:latest": {
+          "name": "Phi-4 Mini (Razonamiento)",
           "config": {
-            "temperature": 0.2,
-            "maxTokens": 1024,
-            "system": "INSTRUCCIÓN OBLIGATORIA: SIEMPRE DEBES RESPONDER EN ESPAÑOL.Eres un asistente versátil y preciso. Da respuestas claras y bien estructuradas. Si no estás seguro, dilo. Para problemas complejos, ofrece soluciones paso a paso. Siempre responde en español."
+            "temperature": 0.3,
+            "maxTokens": 1536,
+            "system": "INSTRUCCIÓN OBLIGATORIA: SIEMPRE RESPONDE EN ESPAÑOL. Eres un asistente de razonamiento lógico. Desglosa los problemas en pasos lógicos y explica tu razonamiento."
           }
         }
       }

@@ -43,6 +43,7 @@ export default function CustomerPortal({
   isClientContact = false,
   allClients = [],
   tenantId = null,
+  branding = null,
 }: CustomerPortalProps) {
   const s = usePortalClientState({
     clientInfo,
@@ -54,6 +55,7 @@ export default function CustomerPortal({
     requirements: initialRequirements,
     previewClientId,
     tenantId,
+    branding,
   });
 
   if (s.isLoading) return <PortalLoadingSkeleton />;
@@ -73,7 +75,7 @@ export default function CustomerPortal({
         isClientContact={isClientContact}
         clientInfo={clientInfo}
         clientName={s.clientName}
-        brandName={s.config.name}
+        brandName={s.companyName}
         allClients={allClients}
         onOpenProfile={() => s.setIsProfileModalOpen(true)}
         onLogout={s.handleLogout}

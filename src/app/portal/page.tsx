@@ -14,6 +14,7 @@ import {
 import { buildLoginUrl } from "@/utils/auth-redirect";
 import { ROUTES } from "@/lib/routes";
 import CustomerPortalClient from "@/portal/components/dashboard/CustomerPortal";
+import { DesignSystemProvider } from "@/design-system";
 
 import { supabaseAdmin } from "@/platform/auth/clients";
 
@@ -76,21 +77,27 @@ export default async function PortalPage({ searchParams }: Props) {
     //    estado de error visible, NO redirigir (sino loop infinito).
     if (!(await hasAccessTokenCookie())) {
       // Sin tenant en la URL de login: nunca se expone antes de autenticar.
-      const loginUrl = buildLoginUrl(ROUTES.PORTAL_LOGIN);
+      // ROUTES.PORTAL_LOGIN ("/portal/login") no es una ruta real — el login
+      // vive en /login (compartido con ERP) y se distingue por ?redirect=/portal.
+      const loginUrl = buildLoginUrl(ROUTES.LOGIN, { redirectTo: ROUTES.PORTAL });
       redirect(loginUrl);
     }
 
     return <PortalNoClientAssigned />;
   }
 
-  // Cargar datos del client (per-client filtering por client_id).
-  const [jobs, invoices, payments, tickets, messages, requirements] = await Promise.all([
+  // Cargar datos del client (per-client filtering por client_id) + branding del
+  // tenant, todo en paralelo. El branding se resuelve aquí (server) y se pasa
+  // como prop, en vez de re-fetchearlo client-side con useEffect (evita el
+  // flash de marca: defaults → branding real).
+  const [jobs, invoices, payments, tickets, messages, requirements, branding] = await Promise.all([
     getClientJobs(previewClientId),
     getClientInvoices(previewClientId),
     getClientPayments(previewClientId),
     getClientTickets(previewClientId),
     getClientMessages(previewClientId),
     getClientRequirements(previewClientId),
+    getTenantBranding(tenantParam),
   ]);
 
   // Documentos tecnicos asociados a las OTs del cliente
@@ -141,7 +148,8 @@ export default async function PortalPage({ searchParams }: Props) {
   }
 
   return (
-    <CustomerPortalClient
+    <DesignSystemProvider>
+      <CustomerPortalClient
       clientInfo={{
         legalName: currentClient.legalName,
         taxId: currentClient.taxId,
@@ -159,7 +167,9 @@ export default async function PortalPage({ searchParams }: Props) {
       documents={documents}
       requirements={requirements}
       tenantId={currentClient.tenantId}
-    />
+      branding={branding}
+      />
+    </DesignSystemProvider>
   );
 }
 
@@ -170,9 +180,9 @@ export default async function PortalPage({ searchParams }: Props) {
  */
 function PortalNoClientAssigned() {
   return (
-    <main className="min-h-screen flex items-center justify-center bg-stone-50 p-6">
-      <div className="w-full max-w-md rounded-2xl border border-stone-200 bg-white p-8 text-center shadow-sm">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+    <main className="min-h-screen flex items-center justify-center bg-background p-6">
+      <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-warning/10 text-warning">
           <svg
             className="h-6 w-6"
             fill="none"
@@ -187,18 +197,18 @@ function PortalNoClientAssigned() {
             />
           </svg>
         </div>
-        <h1 className="text-lg font-semibold text-stone-900 tracking-tight">
+        <h1 className="text-lg font-semibold text-foreground tracking-tight">
           Tu cuenta no tiene un cliente asociado
         </h1>
-        <p className="mt-2 text-sm text-stone-600 leading-relaxed">
+        <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
           Estás autenticado, pero aún no hemos vinculado tu usuario a una
           empresa cliente. Si acabas de registrarte, tu ejecutivo comercial
           completará la asignación en breve.
         </p>
-        <p className="mt-4 text-xs text-stone-500">
+        <p className="mt-4 text-xs text-muted-foreground">
           ¿Necesitas ayuda? Escríbenos a{" "}
           <a
-            className="text-stone-900 underline"
+            className="text-foreground underline"
             href="mailto:soporte@ventitech.com"
           >
             soporte@ventitech.com
@@ -208,7 +218,7 @@ function PortalNoClientAssigned() {
         <form action="/api/auth/signout?context=portal" method="post" className="mt-6">
           <button
             type="submit"
-            className="inline-flex h-9 items-center justify-center rounded-md border border-stone-300 bg-white px-4 text-xs font-semibold uppercase tracking-widest text-stone-700 hover:bg-stone-50"
+            className="inline-flex h-9 items-center justify-center rounded-md border border-border bg-card px-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground hover:bg-muted"
           >
             Cerrar sesión
           </button>

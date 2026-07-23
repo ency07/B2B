@@ -130,7 +130,7 @@ export function Services({ tenantCode, content }: Props) {
                   />
                 </div>
 
-                <h3 className="font-display text-3xl lg:text-4xl font-light text-ink tracking-[-0.02em] leading-[1.1] mb-4">
+                <h3 className="font-display text-2xl lg:text-3xl font-light text-ink tracking-[-0.02em] leading-[1.1] mb-4">
                   {service.name}
                 </h3>
 

@@ -11,3 +11,5 @@ export {
   type InvoiceStatus,
 } from "./invoice-list";
 export { InvoiceDetail, type InvoiceDetailProps } from "./invoice-detail";
+export { PaymentForm, type PaymentFormProps } from "./payment-form";
+export { CreditNoteForm, type CreditNoteFormProps } from "./credit-note-form";

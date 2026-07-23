@@ -15,7 +15,7 @@
 
 import * as React from "react";
 import { useSearchParams } from "next/navigation";
-import { X, CreditCard, Bell, Send, Download, Printer } from "lucide-react";
+import { X, CreditCard, Bell, Send, Download, Printer, FileMinus } from "lucide-react";
 import {
   Receipt,
   type ReceiptItem,
@@ -26,6 +26,7 @@ import { Button } from "@/platform/ui/button";
 import { cn } from "@/platform/utils/cn";
 import type { InvoiceListItem } from "./invoice-list";
 import { useBranding } from "@/hooks/use-branding";
+import { getTaxRate } from "@/erp/actions/core";
 
 const statusToVariant: Record<InvoiceListItem["status"], StatusVariant> = {
   BORRADOR: "neutral",
@@ -58,6 +59,7 @@ export interface InvoiceDetailProps {
   items: ReceiptItem[];
   onClose: () => void;
   onPay?: () => void;
+  onCreateCreditNote?: () => void;
   onSendReminder?: () => void;
   onDownload?: () => void;
   onPrint?: () => void;
@@ -69,6 +71,7 @@ export function InvoiceDetail({
   items,
   onClose,
   onPay,
+  onCreateCreditNote,
   onSendReminder,
   onDownload,
   onPrint,
@@ -77,8 +80,17 @@ export function InvoiceDetail({
   const searchParams = useSearchParams();
   const tenantParam = searchParams.get("tenant");
   const branding = useBranding(tenantParam);
+  const [taxRate, setTaxRate] = React.useState(0.19);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    getTaxRate(tenantParam)
+      .then((rate) => { if (!cancelled) setTaxRate(rate); })
+      .catch(() => { /* keep default 0.19 */ });
+    return () => { cancelled = true; };
+  }, [tenantParam]);
+
   const subtotal = items.reduce((s, it) => s + it.subtotal, 0);
-  const taxRate = 0.19;
   const tax = Math.round(subtotal * taxRate);
   const total = subtotal + tax;
   const isPending =
@@ -178,6 +190,16 @@ export function InvoiceDetail({
               aria-label="Descargar PDF"
             >
               <Download className="h-3.5 w-3.5" strokeWidth={1.5} />
+            </Button>
+          )}
+          {onCreateCreditNote && invoice.status !== "ANULADA" && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={onCreateCreditNote}
+              aria-label="Crear nota de crédito"
+            >
+              <FileMinus className="h-3.5 w-3.5" strokeWidth={1.5} />
             </Button>
           )}
         </div>

@@ -1,0 +1,123 @@
+/* ============================================================
+   ERP TOKENS — Dashboard (shadcn HSL)
+   Importar SOLO en src/app/(dashboard)/layout.tsx
+
+   NOTA (dedup Fase 1): los tokens shadcn base (--primary, --background,
+   --card, --state-*, etc.), sus overrides .dark, el @theme inline de
+   shadcn, las sombras (@layer base --shadow-*), y las utilities comunes
+   (.depth-*, .bg-state-*, .text-state-*, .border-state-*, .ease-erp)
+   viven ya en src/app/globals.css, cargado en la raíz para todos los
+   módulos. Este archivo mantiene ÚNICAMENTE lo exclusivo del ERP:
+   los tokens nativos --erp-*, sus mapeos --color-erp-* y el scrollbar
+   con tratamiento propio para dark mode.
+   ============================================================ */
+
+/* ============================================================
+   ERP NATIVE TOKENS — Semantic naming (independiente de marketing)
+   Light mode (ERP default)
+   ============================================================ */
+
+:root {
+  /* Surface tokens */
+  --erp-surface: #EEF1F2;
+  --erp-surface-warm: #F4F6F7;
+  --erp-surface-elevated: #FFFFFF;
+  --erp-surface-sunken: #E2E7EA;
+
+  /* Text tokens */
+  --erp-text: #0D2228;
+  --erp-text-secondary: #46626A;
+  --erp-text-muted: #8C9DA1;
+  --erp-text-inverse: #FFFFFF;
+
+  /* Border tokens */
+  --erp-border: #E4E9EA;
+  --erp-border-strong: #D3DADC;
+  --erp-border-focus: #0D2228;
+}
+
+/* ============================================================
+   ERP NATIVE TOKENS — Dark Mode (Portal default / ERP toggle)
+   ============================================================ */
+
+.dark {
+  /* Surface tokens */
+  --erp-surface: #16162A;
+  --erp-surface-warm: #1A1A30;
+  --erp-surface-elevated: #1C1C38;
+  --erp-surface-sunken: #0D0D1A;
+
+  /* Text tokens */
+  --erp-text: #E8EAF0;
+  --erp-text-secondary: #B0B4C0;
+  --erp-text-muted: #6B7080;
+  --erp-text-inverse: #0D2228;
+
+  /* Border tokens */
+  --erp-border: #252540;
+  --erp-border-strong: #35355A;
+  --erp-border-focus: #E8EAF0;
+}
+
+/* ============================================================
+   TAILWIND THEME — ERP native tokens → Tailwind (RECOMENDADO)
+   ============================================================ */
+
+@theme inline {
+  --color-erp-surface: var(--erp-surface);
+  --color-erp-surface-warm: var(--erp-surface-warm);
+  --color-erp-surface-elevated: var(--erp-surface-elevated);
+  --color-erp-surface-sunken: var(--erp-surface-sunken);
+  --color-erp-text: var(--erp-text);
+  --color-erp-text-secondary: var(--erp-text-secondary);
+  --color-erp-text-muted: var(--erp-text-muted);
+  --color-erp-text-inverse: var(--erp-text-inverse);
+  --color-erp-border: var(--erp-border);
+  --color-erp-border-strong: var(--erp-border-strong);
+  --color-erp-border-focus: var(--erp-border-focus);
+}
+
+/* ============================================================
+   ERP UTILITY CLASSES — Native tokens (RECOMENDADO)
+   ============================================================ */
+
+@layer utilities {
+  /* === ERP Surface utilities === */
+  .bg-erp-surface { background-color: var(--erp-surface); }
+  .bg-erp-surface-warm { background-color: var(--erp-surface-warm); }
+  .bg-erp-surface-elevated { background-color: var(--erp-surface-elevated); }
+  .bg-erp-surface-sunken { background-color: var(--erp-surface-sunken); }
+
+  /* === ERP Text utilities === */
+  .text-erp { color: var(--erp-text); }
+  .text-erp-secondary { color: var(--erp-text-secondary); }
+  .text-erp-muted { color: var(--erp-text-muted); }
+  .text-erp-inverse { color: var(--erp-text-inverse); }
+
+  /* === ERP Border utilities === */
+  .border-erp { border-color: var(--erp-border); }
+  .border-erp-strong { border-color: var(--erp-border-strong); }
+  .border-erp-focus { border-color: var(--erp-border-focus); }
+}
+
+/* ============================================================
+   SCROLLBAR (ERP) — usa tokens --erp-* para adaptarse a dark mode
+   ============================================================ */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--erp-surface);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--erp-border-strong);
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--erp-text);
+}

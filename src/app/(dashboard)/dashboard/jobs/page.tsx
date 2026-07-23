@@ -67,7 +67,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/platform/ui/select";
-import { getJobs, createJob, getAssignableUsers, getClients } from "@/erp/actions/core";
+import { getJobs, createJob, getAssignableUsers, getClients, updateJobStatus } from "@/erp/actions/core";
 import { getRequirements } from "@/erp/actions/requirements";
 
 const jobSchema = z.object({
@@ -97,7 +97,7 @@ interface Job {
   priority: "BAJA" | "MEDIA" | "ALTA";
   startDate: string;
   endDate: string;
-  status: "PENDIENTE" | "EN_PROGRESO" | "COMPLETADA" | "CANCELADA";
+  status: "PENDIENTE" | "PROGRAMADO" | "EN_EJECUCION" | "SUSPENDIDO" | "FINALIZADO" | "ENTREGADO" | "CERRADO" | "CANCELADO";
 }
 
 // Checklist structure per job
@@ -131,6 +131,11 @@ export default function JobsPage() {
   const [signatures, setSignatures] = React.useState<Record<string, { signed: boolean; name: string; date: string }>>({});
   // Local interactive state for test measurements
   const [measurements, setMeasurements] = React.useState<Record<string, { targetCfm: string; measuredCfm: string; vibration: string; current: string }>>({});
+
+  // Status transition state
+  const [statusTransitioning, setStatusTransitioning] = React.useState(false);
+  const [cancelReason, setCancelReason] = React.useState("");
+  const [showCancelInput, setShowCancelInput] = React.useState(false);
 
   const form = useForm<JobFormValues>({
     resolver: zodResolver(jobSchema),
@@ -315,6 +320,28 @@ export default function JobsPage() {
     });
   };
 
+  const handleStatusTransition = async (jobId: string, newStatus: Job["status"]) => {
+    if (newStatus === "CANCELADO" && cancelReason.length < 10) {
+      return;
+    }
+    setStatusTransitioning(true);
+    try {
+      await updateJobStatus(tenantParam, {
+        jobId,
+        newStatus,
+        cancelReason: newStatus === "CANCELADO" ? cancelReason : undefined,
+      });
+      setShowCancelInput(false);
+      setCancelReason("");
+      await loadJobs();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Error al actualizar estado";
+      console.error(msg);
+    } finally {
+      setStatusTransitioning(false);
+    }
+  };
+
   const columns: ColumnDef<Job>[] = [
     {
       accessorKey: "code",
@@ -354,10 +381,10 @@ export default function JobsPage() {
       cell: ({ row }) => {
         const status = row.getValue("status") as string;
         let variant: "success" | "warning" | "destructive" | "secondary" | "info" = "secondary";
-        if (status === "COMPLETADA") variant = "success";
-        if (status === "EN_PROGRESO") variant = "info";
+        if (status === "COMPLETADA" || status === "FINALIZADO" || status === "ENTREGADO" || status === "CERRADO") variant = "success";
+        if (status === "EN_EJECUCION" || status === "PROGRAMADO") variant = "info";
         if (status === "PENDIENTE") variant = "warning";
-        if (status === "CANCELADA") variant = "destructive";
+        if (status === "CANCELADA" || status === "CANCELADO") variant = "destructive";
         return <Badge variant={variant} className="text-[9px] font-semibold py-0 px-1 font-mono uppercase">{status}</Badge>;
       },
     },
@@ -683,7 +710,7 @@ export default function JobsPage() {
                     <span className="font-mono text-xs font-semibold text-foreground bg-accent border border-border/80 px-2 py-0.5 rounded shadow-sm">
                       {selectedJob.code}
                     </span>
-                    <Badge variant={selectedJob.status === "COMPLETADA" ? "success" : selectedJob.status === "EN_PROGRESO" ? "info" : "warning"} className="text-[9px] font-semibold py-0 px-1.5 font-mono uppercase">
+                    <Badge variant={selectedJob.status === "CERRADO" || selectedJob.status === "ENTREGADO" || selectedJob.status === "FINALIZADO" ? "success" : selectedJob.status === "EN_EJECUCION" || selectedJob.status === "PROGRAMADO" ? "info" : "warning"} className="text-[9px] font-semibold py-0 px-1.5 font-mono uppercase">
                       {selectedJob.status}
                     </Badge>
                   </div>
@@ -898,6 +925,108 @@ export default function JobsPage() {
                 </div>
 
               </div>
+
+              {/* Status Transition Actions */}
+              {selectedJob.status !== "CERRADO" && selectedJob.status !== "CANCELADO" && (
+                <div className="p-4 border-t border-border bg-muted/50 space-y-3">
+                  <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest font-bold text-center mb-2">
+                    // Acciones de Estado
+                  </div>
+
+                  {showCancelInput && (
+                    <div className="space-y-2">
+                      <Input
+                        placeholder="Motivo de cancelación (mínimo 10 caracteres)"
+                        value={cancelReason}
+                        onChange={(e) => setCancelReason(e.target.value)}
+                        className="bg-background border-border text-xs h-9 font-mono"
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          disabled={statusTransitioning || cancelReason.length < 10}
+                          onClick={() => handleStatusTransition(selectedJob.id, "CANCELADO")}
+                          className="text-xs h-8 cursor-pointer"
+                        >
+                          {statusTransitioning ? <Spinner size="sm" className="mr-1" /> : null}
+                          Confirmar Cancelación
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => { setShowCancelInput(false); setCancelReason(""); }}
+                          className="text-xs h-8 cursor-pointer"
+                        >
+                          Volver
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {!showCancelInput && (
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      {selectedJob.status === "PENDIENTE" && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleStatusTransition(selectedJob.id, "EN_EJECUCION")}
+                          disabled={statusTransitioning}
+                          className="text-xs h-8 cursor-pointer bg-primary text-primary-foreground hover:bg-primary/95"
+                        >
+                          {statusTransitioning ? <Spinner size="sm" className="mr-1" /> : null}
+                          <Wrench className="w-3.5 h-3.5 mr-1" /> Iniciar Trabajo
+                        </Button>
+                      )}
+
+                      {(selectedJob.status === "EN_EJECUCION" || selectedJob.status === "SUSPENDIDO") && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleStatusTransition(selectedJob.id, "FINALIZADO")}
+                          disabled={statusTransitioning}
+                          className="text-xs h-8 cursor-pointer bg-success text-white hover:bg-success/90"
+                        >
+                          {statusTransitioning ? <Spinner size="sm" className="mr-1" /> : null}
+                          <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Finalizar OT
+                        </Button>
+                      )}
+
+                      {selectedJob.status === "FINALIZADO" && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleStatusTransition(selectedJob.id, "ENTREGADO")}
+                          disabled={statusTransitioning}
+                          className="text-xs h-8 cursor-pointer bg-info text-white hover:bg-info/90"
+                        >
+                          {statusTransitioning ? <Spinner size="sm" className="mr-1" /> : null}
+                          <FileSpreadsheet className="w-3.5 h-3.5 mr-1" /> Marcar como Entregado
+                        </Button>
+                      )}
+
+                      {selectedJob.status === "ENTREGADO" && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleStatusTransition(selectedJob.id, "CERRADO")}
+                          disabled={statusTransitioning}
+                          className="text-xs h-8 cursor-pointer bg-success text-white hover:bg-success/90"
+                        >
+                          {statusTransitioning ? <Spinner size="sm" className="mr-1" /> : null}
+                          <ShieldCheck className="w-3.5 h-3.5 mr-1" /> Cerrar OT
+                        </Button>
+                      )}
+
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => setShowCancelInput(true)}
+                        disabled={statusTransitioning}
+                        className="text-xs h-8 cursor-pointer"
+                      >
+                        <AlertTriangle className="w-3.5 h-3.5 mr-1" /> Cancelar
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Bottom status helper */}
               <div className="p-4 border-t border-border bg-muted/50 text-[10px] font-mono text-muted-foreground text-center flex items-center justify-center gap-2">

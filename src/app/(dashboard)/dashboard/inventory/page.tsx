@@ -309,8 +309,8 @@ export default function InventoryPage() {
         <div className="flex gap-3">
           {/* Sheet for Item Creation */}
           <Sheet open={isItemSheetOpen} onOpenChange={setIsItemSheetOpen}>
-            <Button onClick={() => setIsItemSheetOpen(true)} className="flex items-center gap-2 cursor-pointer bg-primary hover:opacity-90 border-0 text-white text-xs py-4 px-6 rounded-md shadow-sm transition-all active:scale-[0.98]">
-              <Plus className="w-4 h-4 text-white" /> Registrar Artículo
+            <Button onClick={() => setIsItemSheetOpen(true)} className="flex items-center gap-2 cursor-pointer bg-primary hover:opacity-90 border-0 text-primary-foreground text-xs py-4 px-6 rounded-md shadow-sm transition-all active:scale-[0.98]">
+              <Plus className="w-4 h-4 text-primary-foreground" /> Registrar Artículo
             </Button>
             <SheetContent className="bg-card border-l border-border p-0 overflow-y-auto w-full sm:max-w-md backdrop-blur-md">
               <div className="p-8 space-y-6 bg-card">

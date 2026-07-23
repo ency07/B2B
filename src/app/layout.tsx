@@ -1,10 +1,18 @@
 import type { Metadata } from "next";
 import { Inter, Fraunces, IBM_Plex_Mono } from "next/font/google";
-import { DesignSystemProvider } from "@/design-system";
 import { PostHogProvider } from "@/platform/providers/posthog-provider";
 import { Toaster } from "@/platform/ui/toaster";
 import { SessionVersionListener } from "@/platform/ui/session-version-listener";
+import { themes } from "@/design-system/themes";
 import "./globals.css";
+
+// Fuente única de verdad para saber qué theme-ids son oscuros.
+// Se deriva de la definición real de temas (kebab-case: carbon, graphite,
+// midnight-blue, neo-emerald) y se inyecta en el script anti-FOUC de abajo.
+// ANTES estaba hardcodeado con "midnightBlue"/"neoEmerald" (camelCase), que
+// NO coinciden con los ids que el provider guarda en localStorage → el script
+// no aplicaba .dark para esos temas y causaba flash/tema desvaído.
+const DARK_THEME_IDS = themes.filter((t) => t.mode === "dark").map((t) => t.id);
 
 const inter = Inter({
   variable: "--font-sans",
@@ -48,7 +56,8 @@ export default function RootLayout({
               try {
                 var dsThemeId = localStorage.getItem('ds-theme-id');
                 if (dsThemeId) {
-                  var isDark = dsThemeId === 'carbon' || dsThemeId === 'graphite' || dsThemeId === 'midnightBlue' || dsThemeId === 'neoEmerald';
+                  var darkThemeIds = ${JSON.stringify(DARK_THEME_IDS)};
+                  var isDark = darkThemeIds.indexOf(dsThemeId) !== -1;
                   if (isDark) document.documentElement.classList.add('dark');
                   else document.documentElement.classList.remove('dark');
                 }
@@ -60,9 +69,27 @@ export default function RootLayout({
                     var config = JSON.parse(cached);
                     if (config.theme === 'dark') document.documentElement.classList.add('dark');
                     else if (config.theme === 'light') document.documentElement.classList.remove('dark');
-                    if (config.primaryColor) {
-                      document.documentElement.style.setProperty('--primary', config.primaryColor);
-                      document.documentElement.style.setProperty('--ring', config.primaryColor);
+                    var rawColor = config.color_primario || config.primaryColor;
+                    if (rawColor) {
+                      var hsl = rawColor;
+                      var hexMatch = /^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})$/.exec(rawColor);
+                      if (hexMatch) {
+                        var hex = hexMatch[1];
+                        if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+                        var r = parseInt(hex.substring(0,2),16)/255, g = parseInt(hex.substring(2,4),16)/255, b = parseInt(hex.substring(4,6),16)/255;
+                        var max = Math.max(r,g,b), min = Math.min(r,g,b), h = 0, s = 0, l = (max+min)/2;
+                        if (max !== min) {
+                          var d = max-min;
+                          s = l > 0.5 ? d/(2-max-min) : d/(max+min);
+                          if (max === r) h = (g-b)/d + (g<b?6:0);
+                          else if (max === g) h = (b-r)/d + 2;
+                          else h = (r-g)/d + 4;
+                          h /= 6;
+                        }
+                        hsl = Math.round(h*360) + ' ' + Math.round(s*100) + '% ' + Math.round(l*100) + '%';
+                      }
+                      document.documentElement.style.setProperty('--primary', hsl);
+                      document.documentElement.style.setProperty('--ring', hsl);
                     }
                   }
                 }
@@ -70,13 +97,11 @@ export default function RootLayout({
             `,
           }}
         />
-        <DesignSystemProvider>
-          <PostHogProvider>
-            {children}
-            <Toaster />
-            <SessionVersionListener />
-          </PostHogProvider>
-        </DesignSystemProvider>
+        <PostHogProvider>
+          {children}
+          <Toaster />
+          <SessionVersionListener />
+        </PostHogProvider>
       </body>
     </html>
   );

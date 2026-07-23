@@ -40,6 +40,25 @@
   --warning: 38 92% 42%;
   --warning-foreground: 0 0% 100%;
 
+  /* === STATE TOKENS (badges/pills de estado — success/warning/danger/info/neutral) ===
+     Valores estáticos independientes de DesignSystemProvider: los usa el Portal de
+     clientes, que no tiene el provider, y sirven de respaldo si el provider falla. */
+  --state-success-bg: 152 60% 95%;
+  --state-success-fg: 152 60% 28%;
+  --state-success-border: 152 50% 75%;
+  --state-warning-bg: 38 92% 93%;
+  --state-warning-fg: 38 85% 32%;
+  --state-warning-border: 38 80% 70%;
+  --state-danger-bg: 354 84% 95%;
+  --state-danger-fg: 354 70% 40%;
+  --state-danger-border: 354 70% 78%;
+  --state-info-bg: 207 60% 94%;
+  --state-info-fg: 207 65% 35%;
+  --state-info-border: 207 50% 75%;
+  --state-neutral-bg: 210 17% 92%;
+  --state-neutral-fg: 210 10% 40%;
+  --state-neutral-border: 210 15% 75%;
+
   --radius: 0.375rem;
 
   /* === BRAND NEUTRALS (white-label safe) === */
@@ -76,6 +95,22 @@
   --success-foreground: 192 100% 16%;
   --warning: 38 90% 55%;
   --warning-foreground: 192 100% 16%;
+
+  --state-success-bg: 152 40% 18%;
+  --state-success-fg: 152 55% 65%;
+  --state-success-border: 152 40% 32%;
+  --state-warning-bg: 38 60% 20%;
+  --state-warning-fg: 38 85% 65%;
+  --state-warning-border: 38 55% 35%;
+  --state-danger-bg: 354 50% 22%;
+  --state-danger-fg: 354 80% 70%;
+  --state-danger-border: 354 45% 38%;
+  --state-info-bg: 207 45% 20%;
+  --state-info-fg: 207 70% 68%;
+  --state-info-border: 207 40% 35%;
+  --state-neutral-bg: 210 20% 24%;
+  --state-neutral-fg: 210 15% 70%;
+  --state-neutral-border: 210 20% 35%;
 }
 
 @theme inline {

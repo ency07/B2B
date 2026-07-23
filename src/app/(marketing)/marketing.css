@@ -1,0 +1,85 @@
+/* ============================================================
+   MARKETING TOKENS — Web pública (landing, wizard, redesign)
+   Importar SOLO en src/app/(marketing)/layout.tsx
+
+   NOTA (dedup Fase 1): los tokens base de marketing (--color-ink,
+   --color-paper, --bg-*, --gunmetal, --red-crayola), el @theme inline
+   y TODAS las clases utilitarias/editoriales (.editorial-*, .btn-*,
+   .nav-link, .section-*, .hairline-*, .hero-overlay, .marquee-track,
+   .photo-treated, etc.) viven ya en src/app/globals.css, que se carga
+   en la raíz para todos los módulos. Este archivo mantiene ÚNICAMENTE
+   los tokens semánticos --ds-c-marketing-* que son exclusivos de la Web.
+   ============================================================ */
+
+/* ============================================================
+   MARKETING SEMANTIC TOKENS (--ds-c-marketing-*)
+   Paleta editorial/industrial: 6 acentos temáticos + fondos oscuros
+   armonizados con --color-ink (#0D2228), usados en marketing-v2/*.
+   ============================================================ */
+:root {
+  /* --- Acentos temáticos base ---
+     Señal (alertas/foco), Medición (datos/aero), Diseño (ingeniería),
+     Ejecución (fabricación/campo), Verificado (calidad/OK),
+     Neutro técnico (informativo, bajo contraste) */
+  --ds-c-marketing-accent-signal: var(--red-crayola);      /* #ED254E */
+  --ds-c-marketing-accent-measurement: #3B82C4;
+  --ds-c-marketing-accent-design: #6B5FA8;
+  --ds-c-marketing-accent-execution: #C4732E;
+  --ds-c-marketing-accent-verified: #2E9463;
+  --ds-c-marketing-accent-neutral: #5B7A85;
+
+  /* --- Disciplines.tsx: 4 tarjetas de disciplina --- */
+  --ds-c-marketing-discipline-color-1: var(--ds-c-marketing-accent-measurement);
+  --ds-c-marketing-discipline-color-2: var(--ds-c-marketing-accent-design);
+  --ds-c-marketing-discipline-color-3: var(--ds-c-marketing-accent-execution);
+  --ds-c-marketing-discipline-color-4: var(--ds-c-marketing-accent-verified);
+
+  /* --- Sectors.tsx: 4 tarjetas de sector --- */
+  --ds-c-marketing-sector-color-1: var(--ds-c-marketing-accent-measurement);
+  --ds-c-marketing-sector-color-2: var(--ds-c-marketing-accent-execution);
+  --ds-c-marketing-sector-color-3: var(--ds-c-marketing-accent-design);
+  --ds-c-marketing-sector-color-4: var(--ds-c-marketing-accent-verified);
+
+  /* --- Hero.tsx: 4 slides + dots de navegación (sobre fondo oscuro) --- */
+  --ds-c-marketing-hero-slide-accent-1: var(--ds-c-marketing-accent-measurement);
+  --ds-c-marketing-hero-slide-accent-2: var(--ds-c-marketing-accent-verified);
+  --ds-c-marketing-hero-slide-accent-3: var(--ds-c-marketing-accent-execution);
+  --ds-c-marketing-hero-slide-accent-4: var(--ds-c-marketing-accent-design);
+  --ds-c-marketing-hero-dot-active: #FFFFFF;
+  --ds-c-marketing-hero-dot-inactive: rgba(255, 255, 255, 0.32);
+
+  /* --- ProblemSolving.tsx: acentos de gráfico + fondo de tarjeta oscura --- */
+  --ds-c-marketing-problem-solving-accent-1: var(--ds-c-marketing-accent-verified);
+  --ds-c-marketing-problem-solving-accent-2: var(--ds-c-marketing-accent-measurement);
+  --ds-c-marketing-problem-solving-accent-3: var(--ds-c-marketing-accent-execution);
+  --ds-c-marketing-problem-solving-card-background: #12262C;
+
+  /* --- EngineeringCapabilities.tsx: estados de disponibilidad (sobre bg-paper) --- */
+  --ds-c-marketing-engineering-status-success: var(--ds-c-marketing-accent-verified);
+  --ds-c-marketing-engineering-status-warning: #D9822B;
+  --ds-c-marketing-engineering-status-info: var(--ds-c-marketing-accent-measurement);
+
+  /* --- CfmCalculator.tsx: terminal simulado sobre fondo oscuro --- */
+  --ds-c-marketing-cfm-background: #0F2229;
+  --ds-c-marketing-cfm-terminal-background: #162C33;
+  --ds-c-marketing-cfm-terminal-dot-red: #FF5F57;
+  --ds-c-marketing-cfm-terminal-dot-yellow: #FFBD2E;
+  --ds-c-marketing-cfm-terminal-dot-green: #28C840;
+  --ds-c-marketing-cfm-progress: var(--ds-c-marketing-accent-measurement);
+  --ds-c-marketing-cfm-error: #FF6B6B;
+  --ds-c-marketing-cfm-status-calculating: var(--ds-c-marketing-accent-execution);
+  --ds-c-marketing-cfm-status-done: var(--ds-c-marketing-accent-verified);
+  --ds-c-marketing-cfm-gauge-color: var(--ds-c-marketing-accent-measurement);
+  --ds-c-marketing-cfm-gauge-secondary: var(--ds-c-marketing-accent-design);
+  --ds-c-marketing-cfm-gauge-accent: var(--ds-c-marketing-accent-verified);
+  --ds-c-marketing-cfm-button-background: #FFFFFF;
+  --ds-c-marketing-cfm-button-hover: #DCE3E5;
+
+  /* --- Footer.tsx: fondo oscuro + stats destacadas --- */
+  --ds-c-marketing-footer-background: #0A1B20;
+  --ds-c-marketing-footer-stat-background: rgba(255, 255, 255, 0.05);
+  --ds-c-marketing-footer-stat-accent: var(--ds-c-marketing-accent-verified);
+
+  /* --- TrustMarquee.tsx: franja de logos --- */
+  --ds-c-marketing-trust-marquee-background: var(--color-paper-warm);
+}

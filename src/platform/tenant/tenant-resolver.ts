@@ -56,25 +56,27 @@ const SUPPRESS_TENANT_WARNINGS =
  */
 export async function resolveTenantIdAsync(tenantCode?: string | null): Promise<string> {
   if (!tenantCode) return DEFAULT_TENANT_ID;
+  const normalizedCode = tenantCode.toLowerCase();
 
   // 1. Verificar mapa estático
-  const staticId = TENANT_CODE_TO_ID[tenantCode];
+  const staticId = TENANT_CODE_TO_ID[normalizedCode];
   if (staticId) return staticId;
 
   // 2. Verificar caché dinámica
-  const cachedId = DYNAMIC_TENANT_CACHE[tenantCode];
+  const cachedId = DYNAMIC_TENANT_CACHE[normalizedCode];
   if (cachedId) return cachedId;
 
-  // 3. Consultar base de datos
+  // 3. Consultar base de datos (case-insensitive: el código puede llegar en
+  // cualquier capitalización desde la URL o desde el flujo de login)
   try {
     const { data } = await supabaseAdmin
       .from("tenants")
       .select("id")
-      .eq("tenant_code", tenantCode)
+      .ilike("tenant_code", normalizedCode)
       .maybeSingle();
 
     if (data?.id) {
-      DYNAMIC_TENANT_CACHE[tenantCode] = data.id;
+      DYNAMIC_TENANT_CACHE[normalizedCode] = data.id;
       return data.id;
     }
   } catch (err) {
@@ -91,7 +93,8 @@ export async function resolveTenantIdAsync(tenantCode?: string | null): Promise<
  */
 export function resolveTenantId(tenantCode?: string | null): string {
   if (!tenantCode) return DEFAULT_TENANT_ID;
-  const id = TENANT_CODE_TO_ID[tenantCode] || DYNAMIC_TENANT_CACHE[tenantCode];
+  const normalizedCode = tenantCode.toLowerCase();
+  const id = TENANT_CODE_TO_ID[normalizedCode] || DYNAMIC_TENANT_CACHE[normalizedCode];
   if (!id) {
     if (!SUPPRESS_TENANT_WARNINGS) {
       console.warn(

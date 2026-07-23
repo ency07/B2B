@@ -19,6 +19,13 @@
 import { supabaseAdmin } from "@/platform/auth/clients";
 import { getTenantId } from "@/erp/actions/core";
 import { requireAction, validateTenantAccess } from "@/platform/auth/server-guards";
+import {
+  validate,
+  uuidSchema,
+  createUserSchema,
+  updateUserSchema,
+  userRoleSchema,
+} from "@/lib/validations/erp";
 
 export interface UserListItem {
   id: string;
@@ -149,8 +156,10 @@ export async function createUser(
   }
 ): Promise<{ success: boolean; error?: string; userId?: string }> {
   // P8: Validacion backend. Accion: users.create.
-  await requireAction("users.create");
+  const ctx = await requireAction("users.create");
+  data = validate(createUserSchema, data);
   const tenantId = await getTenantId(tenantCode);
+  await validateTenantAccess(ctx.userId, ctx.role, tenantId);
 
   // 1. Crear usuario en Supabase Auth.
   const { data: authData, error: authErr } =
@@ -217,8 +226,11 @@ export async function updateUser(
   data: { firstName?: string; lastName?: string; phone?: string }
 ): Promise<{ success: boolean; error?: string }> {
   // P8: Validacion backend. Accion: users.edit.
-  await requireAction("users.edit");
+  const ctx = await requireAction("users.edit");
+  validate(uuidSchema, userId);
+  data = validate(updateUserSchema, data);
   const tenantId = await getTenantId(tenantCode);
+  await validateTenantAccess(ctx.userId, ctx.role, tenantId);
 
   const update: Record<string, string | null> = {};
   if (data.firstName !== undefined) update.first_name = data.firstName;
@@ -251,8 +263,10 @@ export async function assignRole(
   roleId: string
 ): Promise<{ success: boolean; error?: string }> {
   // P8: Validacion backend. Accion: users.permissions.
-  await requireAction("users.permissions");
+  const ctx = await requireAction("users.permissions");
+  ({ userId, roleId } = validate(userRoleSchema, { userId, roleId }));
   const tenantId = await getTenantId(tenantCode);
+  await validateTenantAccess(ctx.userId, ctx.role, tenantId);
 
   const { error } = await supabaseAdmin.from("user_roles").insert({
     tenant_id: tenantId,
@@ -280,8 +294,10 @@ export async function removeRole(
   roleId: string
 ): Promise<{ success: boolean; error?: string }> {
   // P8: Validacion backend. Accion: users.permissions.
-  await requireAction("users.permissions");
+  const ctx = await requireAction("users.permissions");
+  ({ userId, roleId } = validate(userRoleSchema, { userId, roleId }));
   const tenantId = await getTenantId(tenantCode);
+  await validateTenantAccess(ctx.userId, ctx.role, tenantId);
 
   const { error } = await supabaseAdmin
     .from("user_roles")
