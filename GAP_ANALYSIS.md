@@ -52,10 +52,10 @@
 
 | ID | Hallazgo |
 |----|----------|
-| W-009 | `console.error()` en vez de `logger.error()` en `wizard.ts`, `leads.ts`, `catalog.ts`, `branding.ts` (viola Constitution Pilar VIII) |
-| W-010 | `any` types extensivos con `eslint-disable @typescript-eslint/no-explicit-any` en 9+ archivos del web |
-| W-011 | Sin `startTimer()` de timing.ts en Server Actions (viola Constitution) |
-| W-012 | Sección "Productos" embebida dentro de EngineeringCapabilities en vez de componente separado |
+| W-009 | ✅ **CERRADO (2026-07-23, `feat/008-medios-observabilidad`)** — ~~`console.error()` en vez de `logger.error()`~~. Las 4 Server Actions (`wizard.ts`, `leads.ts`, `catalog.ts`, `branding.ts`) ahora usan `createLogger("web:<módulo>")` con contexto estructurado (`{data, error}`) en cada punto que antes era `console.error`. |
+| W-010 | ⏸️ **DIFERIDO A PROPÓSITO (2026-07-23)** — `any` types extensivos con `eslint-disable @typescript-eslint/no-explicit-any` en 9+ archivos del web. No se aborda esta ronda: el cliente Supabase de este proyecto no usa los tipos generados (`Database`), así que tipar correctamente exige generarlos (`generate_typescript_types`) y luego re-tipar cada `.from()/.rpc()` en 9+ archivos — un refactor mecánico pero de alto volumen y riesgo de regresión silenciosa (un tipo generado mal puede compilar y fallar solo en runtime), sin ningún bug de comportamiento detrás. Es deuda de tipado, no un defecto funcional — se prioriza cerrar los gaps con impacto real primero. Ver C-002. |
+| W-011 | ✅ **CERRADO (2026-07-23, `feat/008-medios-observabilidad`)** — ~~Sin `startTimer()` en Server Actions~~. Agregado a las mismas 4 Server Actions de W-009: `getTenantBranding`, `getIndustrialCatalog` (interno, `fetchRawCatalogFromDB`), `createLeadWithScore`, `submitContactForm`, `submitChatbotLead`, `submitWizardData` — cada una mide su duración y loggea "Slow operation" si supera 300ms. |
+| W-012 | ⏸️ **DIFERIDO A PROPÓSITO (2026-07-23)** — Sección "Productos" embebida dentro de `EngineeringCapabilities.tsx` (484 líneas) en vez de componente separado. Es una preferencia de organización de código, no un defecto: no hay bug, dato incorrecto ni problema de seguridad detrás, y el componente fue reescrito por completo hace apenas 2 rondas (W-002/W-003, eliminación de 272 líneas de datos falsos) — separar la sección ahora sin una razón funcional que lo motive es refactor por refactor, con riesgo de regresión en un componente recién estabilizado y cero beneficio para el usuario final. |
 
 ---
 
@@ -114,9 +114,9 @@
 
 | ID | Hallazgo |
 |----|----------|
-| P-006 | Login del portal no es ruta independiente (`/portal/login` no existe). Usa `/login` genérico. |
-| P-007 | PDF de factura se genera client-side con jsPDF. No es recibo oficial del gateway. |
-| P-008 | Notificaciones vía Resend/Slack/Discord dependen de configuración externa. Sin configuración, solo `console.log`. |
+| P-006 | ✅ **CERRADO (2026-07-23, `feat/008-medios-observabilidad`)** — ~~Login del portal no es ruta independiente~~. Se creó `/portal/login` (renderiza `PortalLoginFeature` directo, sin pasar por la detección de contexto de `/login`). `ROUTES.PORTAL_LOGIN` existía solo como referencia en un comentario que decía explícitamente "no es una ruta real" — ahora es una constante real. El redirect interno de `/portal` (sin sesión) se deja apuntando a `/login?redirect=/portal`, que ya funcionaba correctamente vía `detectLoginContext()`; la ruta nueva es para enlaces externos/marketing que quieran ir directo al login del portal. |
+| P-007 | ✅ **CERRADO (2026-07-23, `feat/008-medios-observabilidad`)** — ~~PDF de factura no es recibo oficial del gateway~~. El PDF client-side (`usePortalClientState.ts`) ahora se titula "Resumen de Factura" (antes "Factura:", fácil de confundir con la factura electrónica) y agrega un disclaimer explícito: no lleva CUFE/QR/resolución DIAN, no es la factura electrónica oficial, y remite al ejecutivo comercial para el documento fiscal real. No se implementó facturación electrónica DIAN real — fuera de alcance de este gap, que era de honestidad en el etiquetado, no de funcionalidad nueva. |
+| P-008 | ✅ **VERIFICADO — sin cambios de código (2026-07-23)** — Notificaciones vía Resend/Slack/Discord dependen de configuración externa. Revisado `notifications.ts` a fondo: cuando falta la config, cada función loggea la razón exacta y retorna `{ok:true}` (la notificación es un canal secundario; el ticket/mensaje/respuesta ya se guardó en BD antes de intentar notificar). Los 4 call sites (`quotes.ts`, `portal.ts`) invocan estas funciones de forma fire-and-forget con `.catch()`, después de que la escritura principal ya tuvo éxito — un fallo o ausencia de notificación nunca bloquea ni revierte la acción del usuario. Es degradación controlada correcta, igual que P-005 (Wompi caído); solo necesitaba configurarse `RESEND_API_KEY`/`SLACK_WEBHOOK_URL`/`DISCORD_WEBHOOK_URL` en producción para activarse, lo cual es una tarea operativa, no un defecto de código. |
 
 ---
 
@@ -126,22 +126,22 @@
 
 | ID | Principio | Violación | Módulo |
 |----|-----------|-----------|--------|
-| C-001 | Pilar VIII — Logger estructurado | `console.error()` en vez de `logger.error()` | Web, ERP |
-| C-002 | Pilar VI — Tipado estricto | `eslint-disable @typescript-eslint/no-explicit-any` en 9+ archivos | Web |
-| C-003 | Pilar IV — UI Defensiva | Sin timeout handling en wizard | Web |
-| C-004 | Pilar VII — Reutilización | ACH hardcodeados en vez de reutilizar `ACH_BY_ENVIRONMENT` | Web |
-| C-005 | Pilar VIII — Timing | Sin `startTimer()` en Server Actions lentas | Web, ERP |
-| C-006 | Portal FR-007 — Modo claro | Dark mode toggle implementado pese a spec explícito | Portal |
+| C-001 | Pilar VIII — Logger estructurado | 🟡 **PARCIAL (2026-07-23)** — ~~`console.error()` en vez de `logger.error()`~~. Cerrado para **Web** (ver W-009: `wizard.ts`, `leads.ts`, `catalog.ts`, `branding.ts`). **ERP sigue abierto**: 9 archivos en `src/erp` todavía usan `console.*` directo, 0 usan `createLogger` (confirmado por grep). No estaba nombrado por ningún gap específico de la sección ERP — se documenta aquí en vez de asumirlo cerrado. | Web ✅ / ERP ❌ |
+| C-002 | Pilar VI — Tipado estricto | ⏸️ **DIFERIDO A PROPÓSITO** — ver W-010: mismo hallazgo, mismo razonamiento de por qué se difiere. | Web |
+| C-003 | Pilar IV — UI Defensiva | ✅ **CERRADO (2026-07-23, `feat/008-medios-observabilidad`)** — ~~Sin timeout handling en wizard~~. `handleSubmit` en `WizardStepper.tsx` envuelve `submitWizardData()` en un `Promise.race` con timeout de 20s: si el servidor no responde, el usuario ve un error claro en vez de un botón deshabilitado indefinidamente. | Web |
+| C-004 | Pilar VII — Reutilización | ✅ **YA CERRADO (2026-07-23, `feat/006-web-criticos-w002-w003-w004`)** — ~~ACH hardcodeados~~. Mismo hallazgo que W-004 (ver arriba): `SummaryStep.tsx` y el PDF de `WizardStepper.tsx` ya leen `getAchForEnvironment()`. No requirió trabajo nuevo esta ronda, solo faltaba reflejarlo aquí. | Web |
+| C-005 | Pilar VIII — Timing | 🟡 **PARCIAL (2026-07-23)** — ~~Sin `startTimer()` en Server Actions lentas~~. Cerrado para **Web** (ver W-011). **ERP sigue sin instrumentar** (mismos 9 archivos de C-001). | Web ✅ / ERP ❌ |
+| C-006 | Portal FR-007 — Modo claro | ✅ **YA CERRADO (2026-07-23, `feat/007-web-portal-altos`)** — ~~Dark mode toggle pese a spec~~. Mismo hallazgo que P-003 (ver arriba): tab "Apariencia" eliminado + `initialThemeId="minimal-white"` fuerza modo claro real. No requirió trabajo nuevo esta ronda. | Portal |
 
 ### Recomendaciones
 
 | ID | Recomendación |
 |----|---------------|
-| C-007 | Migrar todos los `console.error` a `logger.error` con tag de módulo |
-| C-008 | Eliminar `eslint-disable any` y tipar correctamente |
-| C-009 | Centralizar ACH en `ACH_BY_ENVIRONMENT` y eliminar hardcode |
-| C-010 | Agregar `startTimer()` en Server Actions con warning >300ms |
-| C-011 | Remover toggle dark mode del portal o actualizar spec si se decide soportarlo |
+| C-007 | 🟡 Migrar todos los `console.error` a `logger.error` con tag de módulo — hecho en Web (C-001), pendiente en ERP (9 archivos) |
+| C-008 | ⏸️ Eliminar `eslint-disable any` y tipar correctamente — diferido, ver C-002/W-010 |
+| C-009 | ✅ Centralizar ACH en `ACH_BY_ENVIRONMENT` y eliminar hardcode — hecho (C-004/W-004) |
+| C-010 | 🟡 Agregar `startTimer()` en Server Actions con warning >300ms — hecho en Web (C-005), pendiente en ERP |
+| C-011 | ✅ Remover toggle dark mode del portal o actualizar spec — se removió el toggle (C-006/P-003) |
 
 ---
 
@@ -262,6 +262,31 @@ E-017: ✅ CERRADO (2026-07-23, rama fix/004-server-action-identity-bridge) — 
        fuente cuando el GUC app.settings_secret_key no está configurado (no lo está hoy); sin
        datos en riesgo todavía (0 filas is_encrypted=true), pero antes de guardar cualquier
        secreto real ahí hace falta decidir de dónde sale la clave real.
+```
+
+---
+
+### Ronda de los 13 medios (2026-07-23, rama `feat/008-medios-observabilidad`)
+
+```
+De los 13 gaps 🔵 medios abiertos tras cerrar los 12 críticos + 12 altos (W-009 a W-012,
+P-006 a P-008, C-001 a C-006), el resultado de esta ronda:
+
+CERRADOS con código nuevo (6): W-009, W-011, C-003, P-006, P-007 — más C-001/C-005
+parcialmente (ver abajo).
+VERIFICADOS sin cambios de código, ya correctos (1): P-008.
+YA CERRADOS por rondas anteriores, solo faltaba documentarlo (2): C-004 (= W-004),
+C-006 (= P-003).
+PARCIALES, cerrados solo en Web (2): C-001, C-005 — ERP (9 archivos) queda pendiente,
+no tenía un gap propio nombrado en la sección ERP y no se asumió su cierre sin evidencia.
+DIFERIDOS a propósito, con razón documentada (2): W-010/C-002 (any-typing, refactor de
+alto volumen y riesgo sin bug detrás), W-012 (reorganización de componente sin defecto
+funcional).
+
+De los 41 gaps originales del análisis: 12 críticos cerrados, 12 altos cerrados, y de los
+17 medios (13 + 4 de ERP ya cerrados antes de esta remediación) quedan abiertos solo:
+W-010/C-002, W-012, y la mitad ERP de C-001/C-005. Ninguno bloquea funcionalidad ni
+representa un riesgo de datos — son deuda de tipado y de organización de código.
 ```
 
 ---
