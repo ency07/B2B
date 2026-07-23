@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, PlusCircle, CreditCard, FileText, ShieldCheck } from "lucide-react";
+import { Clock, PlusCircle, CreditCard, FileText, ShieldCheck, FileSignature } from "lucide-react";
 import { capture } from "@/lib/analytics";
 import type { PortalActiveSection } from "@/portal/components/dashboard/types";
 
@@ -10,6 +10,7 @@ interface SectionTabsProps {
   openRequirementsCount: number;
   pendingInvoicesCount: number;
   activeTicketsCount: number;
+  pendingQuotesCount: number;
 }
 
 export function SectionTabs({
@@ -18,9 +19,11 @@ export function SectionTabs({
   openRequirementsCount,
   pendingInvoicesCount,
   activeTicketsCount,
+  pendingQuotesCount,
 }: SectionTabsProps) {
   const tabs = [
     { id: "ots" as const, label: "Taller en Vivo", Icon: Clock, badge: undefined as number | undefined },
+    { id: "quotes" as const, label: "Cotizaciones", Icon: FileSignature, badge: pendingQuotesCount },
     { id: "requirements" as const, label: "Requerimientos", Icon: PlusCircle, badge: openRequirementsCount },
     { id: "invoices" as const, label: "Facturas y Pagos", Icon: CreditCard, badge: pendingInvoicesCount },
     { id: "docs" as const, label: "Documentos Técnicos", Icon: FileText, badge: undefined as number | undefined },

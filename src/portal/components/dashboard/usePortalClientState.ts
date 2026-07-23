@@ -15,6 +15,12 @@ import {
   type ClientSupportMessage,
   type ClientRequirement,
 } from "@/portal/actions/portal";
+import {
+  getClientQuoteDetail,
+  respondToQuote,
+  type ClientQuote,
+  type ClientQuoteDetail,
+} from "@/portal/actions/quotes";
 import { capture } from "@/lib/analytics";
 import type {
   PortalClientInfo,
@@ -67,6 +73,7 @@ interface UsePortalClientStateInput {
   tickets: ClientSupportTicket[];
   messages: ClientSupportMessage[];
   requirements: ClientRequirement[];
+  quotes: ClientQuote[];
   previewClientId: string | null;
   tenantId?: string | null;
   branding?: PortalBranding | null;
@@ -80,6 +87,7 @@ export function usePortalClientState({
   tickets: initialTickets,
   messages: initialMessages,
   requirements: initialRequirements,
+  quotes: initialQuotes,
   previewClientId,
   branding: initialBranding = null,
 }: UsePortalClientStateInput) {
@@ -186,6 +194,12 @@ export function usePortalClientState({
   // estado honesto en vez de marcar la factura como pagada sin que haya
   // ocurrido una transacción real.
   const [selectedInvoice, setSelectedInvoice] = React.useState<PortalInvoice | null>(null);
+
+  const [quotes, setQuotes] = React.useState<ClientQuote[]>(initialQuotes);
+  const [selectedQuote, setSelectedQuote] = React.useState<ClientQuote | null>(null);
+  const [quoteDetail, setQuoteDetail] = React.useState<ClientQuoteDetail | null>(null);
+  const [isLoadingQuoteDetail, setIsLoadingQuoteDetail] = React.useState(false);
+  const [isRespondingToQuote, setIsRespondingToQuote] = React.useState(false);
 
   const [searchQuery, setSearchQuery] = React.useState("");
 
@@ -316,6 +330,112 @@ export function usePortalClientState({
     }
   };
 
+  const handleOpenQuote = async (quote: ClientQuote) => {
+    setSelectedQuote(quote);
+    setQuoteDetail(null);
+    setIsLoadingQuoteDetail(true);
+    try {
+      const detail = await getClientQuoteDetail(previewClientId, quote.id);
+      setQuoteDetail(detail);
+    } catch (err) {
+      console.error("Error cargando detalle de cotización:", err);
+      toast.error("No se pudo cargar el detalle de la cotización.");
+    } finally {
+      setIsLoadingQuoteDetail(false);
+    }
+  };
+
+  const handleRespondToQuote = async (
+    quoteId: string,
+    response: "ACEPTADA" | "RECHAZADA",
+    reason?: string
+  ) => {
+    setIsRespondingToQuote(true);
+    try {
+      const updated = await respondToQuote(previewClientId, { quoteId, response, reason });
+      setQuotes((prev) =>
+        prev.map((q) =>
+          q.id === quoteId
+            ? {
+                ...q,
+                clientResponse: updated.clientResponse,
+                clientResponseAt: updated.clientResponseAt,
+                clientResponseReason: updated.clientResponseReason,
+              }
+            : q
+        )
+      );
+      setQuoteDetail((prev) =>
+        prev && prev.quote.id === quoteId
+          ? {
+              ...prev,
+              quote: {
+                ...prev.quote,
+                clientResponse: updated.clientResponse,
+                clientResponseAt: updated.clientResponseAt,
+                clientResponseReason: updated.clientResponseReason,
+              },
+            }
+          : prev
+      );
+      setSelectedQuote((prev) =>
+        prev && prev.id === quoteId
+          ? { ...prev, clientResponse: updated.clientResponse, clientResponseAt: updated.clientResponseAt, clientResponseReason: updated.clientResponseReason }
+          : prev
+      );
+      capture("portal_quote_responded", { quoteId, response });
+      toast.success(response === "ACEPTADA" ? "Cotización aceptada." : "Cotización rechazada.");
+    } catch (err) {
+      console.error("Error respondiendo cotización:", err);
+      toast.error(err instanceof Error ? err.message : "No se pudo registrar tu respuesta.");
+    } finally {
+      setIsRespondingToQuote(false);
+    }
+  };
+
+  // Genera y descarga PDF de la cotización actualmente abierta usando jspdf
+  const downloadQuotePdf = () => {
+    if (!quoteDetail) return;
+    try {
+      import("jspdf").then(({ jsPDF }) => {
+        const doc = new jsPDF({ unit: "mm", format: "letter" });
+        const { quote, items, subtotal, taxAmount } = quoteDetail;
+
+        doc.setFontSize(18);
+        doc.text(`${companyName}`, 20, 30);
+        doc.setFontSize(10);
+        doc.text(`Cotización: ${quote.code}`, 20, 42);
+        doc.text(`${quote.title}`, 20, 50);
+        doc.text(`Cliente: ${clientName}`, 20, 58);
+        doc.text(`Válida hasta: ${quote.validUntil}`, 20, 66);
+        doc.line(20, 74, 190, 74);
+
+        let y = 84;
+        doc.setFontSize(9);
+        items.forEach((item) => {
+          doc.text(`${item.quantity} ${item.unit} — ${item.description}`, 20, y);
+          doc.text(formatCurrency(item.lineTotal), 170, y, { align: "right" });
+          y += 8;
+        });
+
+        doc.line(20, y, 190, y);
+        y += 10;
+        doc.setFontSize(11);
+        doc.text(`Subtotal: ${formatCurrency(subtotal)}`, 20, y);
+        y += 8;
+        doc.text(`Impuestos: ${formatCurrency(taxAmount)}`, 20, y);
+        y += 8;
+        doc.setFontSize(13);
+        doc.text(`Total: ${formatCurrency(quote.totalAmount)}`, 20, y);
+
+        doc.save(`cotizacion-${quote.code}.pdf`);
+      });
+    } catch (err) {
+      console.error("Error generando PDF de cotización:", err);
+      toast.error("No se pudo generar el PDF.");
+    }
+  };
+
   // Reset demo error state
   const handleResetError = () => {
     setHasError(false);
@@ -337,6 +457,7 @@ export function usePortalClientState({
   const activeTicketsCount = tickets.filter((t) => t.status !== "RESUELTO").length;
   const openRequirementsCount = requirements.filter((r) => !["CERRADO", "CANCELADO"].includes(r.status)).length;
   const pendingInvoicesCount = invoices.filter((i) => i.status === "PENDIENTE").length;
+  const pendingQuotesCount = quotes.filter((q) => q.status === "ENVIADA" && !q.clientResponse).length;
 
   return {
     config,
@@ -371,6 +492,16 @@ export function usePortalClientState({
     selectedInvoice,
     setSelectedInvoice,
     downloadInvoicePdf,
+    quotes,
+    selectedQuote,
+    setSelectedQuote,
+    quoteDetail,
+    isLoadingQuoteDetail,
+    isRespondingToQuote,
+    handleOpenQuote,
+    handleRespondToQuote,
+    downloadQuotePdf,
+    pendingQuotesCount,
     searchQuery,
     setSearchQuery,
     expandedOt,

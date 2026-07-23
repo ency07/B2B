@@ -99,7 +99,7 @@
 
 | ID | Hallazgo | FR violado |
 |----|----------|------------|
-| P-001 | **Cotizaciones completamente ausentes** (US-3). No existe entidad `ClientQuote`, RPCs, vista, ni PDF. El dashboard no puede mostrar "cotizaciones pendientes". | FR-003 |
+| P-001 | ✅ **CERRADO (2026-07-21, `feat/002-portal-client-quotes`)** — ~~Cotizaciones completamente ausentes~~. Lista, detalle, respuesta (aceptar/rechazar) y PDF agregados (ver `specs/002-portal-client-quotes/`). Reutiliza `quotes`/`quote_items` ya existentes en el ERP — no se creó una entidad `ClientQuote` nueva. La respuesta del cliente se registra por separado de `status` (motor de aprobación interno ya en producción exige rol Gerencia/Dirección Comercial para aprobar/rechazar — decisión confirmada con el usuario, ver spec.md). | FR-003 |
 | P-002 | **Pasarela Wompi no integrada**. Código comenta explícitamente "sin gateway conectado". Clientes no pueden pagar en línea. | FR-004 |
 
 ### 🟡 Altos
@@ -184,11 +184,13 @@ Para cada uno de los 12 gaps críticos:
 ```
 P1-01: ✅ CERRADO (2026-07-21) — registerPayment() en ERP Core
 P1-02: ✅ CERRADO (2026-07-21) — cierre de OT vía updateJobStatus (FACTURADA/CERRADO)
-P1-03: 🔴 ABIERTO — /speckit.specify "Implementar filtro por categoría en catálogo web - Selector de tipo de ventilador con data de Supabase"
-P1-04: 🔴 ABIERTO — /speckit.specify "Implementar módulo de cotizaciones en Portal Cliente - CRUD completo con PDF y flujo de aceptación"
+P1-03: ✅ CERRADO (2026-07-21) — filtro por subcategoría en catálogo web (feat/001-web-catalog-category-filter)
+P1-04: ✅ CERRADO (2026-07-21) — cotizaciones en Portal Cliente: lista, detalle, respuesta, PDF (feat/002-portal-client-quotes; NO CRUD completo — ver nota de diseño en GAP P-001 arriba)
 P1-05: ✅ CERRADO (2026-07-21) — approvePurchaseOrder() en ERP Core
 P1-06: 🔴 ABIERTO — /speckit.specify "Integrar Wompi/PSE en Portal Cliente - Pasarela de pagos con webhook y actualización de estado"
 ```
+
+**Estado tras esta sesión**: de los 6 gaps P1 originales, solo **P1-06 (Wompi/PSE)** sigue abierto.
 
 ---
 

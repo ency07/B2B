@@ -9,6 +9,7 @@ import { MetricCards } from "@/portal/components/dashboard/MetricCards";
 import { ActivityFeed } from "@/portal/components/dashboard/ActivityFeed";
 import { SectionTabs } from "@/portal/components/dashboard/SectionTabs";
 import { RequirementsSection } from "@/portal/components/dashboard/RequirementsSection";
+import { QuotesSection } from "@/portal/components/dashboard/QuotesSection";
 import { InvoicesSection } from "@/portal/components/dashboard/InvoicesSection";
 import { DocumentsSection } from "@/portal/components/dashboard/DocumentsSection";
 import { TicketsSection } from "@/portal/components/dashboard/TicketsSection";
@@ -38,6 +39,7 @@ export default function CustomerPortal({
   messages: initialMessages = [],
   documents: initialDocs = [],
   requirements: initialRequirements = [],
+  quotes: initialQuotes = [],
   previewClientId = null,
   isPlatformAdmin = false,
   isClientContact = false,
@@ -53,6 +55,7 @@ export default function CustomerPortal({
     tickets: initialTickets,
     messages: initialMessages,
     requirements: initialRequirements,
+    quotes: initialQuotes,
     previewClientId,
     tenantId,
     branding,
@@ -96,6 +99,7 @@ export default function CustomerPortal({
           unpaidTotal={s.unpaidTotal}
           activeTicketsCount={s.activeTicketsCount}
           openRequirementsCount={s.openRequirementsCount}
+          pendingQuotesCount={s.pendingQuotesCount}
           setActiveSection={s.setActiveSection}
         />
 
@@ -113,11 +117,26 @@ export default function CustomerPortal({
             openRequirementsCount={s.openRequirementsCount}
             pendingInvoicesCount={s.pendingInvoicesCount}
             activeTicketsCount={s.activeTicketsCount}
+            pendingQuotesCount={s.pendingQuotesCount}
           />
 
           <div className="rounded-2xl border border-border bg-card p-6 sm:p-8 min-h-[480px] shadow-sm">
             {s.activeSection === "requirements" && (
               <RequirementsSection requirements={s.requirements} onNewRequirement={() => s.setIsRequirementSheetOpen(true)} />
+            )}
+
+            {s.activeSection === "quotes" && (
+              <QuotesSection
+                quotes={s.quotes}
+                selectedQuote={s.selectedQuote}
+                setSelectedQuote={s.setSelectedQuote}
+                quoteDetail={s.quoteDetail}
+                isLoadingDetail={s.isLoadingQuoteDetail}
+                onOpenQuote={s.handleOpenQuote}
+                isResponding={s.isRespondingToQuote}
+                onRespond={s.handleRespondToQuote}
+                onDownloadPdf={s.downloadQuotePdf}
+              />
             )}
 
             {s.activeSection === "ots" && (
