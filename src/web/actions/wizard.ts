@@ -9,6 +9,10 @@ import { checkRateLimit } from "@/lib/utils/rate-limiter";
 import { calculateRequiredCfm } from "@/utils/engineering";
 import { estimatePrice } from "@/utils/pricing";
 import { createLeadWithScore } from "./leads";
+import createLogger from "@/lib/utils/logger";
+import { startTimer } from "@/lib/utils/timing";
+
+const logger = createLogger("web:wizard");
 
 // Admin client: Server Action corre en el servidor, service_role nunca llega al cliente
 const db = getSupabaseAdmin();
@@ -74,6 +78,7 @@ export async function submitWizardData(
   tenantCode: string | null,
   rawData: WizardSubmission
 ): Promise<WizardResult> {
+  const timer = startTimer("submitWizardData");
   // 1. Validar datos de entrada con Zod
   const parsed = wizardSubmissionSchema.safeParse(rawData);
   if (!parsed.success) {
@@ -88,6 +93,7 @@ export async function submitWizardData(
   // 3. Honeypot: si el campo oculto website tiene contenido, es un bot
   if (data.website) {
     // No revelamos al bot que fue detectado — respondemos como si todo estuviera bien
+    timer.stop({ ok: true, honeypot: true });
     return getDummyResult();
   }
 
@@ -111,7 +117,8 @@ export async function submitWizardData(
     .maybeSingle();
 
   if (tenantErr || !tenantInfo || tenantInfo.status !== "Activo") {
-    console.error("Tenant validation error:", tenantErr, tenantInfo);
+    logger.error("Tenant validation error", { data: { tenantErr, tenantInfo } });
+    timer.stop({ ok: false });
     throw new Error("El servicio no está disponible para este tenant.");
   }
 
@@ -193,7 +200,8 @@ export async function submitWizardData(
       .single();
 
     if (clientErr) {
-      console.error("Error creating client in wizard:", clientErr);
+      logger.error("Error creating client in wizard", { data: { error: clientErr } });
+      timer.stop({ ok: false });
       throw new Error("Error al registrar el cliente. Intente nuevamente.");
     }
     client = newClient;
@@ -230,7 +238,8 @@ export async function submitWizardData(
       .single();
 
     if (contactErr) {
-      console.error("Error creating contact in wizard:", contactErr);
+      logger.error("Error creating contact in wizard", { data: { error: contactErr } });
+      timer.stop({ ok: false });
       throw new Error("Error al registrar el contacto. Intente nuevamente.");
     }
     contact = newContact;
@@ -283,10 +292,12 @@ export async function submitWizardData(
     .single();
 
   if (diagErr) {
-    console.error("Error creating diagnostic report:", diagErr);
+    logger.error("Error creating diagnostic report", { data: { error: diagErr } });
+    timer.stop({ ok: false });
     throw new Error("Error al generar el reporte de diagnóstico. Intente nuevamente.");
   }
 
+  timer.stop({ ok: true });
   return {
     diagnosticCode: diagReport.diagnostic_code,
     requiredCfm: cfm,

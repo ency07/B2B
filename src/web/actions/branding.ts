@@ -1,11 +1,16 @@
 "use server";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { supabaseAdmin } from "@/platform/auth/clients";
 import { getTenantId } from "@/erp/actions/core";
 import { resolveTenantOwnerUserId } from "@/platform/tenant/tenant-resolver";
 import { requireAction, validateTenantAccess } from "@/platform/auth/server-guards";
+import createLogger from "@/lib/utils/logger";
+import { startTimer } from "@/lib/utils/timing";
 
 import { BrandingConfig, getBrandingDefaults } from "@/platform/branding/branding-defaults";
+
+const logger = createLogger("web:branding");
 
 export interface BrandingVersion {
   id: string;
@@ -20,6 +25,7 @@ export interface BrandingVersion {
  * Retorna la configuración visual de branding consolidada del active tenant
  */
 export async function getTenantBranding(tenantCode?: string | null): Promise<BrandingConfig> {
+  const timer = startTimer("getTenantBranding");
   const tenantId = await getTenantId(tenantCode);
   const defaults = getBrandingDefaults(tenantCode);
 
@@ -31,7 +37,8 @@ export async function getTenantBranding(tenantCode?: string | null): Promise<Bra
     .is("deleted_at", null);
 
   if (error) {
-    console.error("Error fetching branding settings:", error);
+    logger.error("Error fetching branding settings", { data: { tenantId, error } });
+    timer.stop({ ok: false });
     return defaults;
   }
 
@@ -46,6 +53,7 @@ export async function getTenantBranding(tenantCode?: string | null): Promise<Bra
     });
   }
 
+  timer.stop({ ok: true, rows: data?.length ?? 0 });
   return config;
 }
 
@@ -70,18 +78,18 @@ export async function saveTenantBranding(
 
     // 1. Prepare settings rows
     const rows = keys.map((key) => {
-      let module = "IDENTIDAD";
+      let settingsModule = "IDENTIDAD";
       if (["nombre_comercial", "razon_social", "nit", "direccion", "ciudad", "pais", "telefono_principal", "email_corporativo", "web"].includes(key)) {
-        module = "EMPRESA";
+        settingsModule = "EMPRESA";
       } else if (["zona_horaria", "idioma", "moneda", "formato_fecha", "formato_hora", "separador_decimal", "separador_miles"].includes(key)) {
-        module = "LOCALIZACION";
+        settingsModule = "LOCALIZACION";
       } else if (["firma_url", "sello_url"].includes(key)) {
-        module = "DOCUMENTOS";
+        settingsModule = "DOCUMENTOS";
       }
 
       return {
         tenant_id: tenantId,
-        module,
+        module: settingsModule,
         config_key: key,
         config_value: data[key],
         is_public: true,
@@ -97,7 +105,7 @@ export async function saveTenantBranding(
       .upsert(rows, { onConflict: "tenant_id,module,config_key" });
 
     if (upsertErr) {
-      console.error("Error upserting branding settings:", upsertErr);
+      logger.error("Error upserting branding settings", { data: { tenantId, error: upsertErr } });
       return { success: false, error: upsertErr.message };
     }
 
@@ -114,7 +122,7 @@ export async function saveTenantBranding(
       .maybeSingle();
 
     if (verErr) {
-      console.error("Error fetching latest version number:", verErr);
+      logger.error("Error fetching latest version number", { data: { tenantId, error: verErr } });
     }
 
     const nextVersion = latestVer ? latestVer.version_number + 1 : 1;
@@ -131,13 +139,13 @@ export async function saveTenantBranding(
       });
 
     if (versionErr) {
-      console.error("Error inserting branding version snapshot:", versionErr);
+      logger.error("Error inserting branding version snapshot", { data: { tenantId, error: versionErr } });
       return { success: false, error: versionErr.message };
     }
 
     return { success: true };
   } catch (err: any) {
-    console.error("Exception in saveTenantBranding:", err);
+    logger.error("Exception in saveTenantBranding", { error: err instanceof Error ? err : undefined, data: { raw: err } });
     return { success: false, error: err.message || String(err) };
   }
 }
@@ -155,7 +163,7 @@ export async function getBrandingHistory(tenantCode?: string | null): Promise<Br
     .order("version_number", { ascending: false });
 
   if (error) {
-    console.error("Error fetching branding history:", error);
+    logger.error("Error fetching branding history", { data: { tenantId, error } });
     return [];
   }
 
@@ -184,7 +192,7 @@ export async function restoreBrandingVersion(
       .single();
 
     if (fetchErr || !version) {
-      console.error("Error fetching branding version for restore:", fetchErr);
+      logger.error("Error fetching branding version for restore", { data: { tenantId, versionId, error: fetchErr } });
       return { success: false, error: fetchErr?.message || "Versión no encontrada" };
     }
 
@@ -193,18 +201,18 @@ export async function restoreBrandingVersion(
     // 2. Prepare settings rows from configuration snapshot
     const keys = Object.keys(config) as Array<keyof BrandingConfig>;
     const rows = keys.map((key) => {
-      let module = "IDENTIDAD";
+      let settingsModule = "IDENTIDAD";
       if (["nombre_comercial", "razon_social", "nit", "direccion", "ciudad", "pais", "telefono_principal", "email_corporativo", "web"].includes(key)) {
-        module = "EMPRESA";
+        settingsModule = "EMPRESA";
       } else if (["zona_horaria", "idioma", "moneda", "formato_fecha", "formato_hora", "separador_decimal", "separador_miles"].includes(key)) {
-        module = "LOCALIZACION";
+        settingsModule = "LOCALIZACION";
       } else if (["firma_url", "sello_url"].includes(key)) {
-        module = "DOCUMENTOS";
+        settingsModule = "DOCUMENTOS";
       }
 
       return {
         tenant_id: tenantId,
-        module,
+        module: settingsModule,
         config_key: key,
         config_value: config[key],
         is_public: true,
@@ -220,7 +228,7 @@ export async function restoreBrandingVersion(
       .upsert(rows, { onConflict: "tenant_id,module,config_key" });
 
     if (upsertErr) {
-      console.error("Error restoring settings from version snapshot:", upsertErr);
+      logger.error("Error restoring settings from version snapshot", { data: { tenantId, error: upsertErr } });
       return { success: false, error: upsertErr.message };
     }
 
@@ -246,12 +254,12 @@ export async function restoreBrandingVersion(
       });
 
     if (versionErr) {
-      console.error("Error logging version restoration:", versionErr);
+      logger.error("Error logging version restoration", { data: { tenantId, error: versionErr } });
     }
 
     return { success: true };
   } catch (err: any) {
-    console.error("Exception in restoreBrandingVersion:", err);
+    logger.error("Exception in restoreBrandingVersion", { error: err instanceof Error ? err : undefined, data: { raw: err } });
     return { success: false, error: err.message || String(err) };
   }
 }
@@ -274,14 +282,14 @@ export async function uploadBrandingLogo(
     const ctx = await requireAction("branding.manage");
     const tenantId = await getTenantId(tenantCode);
     await validateTenantAccess(ctx.userId, ctx.role, tenantId);
-    
+
     // 1. Convert base64 to buffer
     const buffer = Buffer.from(base64Data, "base64");
 
     // 2. Ensure bucket exists and is public
     const { data: buckets, error: listErr } = await supabaseAdmin.storage.listBuckets();
     if (listErr) {
-      console.error("Error listing buckets:", listErr);
+      logger.error("Error listing buckets", { data: { tenantId, error: listErr } });
       return { success: false, error: listErr.message };
     }
 
@@ -296,7 +304,7 @@ export async function uploadBrandingLogo(
       });
 
       if (createErr) {
-        console.error("Error creating bucket:", createErr);
+        logger.error("Error creating bucket", { data: { tenantId, bucketName, error: createErr } });
         return { success: false, error: createErr.message };
       }
     }
@@ -313,7 +321,7 @@ export async function uploadBrandingLogo(
       });
 
     if (uploadErr) {
-      console.error("Error uploading file:", uploadErr);
+      logger.error("Error uploading file", { data: { tenantId, filePath, error: uploadErr } });
       return { success: false, error: uploadErr.message };
     }
 
@@ -328,8 +336,7 @@ export async function uploadBrandingLogo(
 
     return { success: true, url: urlData.publicUrl };
   } catch (err: any) {
-    console.error("Exception in uploadBrandingLogo:", err);
+    logger.error("Exception in uploadBrandingLogo", { error: err instanceof Error ? err : undefined, data: { raw: err } });
     return { success: false, error: err.message || String(err) };
   }
 }
-
