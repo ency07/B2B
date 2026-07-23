@@ -21,6 +21,7 @@ export interface WizardSubmission {
   environment: "heavy_plant" | "data_center" | "mining" | "warehouse" | "default";
   nombre: string;
   empresa: string;
+  taxId?: string;
   cargo: string;
   telefono: string;
   email: string;
@@ -38,6 +39,7 @@ const wizardSubmissionSchema = z.object({
   environment: z.enum(["heavy_plant", "data_center", "mining", "warehouse", "default"]),
   nombre: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
   empresa: z.string().min(2, "La empresa debe tener al menos 2 caracteres"),
+  taxId: z.string().optional(),
   cargo: z.string().min(2, "El cargo debe tener al menos 2 caracteres"),
   telefono: z.string().min(7, "El teléfono debe tener al menos 7 caracteres"),
   email: z.string().email("El correo electrónico no es válido"),
@@ -141,15 +143,35 @@ export async function submitWizardData(
   }
 
   // 2. Reutilización B2B Upsert (Clients)
-  // Buscar si ya existe el cliente por Razón Social (legal_name)
-  let { data: client } = await db
-    .from("clients")
-    .select("id")
-    .eq("tenant_id", tenantId)
-    .eq("legal_name", data.empresa)
-    .is("deleted_at", null)
-    .limit(1)
-    .maybeSingle();
+  // Si viene NIT, buscar por tax_id primero: es más confiable que legal_name
+  // (evita duplicados por variaciones de escritura de la razón social) y,
+  // como tax_id tiene UNIQUE (tenant_id, tax_id) en BD, buscar solo por
+  // legal_name cuando SÍ hay NIT arriesgaría un insert que choca contra ese
+  // constraint si el mismo NIT ya existe bajo otro nombre.
+  let client: { id: string } | null = null;
+  if (data.taxId) {
+    const { data: byTaxId } = await db
+      .from("clients")
+      .select("id")
+      .eq("tenant_id", tenantId)
+      .eq("tax_id", data.taxId)
+      .is("deleted_at", null)
+      .limit(1)
+      .maybeSingle();
+    client = byTaxId;
+  }
+
+  if (!client) {
+    const { data: byName } = await db
+      .from("clients")
+      .select("id")
+      .eq("tenant_id", tenantId)
+      .eq("legal_name", data.empresa)
+      .is("deleted_at", null)
+      .limit(1)
+      .maybeSingle();
+    client = byName;
+  }
 
   if (!client) {
     // Si no existe, crear nuevo cliente (tax_id es nullable)
@@ -158,6 +180,7 @@ export async function submitWizardData(
       .insert({
         tenant_id: tenantId,
         legal_name: data.empresa,
+        tax_id: data.taxId || null,
         client_type: "Empresa",
         country: "Colombia",
         city: data.ciudad,

@@ -43,10 +43,10 @@
 
 | ID | Hallazgo | Archivos | FR violado |
 |----|----------|----------|------------|
-| W-005 | **Orden de pasos del Wizard no coincide con spec**. Spec dice: Corporate → Service → Technical. Código: Service → Technical → Corporate. | `wizard/page.tsx`, spec.md | FR-005 |
-| W-006 | **No existe `tax_id` (RUC)** en formulario del wizard a pesar de que el spec lo menciona. | `CorporateInfoStep.tsx` | FR-005 |
-| W-007 | **Landing page no está en la raíz**. `src/app/page.tsx` no existe. La ruta raíz no renderiza contenido. | `src/app/(marketing)/page.tsx` | FR-001 |
-| W-008 | **Footer con links deshabilitados**: "Términos", "Cookies", "RETIE" con `cursor-not-allowed`. No redirigen. | `Footer.tsx` | FR-010 |
+| W-005 | ✅ **CERRADO (2026-07-23, `feat/007-web-portal-altos`)** — ~~Orden de pasos del Wizard no coincide con spec~~. Decisión del usuario: actualizar la spec para reflejar el código real (Service → Technical → Corporate) en vez de reordenar código probado en producción — preguntar la necesidad antes que los datos de contacto es un patrón de conversión establecido, y reordenar habría afectado validación por paso + las asociaciones `forWizardStep` del chatbot sin evidencia de que el orden anterior fuera la decisión correcta. Ver nota en `specs/web-existing/spec.md`. | `specs/web-existing/spec.md` | FR-005 |
+| W-006 | ✅ **CERRADO (2026-07-23, `feat/007-web-portal-altos`)** — ~~No existe `tax_id` (RUC)~~. Campo opcional agregado a `CorporateInfoStep.tsx` (la columna `clients.tax_id` ya era nullable). De paso: la búsqueda de cliente existente en `submitWizardData()` ahora busca por `tax_id` primero cuando viene provisto — antes solo buscaba por `legal_name`, y como `clients` tiene `UNIQUE (tenant_id, tax_id)`, un envío con el mismo NIT bajo una razón social distinta habría chocado con un error crudo de constraint. | `CorporateInfoStep.tsx`, `wizard.ts` | FR-005 |
+| W-007 | ✅ **YA CERRADO (sin cambios de código)** — `src/app/(marketing)/page.tsx` sí renderiza en `/`: los route groups de Next.js (carpetas entre paréntesis) no forman parte de la URL. Confirmado en cada `next build` de esta sesión (`┌ ƒ /` aparece consistentemente en la lista de rutas). El hallazgo original describía correctamente que `src/app/page.tsx` no existe, pero eso no significa que la ruta raíz esté vacía. | `src/app/(marketing)/page.tsx` | FR-001 |
+| W-008 | ✅ **CERRADO (2026-07-23, `feat/007-web-portal-altos`)** — ~~Footer con links deshabilitados~~. Se crearon `/terminos`, `/cookies`, `/retie`. Cookies tiene contenido real (ya sabíamos, por `/privacidad`, que este sitio no usa cookies de rastreo). Términos y RETIE son páginas honestas de "contenido en preparación" con contacto — no se fabricó texto legal ni una certificación RETIE que no está confirmada, solo se cerró el link muerto. | `Footer.tsx`, `terminos/page.tsx`, `cookies/page.tsx`, `retie/page.tsx` | FR-010 |
 
 ### 🔵 Medios
 
@@ -106,9 +106,9 @@
 
 | ID | Hallazgo | FR violado |
 |----|----------|------------|
-| P-003 | **FR-007 violado**: Dark mode disponible en portal. Spec dice "modo claro SIEMPRE". `ClientProfileModal.tsx` incluye toggle light/dark. | FR-007 |
-| P-004 | **Perfil de contacto solo lectura**. Clientes no pueden editar nombre/email desde el portal. | FR-006 |
-| P-005 | **Sin plan de contingencia para Wompi caído**. Mensaje actual "coordina con ejecutivo" no es un plan formal. | FR-004 |
+| P-003 | ✅ **CERRADO (2026-07-23, `feat/007-web-portal-altos`)** — ~~Dark mode disponible en portal~~. Se quitó el tab "Apariencia" de `ClientProfileModal.tsx`, y se encontró que el gap era más amplio que el modal: `DesignSystemProvider` en `portal/page.tsx` no fijaba tema, así que cualquier visitante con `prefers-color-scheme: dark` en su sistema ya veía el portal en oscuro desde la primera visita, sin haber tocado ningún toggle. Ahora `initialThemeId="minimal-white"` fuerza modo claro sin importar localStorage o preferencia del sistema. | `ClientProfileModal.tsx`, `portal/page.tsx` | FR-007 |
+| P-004 | ✅ **CERRADO — alcance reducido, decisión del usuario (2026-07-23, `feat/007-web-portal-altos`)** — ~~Perfil de contacto solo lectura~~. Se agregó edición del nombre del CONTACTO (persona) — distinto del nombre de la empresa/NIT, que el modal usaba antes por error para los 3 campos y quedan de solo lectura a propósito (son datos legales/de facturación de la empresa). Email tampoco es editable: es también la credencial de login de Supabase Auth y cambiarlo sin un flujo de reverificación abriría un hueco de seguridad — decisión explícita de no implementarlo esta ronda. Hallazgo al implementar: no existía ninguna política RLS que permitiera a un contacto de portal actualizar su propia fila en `client_contacts` — se agregó una nueva (`cc_self_update`), acompañada de un trigger que hace `auth_user_id`/`tenant_id` inmutables sin importar quién escriba, para que la política nueva no abra una vía para que un contacto cambie de tenant o de cuenta de login vía una llamada cruda a la API. | `ClientProfileModal.tsx`, `profile.ts` | FR-006 |
+| P-005 | ✅ **CERRADO (2026-07-23, `feat/007-web-portal-altos`)** — ~~Sin plan de contingencia para Wompi caído~~. El mensaje ahora da pasos concretos y numerados (contactar por email/teléfono, mencionar el número de factura y saldo ya visibles en pantalla, esperar confirmación) en vez de la frase genérica "coordina con tu ejecutivo". No se inventaron canales de pago alternativos (transferencia, link manual) que no están confirmados como reales. | `InvoicesSection.tsx` | FR-004 |
 
 ### 🔵 Medios
 

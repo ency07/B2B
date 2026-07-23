@@ -221,32 +221,20 @@ export function Footer({ siteName, tenantCode, branding = {} }: FooterProps) {
             {branding.copyright_footer || `© ${year} · ${siteName} · Todos los derechos reservados`}
           </p>
           <div className="flex items-center gap-5">
-            {([
-              { label: "Términos",   href: null },
+            {[
+              { label: "Términos",   href: "/terminos" },
               { label: "Privacidad", href: "/privacidad" },
-              { label: "Cookies",    href: null },
-              { label: "RETIE",      href: null },
-            ] as { label: string; href: string | null }[]).map(({ label, href }) =>
-              href ? (
-                <a
-                  key={label}
-                  href={href}
-                  className="font-mono text-[10px] tracking-widest text-white/40 hover:text-white uppercase transition-colors link-reveal"
-                >
-                  {label}
-                </a>
-              ) : (
-                <button
-                  key={label}
-                  type="button"
-                  aria-disabled="true"
-                  title="Próximamente"
-                  className="font-mono text-[10px] tracking-widest text-white/40 hover:text-white uppercase transition-colors link-reveal cursor-not-allowed"
-                >
-                  {label}
-                </button>
-              )
-            )}
+              { label: "Cookies",    href: "/cookies" },
+              { label: "RETIE",      href: "/retie" },
+            ].map(({ label, href }) => (
+              <a
+                key={label}
+                href={href}
+                className="font-mono text-[10px] tracking-widest text-white/40 hover:text-white uppercase transition-colors link-reveal"
+              >
+                {label}
+              </a>
+            ))}
           </div>
         </div>
       </div>

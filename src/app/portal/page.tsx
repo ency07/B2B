@@ -150,7 +150,14 @@ export default async function PortalPage({ searchParams }: Props) {
   }
 
   return (
-    <DesignSystemProvider>
+    // initialThemeId fuerza modo claro (FR-007: "modo claro SIEMPRE" en el
+    // portal). Sin esto, DesignSystemProvider caía a prefers-color-scheme del
+    // sistema — cualquier visitante con dark mode del SO activado veía el
+    // portal en oscuro desde la primera visita, sin haber tocado ningún
+    // toggle. "minimal-white" es el mismo tema que ya era el default de
+    // hecho (themes[0]); esto solo lo hace explícito e inmune a
+    // localStorage/preferencia del sistema.
+    <DesignSystemProvider initialThemeId="minimal-white">
       <CustomerPortalClient
       clientInfo={{
         legalName: currentClient.legalName,
