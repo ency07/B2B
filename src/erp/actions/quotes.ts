@@ -11,6 +11,10 @@ import {
   updateQuoteStatusSchema,
 } from "@/lib/validations/erp";
 
+// requirement_id es NOT NULL en la tabla quotes (y convertQuoteToJob() ya
+// exige que exista para poder generar la OT), así que no puede ser
+// verdaderamente opcional pese a que el tipo de abajo lo permitía antes.
+
 export interface QuoteRow {
   id: string;
   quote_code: string;
@@ -56,26 +60,22 @@ export async function getQuotes(tenantCode?: string | null, clientId?: string): 
 
 export async function createQuote(
   tenantCode: string | null,
-  quoteData: { clientId: string; requirementId?: string; validUntil: string }
+  quoteData: { clientId: string; requirementId: string; validUntil: string }
 ) {
   const ctx = await requireAction("quotes.create");
   quoteData = validate(createQuoteSchema, quoteData);
   const tenantId = await getTenantId(tenantCode);
   await validateTenantAccess(ctx.userId, ctx.role, tenantId);
 
-  const { data, error } = await supabaseAdmin
-    .from("quotes")
-    .insert({
-      tenant_id: tenantId,
-      client_id: quoteData.clientId,
-      requirement_id: quoteData.requirementId || null,
-      assigned_user_id: ctx.userId,
-      valid_until: quoteData.validUntil,
-      status: "BORRADOR",
-      created_by: ctx.userId,
-    })
-    .select()
-    .single();
+  // RPC (puente de identidad): ver supabase/migrations/*_identity_bridge_remaining_erp_write_paths.sql
+  const { data, error } = await supabaseAdmin.rpc("create_quote_bridged", {
+    p_tenant_id: tenantId,
+    p_client_id: quoteData.clientId,
+    p_requirement_id: quoteData.requirementId,
+    p_assigned_user_id: ctx.userId,
+    p_valid_until: quoteData.validUntil,
+    p_actor_user_id: ctx.userId,
+  });
 
   if (error) {
     console.error("Error creating quote:", error);
@@ -166,13 +166,13 @@ export async function updateQuoteStatus(quoteId: string, status: string) {
     : await requireAction("quotes.create");
   const tenantId = await getCallerTenantId();
 
-  const { data, error } = await supabaseAdmin
-    .from("quotes")
-    .update({ status, status_changed_by: ctx.userId, status_changed_at: new Date().toISOString() })
-    .eq("id", quoteId)
-    .eq("tenant_id", tenantId)
-    .select()
-    .single();
+  // RPC (puente de identidad): ver supabase/migrations/*_identity_bridge_remaining_erp_write_paths.sql
+  const { data, error } = await supabaseAdmin.rpc("update_quote_status_bridged", {
+    p_quote_id: quoteId,
+    p_tenant_id: tenantId,
+    p_status: status,
+    p_actor_user_id: ctx.userId,
+  });
 
   if (error) {
     console.error("Error updating quote status:", error);
@@ -209,16 +209,18 @@ export async function convertQuoteToJob(quoteId: string) {
   if (rErr || !req) throw new Error("Requerimiento asociado no encontrado");
   if (req.status !== "APROBACION") throw new Error(`El requerimiento debe estar en APROBACION (actual: ${req.status})`);
 
-  // Transicionar a OT_GENERADA — el trigger valida documentos y crea el Job automáticamente
-  const { error: updateErr } = await supabaseAdmin
-    .from("requirements")
-    .update({
-      status: "OT_GENERADA",
-      updated_at: new Date().toISOString(),
-      updated_by: ctx.userId,
-    })
-    .eq("id", quote.requirement_id)
-    .eq("tenant_id", tenantId);
+  // Transicionar a OT_GENERADA — el trigger valida documentos y crea el Job automáticamente.
+  // RPC (puente de identidad): ver supabase/migrations/*_identity_bridge_remaining_erp_write_paths.sql
+  const { error: updateErr } = await supabaseAdmin.rpc("update_requirement_status_bridged", {
+    p_requirement_id: quote.requirement_id,
+    p_tenant_id: tenantId,
+    p_new_status: "OT_GENERADA",
+    p_actor_user_id: ctx.userId,
+    p_set_engineering: false,
+    p_engineering_user_id: null,
+    p_set_sales: false,
+    p_sales_user_id: null,
+  });
 
   if (updateErr) {
     console.error("Error converting quote to job:", updateErr);

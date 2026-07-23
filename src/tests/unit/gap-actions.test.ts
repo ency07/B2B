@@ -409,25 +409,13 @@ describe("E-002: updateJobStatus", () => {
       }),
     });
 
-    // The update chain
-    const updateResult = {
+    // update_job_status_bridged: RPC que fija app.verified_actor_id (puente de
+    // identidad) y actualiza en la misma transacción — ver
+    // supabase/migrations/*_identity_bridge_remaining_erp_write_paths.sql
+    supabaseAdminRpcMock.mockResolvedValue({
       data: { id: JOB_ID, status: "PROGRAMADO" },
       error: null,
-    };
-    // Override the jobs chain for update
-    const jobsChain = buildChain({
-      data: { id: JOB_ID, status: "PENDIENTE", deleted_at: null },
-      error: null,
     });
-    jobsChain.update = vi.fn().mockReturnValue({
-      eq: vi.fn().mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue(updateResult),
-        }),
-      }),
-    });
-
-    mockFrom({ jobs: jobsChain });
 
     const result = await updateJobStatus(TENANT, {
       jobId: JOB_ID,
@@ -437,22 +425,17 @@ describe("E-002: updateJobStatus", () => {
   });
 
   it("acepta FACTURADA como estado válido (E-011)", async () => {
-    const jobsChain = buildChain({
-      data: { id: JOB_ID, status: "ENTREGADO", deleted_at: null },
-      error: null,
-    });
-    jobsChain.update = vi.fn().mockReturnValue({
-      eq: vi.fn().mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({
-            data: { id: JOB_ID, status: "FACTURADA" },
-            error: null,
-          }),
-        }),
+    mockFrom({
+      jobs: buildChain({
+        data: { id: JOB_ID, status: "ENTREGADO", deleted_at: null },
+        error: null,
       }),
     });
 
-    mockFrom({ jobs: jobsChain });
+    supabaseAdminRpcMock.mockResolvedValue({
+      data: { id: JOB_ID, status: "FACTURADA" },
+      error: null,
+    });
 
     const result = await updateJobStatus(TENANT, {
       jobId: JOB_ID,
@@ -462,24 +445,17 @@ describe("E-002: updateJobStatus", () => {
   });
 
   it("guarda actual_hours cuando se provee en FINALIZADO", async () => {
-    const jobsChain = buildChain({
-      data: { id: JOB_ID, status: "EN_EJECUCION", deleted_at: null },
-      error: null,
-    });
-
-    const updateMock = vi.fn().mockReturnValue({
-      eq: vi.fn().mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({
-            data: { id: JOB_ID, status: "FINALIZADO", actual_hours: 40 },
-            error: null,
-          }),
-        }),
+    mockFrom({
+      jobs: buildChain({
+        data: { id: JOB_ID, status: "EN_EJECUCION", deleted_at: null },
+        error: null,
       }),
     });
-    jobsChain.update = updateMock;
 
-    mockFrom({ jobs: jobsChain });
+    supabaseAdminRpcMock.mockResolvedValue({
+      data: { id: JOB_ID, status: "FINALIZADO", actual_hours: 40 },
+      error: null,
+    });
 
     await updateJobStatus(TENANT, {
       jobId: JOB_ID,
@@ -487,8 +463,12 @@ describe("E-002: updateJobStatus", () => {
       actualHours: 40,
     });
 
-    // Verify update was called with actual_hours
-    expect(updateMock).toHaveBeenCalled();
+    // Verifica que actual_hours viaja al RPC (p_actual_hours), no como columna
+    // suelta de un .update() directo.
+    expect(supabaseAdminRpcMock).toHaveBeenCalledWith(
+      "update_job_status_bridged",
+      expect.objectContaining({ p_actual_hours: 40 })
+    );
   });
 });
 
@@ -995,16 +975,6 @@ describe("E-008: convertQuoteToJob", () => {
   });
 
   it("convierte exitosamente APROBADA → OT_GENERADA", async () => {
-    const reqChain = buildChain({
-      data: { id: REQ_ID, status: "APROBACION", description: "Test" },
-      error: null,
-    });
-    reqChain.update = vi.fn().mockReturnValue({
-      eq: vi.fn().mockReturnValue({
-        eq: vi.fn().mockResolvedValue({ data: null, error: null }),
-      }),
-    });
-
     const jobsChain = buildChain({
       data: { id: JOB_ID, job_code: "OT-2026-001", status: "PENDIENTE", title: "Test Job" },
       error: null,
@@ -1021,10 +991,18 @@ describe("E-008: convertQuoteToJob", () => {
         },
         error: null,
       }),
-      requirements: reqChain,
+      requirements: buildChain({
+        data: { id: REQ_ID, status: "APROBACION", description: "Test" },
+        error: null,
+      }),
       jobs: jobsChain,
       users: buildChain({ data: { tenant_id: TENANT }, error: null }),
     });
+
+    // update_requirement_status_bridged: RPC que fija app.verified_actor_id
+    // (puente de identidad) y actualiza en la misma transacción — ver
+    // supabase/migrations/*_identity_bridge_remaining_erp_write_paths.sql
+    supabaseAdminRpcMock.mockResolvedValue({ data: null, error: null });
 
     const result = await convertQuoteToJob(QUOTE_ID);
     expect(result).toBeDefined();

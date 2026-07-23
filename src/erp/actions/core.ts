@@ -301,25 +301,21 @@ export async function createJob(
 
   // job_code se omite intencionalmente: el trigger handle_job_sequences()
   // lo genera con get_next_tenant_sequence() de forma atómica y sin race conditions.
-  const { data, error } = await supabaseAdmin
-    .from("jobs")
-    .insert({
-      tenant_id: tenantId,
-      client_id: jobData.clientId,
-      requirement_id: jobData.requirementId,
-      site_id: siteResult.data.id,
-      area_id: areaResult.data.id,
-      title: jobData.description.substring(0, 100),
-      description: jobData.description,
-      assigned_user_id: jobData.assignedUserId,
-      planned_start_date: new Date(jobData.startDate).toISOString(),
-      planned_end_date: new Date(jobData.endDate).toISOString(),
-      priority: jobData.priority === "ALTA" ? "HIGH" : jobData.priority === "BAJA" ? "LOW" : "MEDIUM",
-      status: "PENDIENTE",
-      created_by: ctx.userId,
-    })
-    .select()
-    .single();
+  // RPC (puente de identidad): ver supabase/migrations/*_identity_bridge_remaining_erp_write_paths.sql
+  const { data, error } = await supabaseAdmin.rpc("create_job_bridged", {
+    p_tenant_id: tenantId,
+    p_client_id: jobData.clientId,
+    p_requirement_id: jobData.requirementId,
+    p_site_id: siteResult.data.id,
+    p_area_id: areaResult.data.id,
+    p_title: jobData.description.substring(0, 100),
+    p_description: jobData.description,
+    p_assigned_user_id: jobData.assignedUserId,
+    p_planned_start_date: new Date(jobData.startDate).toISOString(),
+    p_planned_end_date: new Date(jobData.endDate).toISOString(),
+    p_priority: jobData.priority === "ALTA" ? "HIGH" : jobData.priority === "BAJA" ? "LOW" : "MEDIUM",
+    p_actor_user_id: ctx.userId,
+  });
 
   if (error) {
     console.error("Error creating job:", error);
@@ -366,36 +362,15 @@ export async function updateJobStatus(
   }
 
   // Actualizar estado — el trigger validate_job_state_transitions valida la transición
-  // y dispatch_job_events emite el business_event correspondiente
-  const updatePayload: Record<string, unknown> = {
-    status: data.newStatus,
-    updated_by: ctx.userId,
-    updated_at: new Date().toISOString(),
-  };
-
-  if (data.newStatus === "EN_EJECUCION") {
-    updatePayload.actual_start_date = new Date().toISOString();
-  }
-
-  if (data.newStatus === "FINALIZADO") {
-    updatePayload.actual_end_date = new Date().toISOString();
-    if (data.actualHours !== undefined) {
-      updatePayload.actual_hours = data.actualHours;
-    }
-  }
-
-  if (data.newStatus === "CANCELADO") {
-    updatePayload.cancel_reason = data.cancelReason;
-    updatePayload.cancelled_by = ctx.userId;
-    updatePayload.cancelled_at = new Date().toISOString();
-  }
-
-  const { data: updated, error: updateErr } = await supabaseAdmin
-    .from("jobs")
-    .update(updatePayload)
-    .eq("id", data.jobId)
-    .select()
-    .single();
+  // y dispatch_job_events emite el business_event correspondiente.
+  // RPC (puente de identidad): ver supabase/migrations/*_identity_bridge_remaining_erp_write_paths.sql
+  const { data: updated, error: updateErr } = await supabaseAdmin.rpc("update_job_status_bridged", {
+    p_job_id: data.jobId,
+    p_new_status: data.newStatus,
+    p_actor_user_id: ctx.userId,
+    p_cancel_reason: data.newStatus === "CANCELADO" ? data.cancelReason : null,
+    p_actual_hours: data.newStatus === "FINALIZADO" && data.actualHours !== undefined ? data.actualHours : null,
+  });
 
   if (updateErr) {
     console.error("Error updating job status:", updateErr);
@@ -468,7 +443,7 @@ export async function createInventoryMovement(
   // Get item_id
   const { data: item } = await supabaseAdmin
     .from("inventory_items")
-    .select("id, purchase_price")
+    .select("id, average_cost")
     .eq("tenant_id", tenantId)
     .eq("item_code", movement.itemCode)
     .limit(1)
@@ -532,36 +507,28 @@ export async function createInventoryMovement(
   // movement_code se omite intencionalmente: el trigger handle_inventory_sequences()
   // lo genera con get_next_tenant_sequence() de forma atómica (MOV-000001), sin el
   // race condition del antiguo count+1.
-  const insertPayload: any = {
-    tenant_id: tenantId,
-    item_id: item.id,
-    movement_type: movement.type,
-    quantity: movement.quantity,
-    unit_cost: item.purchase_price || 0,
-    notes: movement.notes,
-    status: "Aplicado", // Auto apply in this demo
-    created_by: ctx.userId,
-  };
-
-  if (movement.type === "Transferencia") {
-    insertPayload.source_warehouse_id = sourceWh.id;
-    insertPayload.destination_warehouse_id = destWhId;
-  } else {
-    insertPayload.warehouse_id = sourceWh.id;
-  }
-
-  const { data, error } = await supabaseAdmin
-    .from("inventory_movements")
-    .insert(insertPayload)
-    .select()
-    .single();
+  // RPC (puente de identidad): ver supabase/migrations/*_identity_bridge_remaining_erp_write_paths.sql
+  const { data, error } = await supabaseAdmin.rpc("create_inventory_movement_bridged", {
+    p_tenant_id: tenantId,
+    p_item_id: item.id,
+    p_movement_type: movement.type,
+    p_quantity: movement.quantity,
+    p_unit_cost: item.average_cost || 0,
+    p_notes: movement.notes,
+    p_source_warehouse_id: sourceWh.id,
+    p_destination_warehouse_id: movement.type === "Transferencia" ? destWhId : null,
+    p_actor_user_id: ctx.userId,
+  });
 
   if (error) {
     console.error("Error creating movement:", error);
     throw new Error(error.message);
   }
 
-  emitBusinessEvent(tenantId, EVENT_CODES.INVENTORY_MOVEMENT, "INVENTORY_MOVEMENT", data.id, { item_code: movement.itemCode, type: movement.type, quantity: movement.quantity }, ctx.userId);
+  const movementId = typeof data === "object" && data !== null ? (data as any).id : null;
+  if (movementId) {
+    emitBusinessEvent(tenantId, EVENT_CODES.INVENTORY_MOVEMENT, "INVENTORY_MOVEMENT", movementId, { item_code: movement.itemCode, type: movement.type, quantity: movement.quantity }, ctx.userId);
+  }
 
   return data;
 }
@@ -798,23 +765,21 @@ export async function createCreditNote(
     );
   }
 
-  // Insertar NC — el trigger valida el monto y genera el código
-  const { data: creditNote, error: cnErr } = await supabaseAdmin
-    .from("credit_notes")
-    .insert({
-      tenant_id: tenantId,
-      invoice_id: data.invoiceId,
-      client_id: data.clientId,
-      reason: data.reason,
-      description: data.description || null,
-      subtotal: data.subtotal,
-      tax_amount: data.taxAmount || 0,
-      total_amount: data.totalAmount,
-      status: "APLICADA",
-      created_by: ctx.userId,
-    })
-    .select()
-    .single();
+  // Insertar NC — el trigger valida el monto y genera el código. Status inicial
+  // EMITIDA (único valor junto con ANULADA permitido por credit_notes_status_check;
+  // el código anterior insertaba "APLICADA", que nunca fue válido — ver commit).
+  // RPC (puente de identidad): ver supabase/migrations/*_identity_bridge_remaining_erp_write_paths.sql
+  const { data: creditNote, error: cnErr } = await supabaseAdmin.rpc("create_credit_note_bridged", {
+    p_tenant_id: tenantId,
+    p_invoice_id: data.invoiceId,
+    p_client_id: data.clientId,
+    p_reason: data.reason,
+    p_description: data.description || null,
+    p_subtotal: data.subtotal,
+    p_tax_amount: data.taxAmount || 0,
+    p_total_amount: data.totalAmount,
+    p_actor_user_id: ctx.userId,
+  });
 
   if (cnErr) {
     console.error("Error creating credit note:", cnErr);

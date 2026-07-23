@@ -78,19 +78,15 @@ export async function createRequirement(
   const tenantId = await getTenantId(tenantCode);
   await validateTenantAccess(ctx.userId, ctx.role, tenantId);
 
-  const { data, error } = await supabaseAdmin
-    .from("requirements")
-    .insert({
-      tenant_id: tenantId,
-      client_id: reqData.clientId,
-      title: reqData.title,
-      category: reqData.category,
-      priority: reqData.priority,
-      status: "BORRADOR",
-      created_by: ctx.userId,
-    })
-    .select()
-    .single();
+  // RPC (puente de identidad): ver supabase/migrations/*_identity_bridge_remaining_erp_write_paths.sql
+  const { data, error } = await supabaseAdmin.rpc("create_requirement_bridged", {
+    p_tenant_id: tenantId,
+    p_client_id: reqData.clientId,
+    p_title: reqData.title,
+    p_category: reqData.category,
+    p_priority: reqData.priority,
+    p_actor_user_id: ctx.userId,
+  });
 
   if (error) {
     console.error("Error creating requirement:", error);
@@ -111,28 +107,19 @@ export async function updateRequirementStatus(
 
   // Whitelist anti mass-assignment: `extra` solo puede setear estas columnas
   // (asignación de ingeniería/ventas). Evita que un caller inyecte columnas
-  // arbitrarias (tenant_id, created_by, etc.) vía el spread.
-  const ALLOWED_EXTRA_KEYS = ["engineering_user_id", "sales_user_id"] as const;
-  const sanitizedExtra: Record<string, unknown> = {};
-  if (extra) {
-    for (const key of ALLOWED_EXTRA_KEYS) {
-      if (extra[key] !== undefined) sanitizedExtra[key] = extra[key];
-    }
-  }
-
-  const payload: any = {
-    status: newStatus,
-    updated_by: ctx.userId,
-    ...sanitizedExtra,
-  };
-
-  const { data, error } = await supabaseAdmin
-    .from("requirements")
-    .update(payload)
-    .eq("id", reqId)
-    .eq("tenant_id", tenantId)
-    .select()
-    .single();
+  // arbitrarias (tenant_id, created_by, etc.) vía el spread. p_set_engineering/
+  // p_set_sales distinguen "no tocar la columna" de "tocarla" en el RPC — ver
+  // supabase/migrations/*_identity_bridge_remaining_erp_write_paths.sql
+  const { data, error } = await supabaseAdmin.rpc("update_requirement_status_bridged", {
+    p_requirement_id: reqId,
+    p_tenant_id: tenantId,
+    p_new_status: newStatus,
+    p_actor_user_id: ctx.userId,
+    p_set_engineering: extra?.engineering_user_id !== undefined,
+    p_engineering_user_id: extra?.engineering_user_id ?? null,
+    p_set_sales: extra?.sales_user_id !== undefined,
+    p_sales_user_id: extra?.sales_user_id ?? null,
+  });
 
   if (error) {
     console.error("Error updating requirement:", error);

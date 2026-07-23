@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import * as React from "react";
@@ -78,7 +79,10 @@ const formatCurrency = (amount: number) => {
 
 const quoteSchema = z.object({
   clientId: z.string().min(1, { message: "Seleccione un cliente B2B." }),
-  requirementId: z.string().optional(),
+  // requirement_id es NOT NULL en la base — antes era .optional() y dejaba
+  // pasar un envío sin requerimiento hasta que el servidor lo rechazaba con
+  // un error crudo de constraint.
+  requirementId: z.string().min(1, { message: "Seleccione un requerimiento asociado." }),
   validUntil: z.string().min(1, { message: "Seleccione la fecha de vencimiento." }),
 });
 
@@ -122,6 +126,7 @@ export default function QuotesPage() {
     defaultValues: {
       clientId: "",
       requirementId: "",
+      // eslint-disable-next-line react-hooks/purity
       validUntil: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10), // 15 days default
     },
   });
@@ -155,6 +160,7 @@ export default function QuotesPage() {
   }, [tenantParam, selectedQuote]);
 
   React.useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadData();
   }, [tenantParam]);
 
@@ -278,7 +284,7 @@ export default function QuotesPage() {
           <SheetContent className="flex flex-col bg-bg-elevated-1 border-l border-line p-0 w-full sm:max-w-md backdrop-blur-md h-full">
             {/* Header Fijo */}
             <div className="flex-none p-6 md:p-8 border-b border-line bg-bg-elevated-1/80 backdrop-blur-sm z-layer-content">
-              <span className="text-[10px] font-mono tracking-widest text-primary uppercase font-bold">// Comercial / Propuestas</span>
+              <span className="text-[10px] font-mono tracking-widest text-primary uppercase font-bold">{"// Comercial / Propuestas"}</span>
               <h3 className="text-base font-mono uppercase tracking-wider font-bold text-ink mt-0.5">Crear Cotización</h3>
               <p className="text-xs text-ink-muted">Genera una nueva propuesta comercial vinculada a una cuenta y requerimiento técnico.</p>
             </div>
@@ -423,7 +429,7 @@ export default function QuotesPage() {
 
             {filteredQuotes.length === 0 && (
               <div className="col-span-full border border-border bg-card/20 rounded-xl p-8 text-center text-xs text-muted-foreground font-mono uppercase tracking-widest">
-                // No se encontraron cotizaciones registradas.
+                {"// No se encontraron cotizaciones registradas."}
               </div>
             )}
           </div>
@@ -448,7 +454,7 @@ export default function QuotesPage() {
                 </div>
 
                 <div className="text-right space-y-1">
-                  <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider font-semibold">// Flujo de Oferta</div>
+                  <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider font-semibold">{"// Flujo de Oferta"}</div>
                   <Badge variant={selectedQuote.status === "APROBADA" ? "success" : "warning"} className="text-[10px] font-semibold py-0.5 px-2">
                     {selectedQuote.status}
                   </Badge>
@@ -460,7 +466,7 @@ export default function QuotesPage() {
                 {/* 1. Items Table */}
                 <div className="space-y-3">
                   <div className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5 font-mono">
-                    <Briefcase className="w-3.5 h-3.5 text-primary" /> // Desglose de SKUs y Conceptos
+                    <Briefcase className="w-3.5 h-3.5 text-primary" /> {"// Desglose de SKUs y Conceptos"}
                   </div>
 
                   {itemsLoading ? (
@@ -508,7 +514,7 @@ export default function QuotesPage() {
                 {/* 2. Add Item Inline Form */}
                 {selectedQuote.status === "BORRADOR" && (
                   <div className="bg-muted/30 border border-border rounded-xl p-4 space-y-3 shadow-xs">
-                    <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider font-bold">// Agregar Concepto a Propuesta</div>
+                    <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider font-bold">{"// Agregar Concepto a Propuesta"}</div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
                       <div className="md:col-span-5 space-y-1">
@@ -571,7 +577,7 @@ export default function QuotesPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-muted/40 border border-border rounded-xl p-5 shadow-xs">
                     {/* Financial health indicator */}
                     <div className="space-y-2 pr-4 md:border-r md:border-border">
-                      <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider font-bold">// Análisis Operativo</div>
+                      <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider font-bold">{"// Análisis Operativo"}</div>
                       <p className="text-[11px] text-muted-foreground leading-relaxed font-sans">
                         La cotización ha sido generada bajo el motor de precios unificado, aplicando un IVA estándar del <span className="font-mono text-foreground font-bold">19%</span> y una validez garantizada de precios comerciales por inquilino.
                       </p>
@@ -583,7 +589,7 @@ export default function QuotesPage() {
 
                     {/* Math breakdown */}
                     <div className="space-y-2 text-xs font-mono">
-                      <div className="text-[10px] text-muted-foreground uppercase font-bold">// Desglose de Valores</div>
+                      <div className="text-[10px] text-muted-foreground uppercase font-bold">{"// Desglose de Valores"}</div>
                       <div className="flex justify-between text-muted-foreground">
                         <span>Subtotal:</span>
                         <span className="text-foreground">{formatCurrency(selectedQuote.subtotal || 0)}</span>
@@ -607,13 +613,13 @@ export default function QuotesPage() {
                 {/* 4. Workflow sign-offs */}
                 <div className="space-y-4 pt-4 border-t border-border">
                   <div className="flex items-center gap-2 text-xs font-bold text-foreground uppercase tracking-wider font-mono">
-                    <FileCheck className="w-3.5 h-3.5 text-primary" /> // Firmas de Aprobación de la Propuesta
+                    <FileCheck className="w-3.5 h-3.5 text-primary" /> {"// Firmas de Aprobación de la Propuesta"}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Sales signoff */}
                     <div className="border border-border bg-muted/40 p-4 rounded-xl space-y-3 shadow-xs">
-                      <div className="text-[10px] font-mono text-muted-foreground uppercase font-bold">// 1. Ejecutivo Comercial</div>
+                      <div className="text-[10px] font-mono text-muted-foreground uppercase font-bold">{"// 1. Ejecutivo Comercial"}</div>
                       {salesSigned ? (
                         <div className="text-xs font-semibold text-success flex items-center gap-1 font-mono">
                           <CheckCircle2 className="w-4 h-4 shrink-0" /> Propuesta Visada y Firmada
@@ -630,7 +636,7 @@ export default function QuotesPage() {
 
                     {/* Client signoff */}
                     <div className="border border-border bg-muted/40 p-4 rounded-xl space-y-3 shadow-xs">
-                      <div className="text-[10px] font-mono text-muted-foreground uppercase font-bold">// 2. Aceptación Cliente B2B</div>
+                      <div className="text-[10px] font-mono text-muted-foreground uppercase font-bold">{"// 2. Aceptación Cliente B2B"}</div>
                       {clientSigned ? (
                         <div className="text-xs font-semibold text-success flex items-center gap-1 font-mono">
                           <CheckCircle2 className="w-4 h-4 shrink-0" /> Firmado Digitalmente
