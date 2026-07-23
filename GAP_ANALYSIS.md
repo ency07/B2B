@@ -194,32 +194,48 @@ P1-06: ✅ CERRADO EN CÓDIGO (2026-07-22, `feat/003-portal-wompi-payments`) —
 los 6 gaps P1 originales, los 6 están cerrados en código. P1-06 (Wompi/PSE) es el único con una
 verificación pendiente que no depende de código: cobro real contra `comercios.wompi.co` con
 credenciales reales (ver P-002 arriba). Ver además **E-016** abajo — un gap crítico de seguridad
-encontrado durante la remediación, no parte del análisis original de 41 gaps, con fix parcial ya
-fusionado.
+encontrado durante la remediación, no parte del análisis original de 41 gaps, ya cerrado por
+completo (rama `fix/005-erp-remaining-write-paths`).
 
 ### Gap crítico adicional encontrado en remediación (no estaba en el análisis original)
 
 ```
-E-016: 🟡 PARCIAL (2026-07-23, rama fix/004-server-action-identity-bridge) — Puente de
+E-016: ✅ CERRADO (2026-07-23, ramas fix/004 y fix/005-erp-remaining-write-paths) — Puente de
        identidad roto entre Server Actions (requireAction/getAuthContext) y las
        escrituras vía supabaseAdmin (service_role sin auth.uid()). Los triggers
        enforce_*_permissions rechazan (o rechazarían, si is_platform_super_admin()
        no cortocircuitara con session_user='postgres' en pruebas) toda escritura
-       real. Mecanismo genérico ya arreglado (get_current_user_id() +
-       set_erp_actor_context()), corrige las 16 tablas de un solo golpe a nivel de
-       resolución de identidad. RPCs ya migrados al puente: registerPayment(),
-       create_invoice_with_item(), create_inventory_item_with_stock() — estos dos
-       últimos solo necesitaron una línea (PERFORM set_erp_actor_context(...))
-       porque ya eran RPCs SECURITY DEFINER que insertan internamente; no hizo
-       falta tocar TypeScript. PENDIENTE (confirmado vía information_schema.triggers,
-       11 tablas gateadas sin arreglar): jobs, credit_notes, quotes, requirements,
-       warehouses, inventory_batches, inventory_serials, approval_flows,
-       approval_rules, approval_steps, y el 2º insert de inventory_movements
-       (registro de movimientos fuera del alta inicial). Cada una usa
-       supabaseAdmin.from().insert()/.update() directo (sin RPC intermedio) —
-       a diferencia de las dos ya arregladas, cada una necesita un RPC nuevo
-       dedicado (no es una línea, hay que envolver el insert/update en una
-       función SQL nueva, igual que register_payment_for_invoice).
+       real. Mecanismo genérico (get_current_user_id() + set_erp_actor_context())
+       corrige las 16 tablas de un solo golpe a nivel de resolución de identidad.
+       Confirmado por grep exhaustivo de src/ (no solo core.ts) que solo 5 tablas
+       tenían escritura real fuera de payments/invoices/inventory_items: jobs,
+       credit_notes, requirements, quotes, inventory_movements (2º insert). Las
+       otras 6 originalmente listadas como pendientes (warehouses,
+       inventory_batches, inventory_serials, approval_flows, approval_rules,
+       approval_steps) NO tienen ningún punto de escritura en toda la app — no
+       hay código que romper ni que arreglar para ellas hoy (warehouses solo
+       tiene 4 filas de seed; las otras 5 están vacías). Los 9 call sites reales
+       quedaron envueltos en 8 RPCs bridged (create_job_bridged,
+       update_job_status_bridged, create_inventory_movement_bridged,
+       create_credit_note_bridged, create_requirement_bridged,
+       update_requirement_status_bridged — compartido por updateRequirementStatus()
+       y convertQuoteToJob(), create_quote_bridged, update_quote_status_bridged),
+       cada uno verificado con datos reales antes de tocar TypeScript.
+
+       Dos bugs reales, preexistentes y ajenos a la identidad, encontrados durante
+       esa verificación (ninguno hipotético — ambos reproducidos):
+       (a) createCreditNote() insertaba status='APLICADA', que NUNCA fue un valor
+           válido para credit_notes.status (CHECK solo permite EMITIDA/ANULADA) —
+           toda nota crédito fallaba con violación de constraint, no con "Permiso
+           Denegado". Corregido a 'EMITIDA'.
+       (b) createInventoryMovement() leía la columna inventory_items.purchase_price,
+           que no existe (las reales son average_cost/last_cost) — todo registro
+           de movimiento de inventario fallaba de entrada. Corregido a average_cost.
+       (c) createQuote() marcaba requirementId como opcional (TS y Zod) pese a que
+           quotes.requirement_id es NOT NULL en la base, y convertQuoteToJob() ya
+           exige que exista — un envío sin requerimiento seleccionado llegaba
+           hasta el INSERT y fallaba con un error crudo de Postgres. Corregido:
+           requirementId ahora requerido en el schema Zod (servidor y formulario).
 ```
 
 ### E-017: hardening de grants (encontrado y cerrado en la misma remediación)

@@ -171,7 +171,10 @@ export const quoteStatusSchema = z.enum([
 
 export const createQuoteSchema = z.object({
   clientId: uuidSchema,
-  requirementId: uuidSchema.optional(),
+  // requirement_id es NOT NULL en la tabla quotes — antes era .optional() y
+  // el insert hacía `requirementId || null`, lo que violaba el constraint en
+  // cuanto el formulario se enviaba sin requerimiento seleccionado.
+  requirementId: uuidSchema,
   validUntil: dateString("Fecha de validez"),
 });
 
