@@ -454,8 +454,12 @@ export const ACTION_PERMISSIONS: Record<RoleName, Action[] | ["*"]> = {
   // "Listados y niveles de stock de repuestos y materiales (inventory.view).
   //  Registro de entradas/salidas de almacen (inventory.movement).
   //  Requerimientos de compra de insumos (purchases)."
-  ALMACENISTA: ["inventory.view", "inventory.movement", "purchases"],
-  JEFE_INVENTARIO: ["inventory.view", "inventory.movement", "purchases"],
+  // Nota: "purchases" (acción genérica) nunca se verifica en ningún Server
+  // Action — el módulo de compras real usa purchases.create/.approve/.view,
+  // que faltaban acá pese a que la ruta /dashboard/purchases sí las incluye
+  // para estos roles.
+  ALMACENISTA: ["inventory.view", "inventory.movement", "purchases", "purchases.create", "purchases.approve", "purchases.view"],
+  JEFE_INVENTARIO: ["inventory.view", "inventory.movement", "purchases", "purchases.create", "purchases.approve", "purchases.view"],
 
   // 7. Auditor: acceso a logs de auditoria del tenant.
   // "Acceso a los logs de auditoria inmutables del tenant (audit.view_tenant).

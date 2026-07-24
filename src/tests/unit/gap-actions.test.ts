@@ -5,7 +5,6 @@
  *   E-001: registerPayment
  *   E-002: updateJobStatus
  *   E-003: createCreditNote
- *   E-004: Purchase order flow (create/approve/receive)
  *   E-005+E-014: emitBusinessEvent (dual write)
  *   E-007: updateLeadStatus (transitions + auto client)
  *   E-008: convertQuoteToJob
@@ -32,8 +31,6 @@ const {
   JOB_ID,
   LEAD_ID,
   QUOTE_ID,
-  PO_ID,
-  VENDOR_ID,
   REQ_ID,
   SITE_ID,
   supabaseAdminFromMock,
@@ -47,8 +44,6 @@ const {
   JOB_ID: "c3d4e5f6-a7b8-4012-8def-123456789012",
   LEAD_ID: "d4e5f6a7-b8c9-4123-9ef0-234567890123",
   QUOTE_ID: "e5f6a7b8-c9d0-1234-af01-345678901234",
-  PO_ID: "f6a7b8c9-d0e1-2345-8012-456789012345",
-  VENDOR_ID: "a7b8c9d0-e1f2-3456-8123-567890123456",
   REQ_ID: "b8c9d0e1-f2a3-4567-9234-678901234567",
   SITE_ID: "c9d0e1f2-a3b4-5678-a345-789012345678",
   supabaseAdminFromMock: vi.fn(),
@@ -100,9 +95,6 @@ import {
   registerPayment,
   updateJobStatus,
   createCreditNote,
-  createPurchaseOrder,
-  approvePurchaseOrder,
-  receivePurchaseOrder,
   emitBusinessEvent,
   deleteEntity,
   getTaxRate,
@@ -543,148 +535,14 @@ describe("E-003: createCreditNote", () => {
   });
 });
 
-// ═════════════════════════════════════════════════════════════════════════════
-// E-004: Purchase Order Flow
-// ═════════════════════════════════════════════════════════════════════════════
-
-describe("E-004: Purchase Order Flow", () => {
-  const validPO = {
-    vendorId: VENDOR_ID,
-    totalAmount: 5000000,
-    notes: "Compra de materiales",
-    items: [
-      { description: "Acero A36", quantity: 10, unitPrice: 250000, subtotal: 2500000 },
-      { description: "Tornillería", quantity: 5, unitPrice: 500000, subtotal: 2500000 },
-    ],
-  };
-
-  describe("createPurchaseOrder", () => {
-    it("rechaza items vacíos", async () => {
-      await expect(
-        createPurchaseOrder(TENANT, { ...validPO, items: [] })
-      ).rejects.toThrow(/al menos un item/i);
-    });
-
-    it("rechaza vendorId inválido", async () => {
-      await expect(
-        createPurchaseOrder(TENANT, { ...validPO, vendorId: "bad" })
-      ).rejects.toThrow();
-    });
-
-    it("crea PO exitosamente", async () => {
-      const poChain = {
-        insert: vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            single: vi.fn().mockResolvedValue({
-              data: { id: PO_ID, code: "OC-2026-001", status: "BORRADOR" },
-              error: null,
-            }),
-          }),
-        }),
-      };
-      const itemsChain = {
-        insert: vi.fn().mockResolvedValue({ data: null, error: null }),
-      };
-
-      mockFrom({
-        purchase_orders: poChain,
-        purchase_order_items: itemsChain,
-      });
-
-      const result = await createPurchaseOrder(TENANT, validPO);
-      expect(result).toBeDefined();
-      expect(poChain.insert).toHaveBeenCalled();
-    });
-  });
-
-  describe("approvePurchaseOrder", () => {
-    it("rechaza si la PO no existe", async () => {
-      mockFrom({
-        purchase_orders: buildChain({ data: null, error: null }),
-      });
-
-      await expect(approvePurchaseOrder(TENANT, PO_ID)).rejects.toThrow(
-        /no encontrada/i
-      );
-    });
-
-    it("rechaza si la PO no está en BORRADOR", async () => {
-      mockFrom({
-        purchase_orders: buildChain({
-          data: { id: PO_ID, status: "APROBADA", deleted_at: null },
-          error: null,
-        }),
-      });
-
-      await expect(approvePurchaseOrder(TENANT, PO_ID)).rejects.toThrow(
-        /BORRADOR/i
-      );
-    });
-
-    it("aprueba PO exitosamente", async () => {
-      const poChain = buildChain({
-        data: { id: PO_ID, status: "BORRADOR", deleted_at: null },
-        error: null,
-      });
-      poChain.update = vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          eq: vi.fn().mockReturnValue({
-            select: vi.fn().mockReturnValue({
-              single: vi.fn().mockResolvedValue({
-                data: { id: PO_ID, status: "APROBADA" },
-                error: null,
-              }),
-            }),
-          }),
-        }),
-      });
-
-      mockFrom({ purchase_orders: poChain });
-
-      const result = await approvePurchaseOrder(TENANT, PO_ID);
-      expect(result).toBeDefined();
-    });
-  });
-
-  describe("receivePurchaseOrder", () => {
-    it("rechaza si la PO no está APROBADA", async () => {
-      mockFrom({
-        purchase_orders: buildChain({
-          data: { id: PO_ID, status: "BORRADOR", deleted_at: null },
-          error: null,
-        }),
-      });
-
-      await expect(receivePurchaseOrder(TENANT, PO_ID)).rejects.toThrow(
-        /APROBADA/i
-      );
-    });
-
-    it("recibe PO exitosamente", async () => {
-      const poChain = buildChain({
-        data: { id: PO_ID, status: "APROBADA", deleted_at: null },
-        error: null,
-      });
-      poChain.update = vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          eq: vi.fn().mockReturnValue({
-            select: vi.fn().mockReturnValue({
-              single: vi.fn().mockResolvedValue({
-                data: { id: PO_ID, status: "RECIBIDA" },
-                error: null,
-              }),
-            }),
-          }),
-        }),
-      });
-
-      mockFrom({ purchase_orders: poChain });
-
-      const result = await receivePurchaseOrder(TENANT, PO_ID);
-      expect(result).toBeDefined();
-    });
-  });
-});
+// E-004 (Purchase Order Flow contra purchase_orders/purchase_order_items) se
+// eliminó de acá: esas tablas nunca existieron en producción — el test solo
+// pasaba porque mockeaba Supabase por completo, dando falsa confianza sobre
+// código que en la BD real fallaba siempre. El módulo de compras real
+// (proveedores/solicitudes_compra/cotizaciones_proveedor/ordenes_compra/
+// recepciones) vive en src/erp/actions/purchases.ts — ver
+// project_purchases_module_rebuild.md para el detalle de la migración
+// 2026-07-24.
 
 // ═════════════════════════════════════════════════════════════════════════════
 // E-005 + E-014: emitBusinessEvent (dual write)
