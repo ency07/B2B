@@ -9,12 +9,9 @@ import {
   Sparkles,
   Search,
   Plus,
-  Wind,
   Gauge,
   Thermometer,
-  FileCheck2,
   CheckCircle2,
-  AlertTriangle,
   User,
   ClipboardList,
   Upload,
@@ -47,13 +44,14 @@ import {
   SheetTrigger,
 } from "@/platform/ui/sheet";
 
-import { getClients } from "@/erp/actions/core";;
-import { resolveTenantOwnerUserId, resolveTenantId } from "@/platform/tenant/tenant-resolver";
-import { 
-  getRequirements, 
-  createRequirement, 
-  updateRequirementStatus, 
-  RequirementRow 
+import { getClients } from "@/erp/actions/core";
+import {
+  getRequirements,
+  createRequirement,
+  updateRequirementStatus,
+  getAssignableUsers,
+  RequirementRow,
+  AssignableUser
 } from "@/erp/actions/requirements";
 import { generateEngineeringReport } from "@/utils/engineering";
 
@@ -77,6 +75,7 @@ export default function RequirementsPage() {
 
   const [requirements, setRequirements] = React.useState<RequirementRow[]>([]);
   const [clients, setClients] = React.useState<ClientOption[]>([]);
+  const [assignableUsers, setAssignableUsers] = React.useState<AssignableUser[]>([]);
   const [selectedReq, setSelectedReq] = React.useState<RequirementRow | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [submitting, setSubmitting] = React.useState(false);
@@ -103,8 +102,10 @@ export default function RequirementsPage() {
     vibration_dampers: false,
   });
 
-  // Action status simulation
+  // Asignación real de responsables
   const [assignedEngineer, setAssignedEngineer] = React.useState<string | null>(null);
+  const [selectedEngineerId, setSelectedEngineerId] = React.useState<string>("");
+  const [selectedSalesId, setSelectedSalesId] = React.useState<string>("");
   const [uploadedDoc, setUploadedDoc] = React.useState<boolean>(false);
 
   const form = useForm<ReqFormValues>({
@@ -120,10 +121,14 @@ export default function RequirementsPage() {
   const loadData = React.useCallback(async () => {
     setLoading(true);
     try {
-      const reqs = await getRequirements(tenantParam);
-      const clis = await getClients(tenantParam);
+      const [reqs, clis, usrs] = await Promise.all([
+        getRequirements(tenantParam),
+        getClients(tenantParam),
+        getAssignableUsers(tenantParam),
+      ]);
       setRequirements(reqs);
       setClients(clis.map(c => ({ id: c.id, name: c.name })));
+      setAssignableUsers(usrs);
 
       if (selectedReq) {
         const updated = reqs.find(r => r.id === selectedReq.id);
@@ -137,7 +142,7 @@ export default function RequirementsPage() {
   }, [tenantParam, selectedReq]);
 
   React.useEffect(() => {
-    loadData();
+    queueMicrotask(() => { loadData(); });
   }, [tenantParam]);
 
   const onSubmit = async (values: ReqFormValues) => {
@@ -153,9 +158,9 @@ export default function RequirementsPage() {
       setIsSheetOpen(false);
       form.reset();
       await loadData();
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      setErrorMsg(err.message || "Error al crear requerimiento técnico.");
+      setErrorMsg(err instanceof Error ? err.message : "Error al crear requerimiento técnico.");
     } finally {
       setSubmitting(false);
     }
@@ -165,7 +170,13 @@ export default function RequirementsPage() {
     setSelectedReq(req);
     // Simulate loading details of the inherited diagnostic
     setEnvironment(req.category === "MANTENIMIENTO" ? "mecanico" : "heavy_plant");
-    setAssignedEngineer(req.engineering_user_id ? "Ing. Carlos Mendoza" : null);
+    setAssignedEngineer(
+      req.engineering_user
+        ? `${req.engineering_user.first_name} ${req.engineering_user.last_name}`
+        : null
+    );
+    setSelectedEngineerId(req.engineering_user_id || "");
+    setSelectedSalesId(req.sales_user_id || "");
     setUploadedDoc(false);
     setChecklist({
       base_level: false,
@@ -176,14 +187,14 @@ export default function RequirementsPage() {
   };
 
   const handleAssignEngineer = async () => {
-    if (!selectedReq) return;
+    if (!selectedReq || !selectedEngineerId) return;
     try {
-      const mockEngId = resolveTenantOwnerUserId(resolveTenantId(tenantParam));
-      await updateRequirementStatus(selectedReq.id, "DIAGNOSTICO", { engineering_user_id: mockEngId });
-      setAssignedEngineer("Ing. Carlos Mendoza");
+      await updateRequirementStatus(selectedReq.id, "DIAGNOSTICO", { engineering_user_id: selectedEngineerId });
+      const engineer = assignableUsers.find(u => u.id === selectedEngineerId);
+      setAssignedEngineer(engineer ? `${engineer.firstName} ${engineer.lastName}` : null);
       await loadData();
-    } catch (e: any) {
-      alert(e.message);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : String(e));
     }
   };
 
@@ -193,14 +204,13 @@ export default function RequirementsPage() {
   };
 
   const handleAdvanceToQuote = async () => {
-    if (!selectedReq) return;
+    if (!selectedReq || !selectedSalesId) return;
     try {
-      const mockSalesId = resolveTenantOwnerUserId(resolveTenantId(tenantParam));
-      await updateRequirementStatus(selectedReq.id, "COTIZACION", { sales_user_id: mockSalesId });
+      await updateRequirementStatus(selectedReq.id, "COTIZACION", { sales_user_id: selectedSalesId });
       await loadData();
       alert("Flujo avanzado con éxito. El requerimiento técnico se encuentra ahora en fase de COTIZACION.");
-    } catch (e: any) {
-      alert(e.message);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : String(e));
     }
   };
 
@@ -245,7 +255,7 @@ export default function RequirementsPage() {
           <SheetContent className="bg-card border-l border-border p-0 overflow-y-auto w-full sm:max-w-md backdrop-blur-md">
             <div className="p-8 space-y-6 bg-card">
               <div>
-                <span className="text-[10px] font-mono tracking-widest text-primary uppercase font-bold">// Levantamiento / Comercial</span>
+                <span className="text-[10px] font-mono tracking-widest text-primary uppercase font-bold">{"// Levantamiento / Comercial"}</span>
                 <h3 className="text-base font-mono uppercase tracking-wider font-bold text-foreground mt-0.5">Crear Requerimiento</h3>
                 <p className="text-xs text-muted-foreground">Inicia la ficha técnica a partir del contacto comercial B2B.</p>
               </div>
@@ -413,7 +423,7 @@ export default function RequirementsPage() {
 
             {filteredRequirements.length === 0 && (
               <div className="col-span-full border border-border bg-card/20 rounded-xl p-8 text-center text-xs text-muted-foreground font-mono uppercase tracking-widest">
-                // No se encontraron requerimientos registrados.
+                {"// No se encontraron requerimientos registrados."}
               </div>
             )}
           </div>
@@ -441,7 +451,7 @@ export default function RequirementsPage() {
                 </div>
 
                 <div className="text-right space-y-1">
-                  <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider font-semibold">// Flujo Técnico</div>
+                  <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider font-semibold">{"// Flujo Técnico"}</div>
                   <Badge variant={selectedReq.status === "COTIZACION" || selectedReq.status === "COMPLETADO" ? "success" : "warning"} className="text-[9px] font-mono uppercase py-0.5 px-2">
                     ETAPA: {selectedReq.status}
                   </Badge>
@@ -453,7 +463,7 @@ export default function RequirementsPage() {
                 {/* 1. Dimensiones y Parámetros Termodinámicos */}
                 <div className="space-y-4">
                   <h4 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5 font-mono">
-                    <MapPin className="w-3.5 h-3.5 text-primary" /> // Parámetros del Entorno Real
+                    <MapPin className="w-3.5 h-3.5 text-primary" /> {"// Parámetros del Entorno Real"}
                   </h4>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -548,7 +558,7 @@ export default function RequirementsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-muted/40 border border-border rounded-xl p-5 shadow-xs">
                       {/* Live Recalculations output */}
                       <div className="space-y-2 pr-4 md:border-r md:border-border text-[11px]">
-                      <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider font-bold">// Resultados del Recálculo</div>
+                      <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider font-bold">{"// Resultados del Recálculo"}</div>
                       
                       <div className="flex justify-between font-mono">
                         <span className="text-muted-foreground">Densidad Aire:</span>
@@ -572,7 +582,7 @@ export default function RequirementsPage() {
 
                     {/* Simulation recommendations */}
                     <div className="space-y-3">
-                      <div className="text-[10px] font-mono text-muted-foreground uppercase font-bold">// Ventilación Sugerida</div>
+                      <div className="text-[10px] font-mono text-muted-foreground uppercase font-bold">{"// Ventilación Sugerida"}</div>
                       <div className="flex justify-between items-baseline font-mono">
                         <span className="text-xs text-muted-foreground">Equipos Sugeridos (7.5K CFM):</span>
                         <span className="text-lg font-bold text-foreground">{report.eqCount} u.</span>
@@ -594,7 +604,7 @@ export default function RequirementsPage() {
                 {/* 3. Field Checklist validation */}
                 <div className="space-y-4 pt-2">
                   <div className="flex items-center gap-2 text-xs font-bold text-foreground uppercase tracking-wider font-mono">
-                    <ClipboardList className="w-3.5 h-3.5 text-primary" /> // Verificación del Ingeniero de Campo
+                    <ClipboardList className="w-3.5 h-3.5 text-primary" /> {"// Verificación del Ingeniero de Campo"}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -630,28 +640,41 @@ export default function RequirementsPage() {
                     {/* Step 1: Technical Assignee */}
                     <div className="border border-border bg-muted/40 p-3.5 rounded-xl flex flex-col justify-between space-y-3.5 shadow-xs">
                       <div className="space-y-1">
-                        <div className="text-[9px] font-mono text-muted-foreground uppercase font-bold">// Paso 1: Asignar Técnico</div>
+                        <div className="text-[9px] font-mono text-muted-foreground uppercase font-bold">{"// Paso 1: Asignar Técnico"}</div>
                         <p className="text-[11px] text-muted-foreground leading-tight">Es obligatorio asignar un responsable para iniciar el Diagnóstico.</p>
                       </div>
                       
                       {assignedEngineer ? (
                         <div className="text-xs font-semibold text-success flex items-center gap-1 font-mono bg-success/10 border border-success/25 p-1.5 rounded">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Asignado: Ing. Carlos
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Asignado: {assignedEngineer}
                         </div>
                       ) : (
-                        <Button 
-                          onClick={handleAssignEngineer}
-                          className="w-full bg-background border border-border text-foreground hover:bg-accent text-[11px] h-8 cursor-pointer shadow-sm"
-                        >
-                          Asignar Responsable
-                        </Button>
+                        <div className="space-y-2">
+                          <Select value={selectedEngineerId} onValueChange={setSelectedEngineerId}>
+                            <SelectTrigger className="bg-background border-border text-foreground text-[11px] h-8 focus:ring-primary">
+                              <SelectValue placeholder="Seleccione responsable" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-card border-border text-foreground">
+                              {assignableUsers.map(u => (
+                                <SelectItem key={u.id} value={u.id}>{u.firstName} {u.lastName}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            onClick={handleAssignEngineer}
+                            disabled={!selectedEngineerId}
+                            className="w-full bg-background border border-border text-foreground hover:bg-accent text-[11px] h-8 disabled:opacity-30 cursor-pointer shadow-sm"
+                          >
+                            Asignar Responsable
+                          </Button>
+                        </div>
                       )}
                     </div>
 
                     {/* Step 2: Upload Diagnostic PDF */}
                     <div className="border border-border bg-muted/40 p-3.5 rounded-xl flex flex-col justify-between space-y-3.5 shadow-xs">
                       <div className="space-y-1">
-                        <div className="text-[9px] font-mono text-muted-foreground uppercase font-bold">// Paso 2: Cargar Informe</div>
+                        <div className="text-[9px] font-mono text-muted-foreground uppercase font-bold">{"// Paso 2: Cargar Informe"}</div>
                         <p className="text-[11px] text-muted-foreground leading-tight">Requiere subir reporte en formato PDF para habilitar cotización.</p>
                       </div>
 
@@ -673,13 +696,26 @@ export default function RequirementsPage() {
                     {/* Step 3: Advance to Quotation */}
                     <div className="border border-border bg-muted/40 p-3.5 rounded-xl flex flex-col justify-between space-y-3.5 shadow-xs">
                       <div className="space-y-1">
-                        <div className="text-[9px] font-mono text-muted-foreground uppercase font-bold">// Paso 3: Avanzar Flujo</div>
+                        <div className="text-[9px] font-mono text-muted-foreground uppercase font-bold">{"// Paso 3: Avanzar Flujo"}</div>
                         <p className="text-[11px] text-muted-foreground leading-tight">Mueve el estado a COTIZACION para habilitar tabla de SKUs.</p>
                       </div>
 
-                      <Button 
+                      {selectedReq.status !== "COTIZACION" && (
+                        <Select value={selectedSalesId} onValueChange={setSelectedSalesId}>
+                          <SelectTrigger className="bg-background border-border text-foreground text-[11px] h-8 focus:ring-primary">
+                            <SelectValue placeholder="Responsable comercial" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-card border-border text-foreground">
+                            {assignableUsers.map(u => (
+                              <SelectItem key={u.id} value={u.id}>{u.firstName} {u.lastName}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+
+                      <Button
                         onClick={handleAdvanceToQuote}
-                        disabled={!uploadedDoc || selectedReq.status === "COTIZACION"}
+                        disabled={!uploadedDoc || !selectedSalesId || selectedReq.status === "COTIZACION"}
                         className="w-full bg-primary hover:bg-primary/95 text-primary-foreground text-[11px] h-8 disabled:opacity-30 flex items-center justify-center gap-1 cursor-pointer shadow-sm"
                       >
                         Avanzar <ArrowRight className="w-3.5 h-3.5" />
