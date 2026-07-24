@@ -73,6 +73,43 @@ export async function getRequirements(tenantCode?: string | null): Promise<Requi
   return rows as any[];
 }
 
+export interface AssignableUser {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
+/**
+ * Lista usuarios del tenant asignables como responsable de ingeniería o
+ * ventas en un requerimiento. Usa el permiso "requirements" (no
+ * "users.edit") para que los roles comerciales que ya operan esta página
+ * puedan ver la lista sin necesitar acceso de administración de usuarios.
+ */
+export async function getAssignableUsers(tenantCode?: string | null): Promise<AssignableUser[]> {
+  const ctx = await requireAction("requirements");
+  const tenantId = await getTenantId(tenantCode ?? null);
+  await validateTenantAccess(ctx.userId, ctx.role, tenantId);
+
+  const { data, error } = await supabaseAdmin
+    .from("users")
+    .select("id, first_name, last_name, email")
+    .eq("tenant_id", tenantId)
+    .order("first_name", { ascending: true });
+
+  if (error) {
+    logger.error("Error fetching assignable users", { data: { error } });
+    return [];
+  }
+
+  return (data || []).map((u: any) => ({
+    id: u.id,
+    firstName: u.first_name,
+    lastName: u.last_name,
+    email: u.email,
+  }));
+}
+
 export async function createRequirement(
   tenantCode: string | null,
   reqData: { title: string; clientId: string; category: string; priority: string }
