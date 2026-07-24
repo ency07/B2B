@@ -1013,7 +1013,10 @@ export async function deleteEntity(
 
 /**
  * Returns the IVA tax rate for the tenant (default 0.19 = 19%).
- * Stored in tenant_settings as module='finance', config_key='tax_rate'.
+ * Stored in tenant_settings as module='ERP', config_key='tax_rate'.
+ * ("finance" no es un valor válido de tenant_settings_module_check —
+ * el CHECK real solo permite EMPRESA/LOCALIZACION/IDENTIDAD/DOCUMENTOS/
+ * ERP/INTEGRACIONES/TELEFONIA — esta query nunca encontraba nada.)
  */
 export async function getTaxRate(tenantCode?: string | null): Promise<number> {
   const tenantId = await getTenantId(tenantCode);
@@ -1022,7 +1025,7 @@ export async function getTaxRate(tenantCode?: string | null): Promise<number> {
     .from("tenant_settings")
     .select("config_value")
     .eq("tenant_id", tenantId)
-    .eq("module", "finance")
+    .eq("module", "ERP")
     .eq("config_key", "tax_rate")
     .is("deleted_at", null)
     .maybeSingle();
@@ -1042,7 +1045,8 @@ const DEFAULT_PAYMENT_METHODS = ["Transferencia", "Efectivo", "Cheque", "Tarjeta
 
 /**
  * Returns payment methods for the tenant.
- * Stored in tenant_settings as module='finance', config_key='payment_methods' (comma-separated).
+ * Stored in tenant_settings as module='ERP', config_key='payment_methods'
+ * (comma-separated). Ver nota en getTaxRate() sobre por qué no es 'finance'.
  */
 export async function getPaymentMethods(tenantCode?: string | null): Promise<string[]> {
   const tenantId = await getTenantId(tenantCode);
@@ -1051,7 +1055,7 @@ export async function getPaymentMethods(tenantCode?: string | null): Promise<str
     .from("tenant_settings")
     .select("config_value")
     .eq("tenant_id", tenantId)
-    .eq("module", "finance")
+    .eq("module", "ERP")
     .eq("config_key", "payment_methods")
     .is("deleted_at", null)
     .maybeSingle();

@@ -1,13 +1,9 @@
--- OBSOLETO — este archivo NUNCA se aplicó contra la BD real (confirmado
--- 2026-07-24) y además tiene un bug real (column reference "total_amount"
--- is ambiguous). No ejecutar. Ver
--- 20260724180000_dunning_check_and_facturada_status.sql y
--- 20260724180100_fix_run_dunning_check_ambiguous_column.sql, que son las
--- versiones reales aplicadas.
---
--- MIGRACIÓN: DUNNING CHECK (auto-asignación de VENCIDA)
--- Gap E-006: Estado VENCIDA nunca se auto-asigna. No hay cobranza automática.
-
+-- El archivo local dunning_check.sql (nunca antes ejecutado ni una vez en
+-- la vida de este proyecto) tenía un bug real: el parámetro de salida
+-- `total_amount` colisiona con la columna `total_amount` seleccionada en
+-- el CTE, dando "column reference total_amount is ambiguous". Se detectó
+-- al probar la función por primera vez, en esta migración. Se corrige
+-- calificando/renombrando la referencia a la columna del CTE.
 CREATE OR REPLACE FUNCTION run_dunning_check(p_tenant_id uuid DEFAULT NULL)
 RETURNS TABLE(
     affected_count bigint,
@@ -30,9 +26,9 @@ BEGIN
               AND status IN ('EMITIDA', 'PARCIALMENTE_PAGADA')
               AND due_date < CURRENT_DATE
               AND deleted_at IS NULL
-            RETURNING total_amount
+            RETURNING invoices.total_amount AS overdue_amount
         )
-        SELECT COUNT(*), COALESCE(SUM(total_amount), 0) INTO v_count, v_total
+        SELECT COUNT(*), COALESCE(SUM(overdue.overdue_amount), 0) INTO v_count, v_total
         FROM overdue;
 
         affected_count := v_count;
@@ -41,3 +37,6 @@ BEGIN
     END LOOP;
 END;
 $$;
+
+REVOKE ALL ON FUNCTION run_dunning_check(uuid) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION run_dunning_check(uuid) TO service_role;
