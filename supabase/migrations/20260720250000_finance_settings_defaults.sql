@@ -1,3 +1,14 @@
+-- OBSOLETO — este archivo NUNCA se aplicó contra la BD real (confirmado
+-- 2026-07-24): asume tenant_settings.created_by (no existe, la tabla real
+-- solo tiene updated_by), config_value como texto plano (la columna real
+-- es jsonb) y module='finance' (no es un valor válido de
+-- tenant_settings_module_check — solo permite EMPRESA/LOCALIZACION/
+-- IDENTIDAD/DOCUMENTOS/ERP/INTEGRACIONES/TELEFONIA). No ejecutar. Ver
+-- 20260724180000_dunning_check_and_facturada_status.sql (usa module='ERP')
+-- y el fix correspondiente en getTaxRate()/getPaymentMethods()
+-- (src/erp/actions/core.ts), que hasta entonces consultaban un module
+-- que nunca pudo existir.
+--
 -- Migration: Seed default finance settings for all tenants
 -- tax_rate: 0.19 (19% IVA Colombia)
 -- payment_methods: Transferencia,Efectivo,Cheque,Tarjeta,PSE,Otro

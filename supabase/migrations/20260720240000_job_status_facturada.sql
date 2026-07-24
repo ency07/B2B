@@ -1,3 +1,11 @@
+-- OBSOLETO — este archivo NUNCA se aplicó contra la BD real (confirmado
+-- 2026-07-24) y quedó desactualizado respecto a la función real en
+-- producción (valida la nota de entrega contra job_documents/doc_type=
+-- 'ENTREGA', pero la tabla real es documents/document_type='DELIVERY_NOTE'
+-- — aplicar este archivo tal cual habría revertido esa validación). No
+-- ejecutar. Ver 20260724180000_dunning_check_and_facturada_status.sql,
+-- que parte de la versión real y sí está aplicada.
+--
 -- Migration: Add FACTURADA status to job lifecycle
 -- Allows: ENTREGADO → FACTURADA → CERRADO
 -- Also allows: ENTREGADO → CERRADO (unchanged)
