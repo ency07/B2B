@@ -31,6 +31,7 @@ export const ROUTES = {
   DASHBOARD_QUOTES:       "/dashboard/quotes",
   DASHBOARD_REQUIREMENTS: "/dashboard/requirements",
   DASHBOARD_SETTINGS:     "/dashboard/settings",
+  DASHBOARD_TENANTS:      "/dashboard/tenants",
 } as const;
 
 export type AppRoute = typeof ROUTES[keyof typeof ROUTES];
