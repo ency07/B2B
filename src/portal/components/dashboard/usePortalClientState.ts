@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { getPortalBrowserClient } from "@/platform/auth/clients";
 import { getTenantConfig } from "@/platform/tenant/tenant";
+import { getBrandingDefaults } from "@/platform/branding/branding-defaults";
 import {
   createClientTicket,
   sendClientMessage,
@@ -223,7 +224,7 @@ export function usePortalClientState({
   const [searchQuery, setSearchQuery] = React.useState("");
 
   const companyName = brandingState?.nombre_comercial || config.name;
-  const supportEmail = brandingState?.email_corporativo || config.contactEmail || "soporte@ventitech.com";
+  const supportEmail = brandingState?.email_corporativo || config.contactEmail || getBrandingDefaults().email_corporativo;
   const telefono = brandingState?.telefono_principal || config.contactPhone || "+57 601 000 0000";
   const logoUrl = brandingState?.logo_claro_url || brandingState?.logo_oscuro_url || "";
 

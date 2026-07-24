@@ -10,7 +10,7 @@ const RIGHTS = [
   { value: "oposicion", label: "Oposición — Oponerse al tratamiento de sus datos" },
 ] as const;
 
-export function ArcoForm() {
+export function ArcoForm({ contactEmail }: { contactEmail: string }) {
   const [name, setName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [right, setRight] = React.useState("");
@@ -36,7 +36,7 @@ export function ArcoForm() {
       setRight("");
       setDescription("");
     } catch {
-      toast.error("No se pudo enviar tu solicitud. Escríbenos a datos@ventitech.com.");
+      toast.error(`No se pudo enviar tu solicitud. Escríbenos a ${contactEmail}.`);
     } finally {
       setIsSubmitting(false);
     }

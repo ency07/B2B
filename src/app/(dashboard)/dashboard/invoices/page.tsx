@@ -18,7 +18,8 @@ import { toast } from "sonner";
 import { Button } from "@/platform/ui/button";
 import { Input } from "@/platform/ui/input";
 import { Spinner } from "@/platform/ui/spinner";
-import { getInvoices, getClients, createInvoice, registerPayment, runDunningCheck } from "@/erp/actions/core";;
+import { getInvoices, getClients, createInvoice, registerPayment, runDunningCheck } from "@/erp/actions/core";
+import { getTenantBranding } from "@/web/actions/branding";
 import {
   Sheet,
   SheetContent,
@@ -126,6 +127,8 @@ export default function InvoicesPage() {
   const [clients, setClients] = React.useState<{ id: string; name: string; taxId: string }[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<Error | null>(null);
+  // Moneda configurada del tenant (white-label: nunca inferida del código del tenant).
+  const [moneda, setMoneda] = React.useState("COP");
 
   // === View state ===
   const [search, setSearch] = React.useState("");
@@ -191,6 +194,15 @@ export default function InvoicesPage() {
         if (active) setLoading(false);
       }
     })();
+    return () => { active = false; };
+  }, [tenantParam]);
+
+  // Moneda del tenant, resuelta desde su branding — sin fallback por código de tenant.
+  React.useEffect(() => {
+    let active = true;
+    getTenantBranding(tenantParam).then((branding) => {
+      if (active && branding.moneda) setMoneda(branding.moneda);
+    }).catch(() => {});
     return () => { active = false; };
   }, [tenantParam]);
 
@@ -459,7 +471,7 @@ export default function InvoicesPage() {
 
               <div className="space-y-1.5">
                 <label className="text-[10px] font-mono uppercase tracking-wider font-semibold text-foreground">
-                  Valor Total ({tenantParam === "AEROMAX" ? "USD" : "COP"}) <span className="text-state-danger">*</span>
+                  Valor Total ({moneda}) <span className="text-state-danger">*</span>
                 </label>
                 <Input
                   type="number"
