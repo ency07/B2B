@@ -6,13 +6,14 @@ import { getTenantBranding } from "@/web/actions/branding";
 import WizardStepper from "@/web/components/WizardStepper";
 import { Metadata } from "next";
 import { getBrandingDefaults, type BrandingConfig } from "@/platform/branding/branding-defaults";
+import { DEFAULT_TENANT_CODE } from "@/platform/tenant/default-tenant";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata(props: { searchParams: Promise<{ tenant?: string }> }): Promise<Metadata> {
   try {
     const searchParams = await props.searchParams;
-    const tenant = searchParams.tenant || "acme";
+    const tenant = searchParams.tenant || DEFAULT_TENANT_CODE;
     // getTenantBranding es de solo lectura y no requiere auth — el Wizard es
     // una página pública. getTenantSettings (usado antes) exige sesión y
     // fallaba silenciosamente para todo visitante anónimo.
@@ -37,7 +38,7 @@ export async function generateMetadata(props: { searchParams: Promise<{ tenant?:
 
 export default async function WizardPage(props: { searchParams: Promise<{ tenant?: string }> }) {
   const searchParams = await props.searchParams;
-  const tenant = searchParams.tenant || "acme";
+  const tenant = searchParams.tenant || DEFAULT_TENANT_CODE;
   let branding: BrandingConfig = getBrandingDefaults(tenant);
 
   try {

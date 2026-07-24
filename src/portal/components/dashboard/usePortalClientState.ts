@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { getPortalBrowserClient } from "@/platform/auth/clients";
 import { getTenantConfig } from "@/platform/tenant/tenant";
+import { DEFAULT_TENANT_CODE } from "@/platform/tenant/default-tenant";
 import { getBrandingDefaults } from "@/platform/branding/branding-defaults";
 import {
   createClientTicket,
@@ -95,7 +96,7 @@ export function usePortalClientState({
 }: UsePortalClientStateInput) {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const tenantParam = searchParams.get("tenant") || "acme";
+  const tenantParam = searchParams.get("tenant") || DEFAULT_TENANT_CODE;
   const config = getTenantConfig(tenantParam);
 
   const [isLoading, setIsLoading] = React.useState(false);

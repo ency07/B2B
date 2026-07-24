@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ROUTES } from "@/lib/routes";
 import { getTenantBranding } from "@/web/actions/branding";
 import { getBrandingDefaults } from "@/platform/branding/branding-defaults";
+import { DEFAULT_TENANT_CODE } from "@/platform/tenant/default-tenant";
 
 export const metadata: Metadata = {
   title: "Cumplimiento RETIE",
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
 
 export default async function RetiePage(props: { searchParams: Promise<{ tenant?: string }> }) {
   const searchParams = await props.searchParams;
-  const tenant = searchParams.tenant || "acme";
+  const tenant = searchParams.tenant || DEFAULT_TENANT_CODE;
   const defaults = getBrandingDefaults(tenant);
   let branding = defaults;
   try {
