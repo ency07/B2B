@@ -2,7 +2,6 @@
 
 import { supabaseAdmin } from "@/platform/auth/clients";
 import { getTenantId } from "@/erp/actions/core";
-import { resolveTenantOwnerUserId } from "@/platform/tenant/tenant-resolver";
 import { requireAction, validateTenantAccess } from "@/platform/auth/server-guards";
 import createLogger from "@/lib/utils/logger";
 import { startTimer } from "@/lib/utils/timing";
@@ -76,7 +75,9 @@ export async function saveTenantBranding(
     const ctx = await requireAction("branding.manage");
     const tenantId = await getTenantId(tenantCode);
     await validateTenantAccess(ctx.userId, ctx.role, tenantId);
-    const userId = resolveTenantOwnerUserId(tenantId);
+    // Usuario real autenticado, no el "owner" del tenant — trazabilidad real
+    // y no depende del mapa estático de tenants conocidos (ACME/APEX).
+    const userId = ctx.userId;
 
     const keys = Object.keys(data) as Array<keyof BrandingConfig>;
     if (keys.length === 0) {
@@ -188,7 +189,9 @@ export async function restoreBrandingVersion(
     const ctx = await requireAction("branding.manage");
     const tenantId = await getTenantId(tenantCode);
     await validateTenantAccess(ctx.userId, ctx.role, tenantId);
-    const userId = resolveTenantOwnerUserId(tenantId);
+    // Usuario real autenticado, no el "owner" del tenant — trazabilidad real
+    // y no depende del mapa estático de tenants conocidos (ACME/APEX).
+    const userId = ctx.userId;
 
     // 1. Fetch version config
     const { data: version, error: fetchErr } = await supabaseAdmin

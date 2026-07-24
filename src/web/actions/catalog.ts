@@ -157,9 +157,9 @@ interface RawProductCategory {
  *  - Caché en memoria de 60 segundos por tenant
  */
 // Definición interna del fetching y procesado jerárquico del catálogo
-async function fetchRawCatalogFromDB(): Promise<CatalogCategory[]> {
+async function fetchRawCatalogFromDB(tenantId: string): Promise<CatalogCategory[]> {
   const timer = startTimer("getIndustrialCatalog");
-  // ── 1. Consulta jerárquica unificada en una sola query ────────────────────────
+  // ── 1. Consulta jerárquica unificada en una sola query, filtrada por tenant ────
   const { data: categoriesData, error } = await supabaseAdmin
     .from("product_categories")
     .select(`
@@ -233,20 +233,22 @@ async function fetchRawCatalogFromDB(): Promise<CatalogCategory[]> {
         )
       )
     `)
+    .eq("tenant_id", tenantId)
     .is("deleted_at", null)
     .order("name", { ascending: true });
 
   if (error) {
-    logger.error("Error al cargar la jerarquía del catálogo de la BD", { data: { error } });
+    logger.error("Error al cargar la jerarquía del catálogo de la BD", { data: { error, tenantId } });
     timer.stop({ ok: false });
     return [];
   }
 
-  // ── 2. Consulta de metadatos SEO por separado ─────────────────────────────
+  // ── 2. Consulta de metadatos SEO por separado, también filtrada por tenant ────
   const { data: seoData } = await supabaseAdmin
     .from("seo_metadata")
     .select("entity_id, meta_title, meta_description, meta_keywords, slug")
     .eq("entity_type", "PRODUCT")
+    .eq("tenant_id", tenantId)
     .is("deleted_at", null);
 
   const seoMap = new Map<
@@ -356,13 +358,16 @@ async function fetchRawCatalogFromDB(): Promise<CatalogCategory[]> {
 }
 
 // Inicialización de la función de caché condicional según el runtime (soporte para ts-node/Next.js)
-let getCachedCatalogInternal: () => Promise<CatalogCategory[]>;
+// El argumento tenantId pasado a la función envuelta se incorpora a la key de
+// caché de unstable_cache automáticamente (además de la key explícita de
+// abajo) — esto es lo que separa el caché por tenant, no un string fijo.
+let getCachedCatalogInternal: (tenantId: string) => Promise<CatalogCategory[]>;
 
 try {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { unstable_cache } = require("next/cache");
   getCachedCatalogInternal = unstable_cache(
-    async () => fetchRawCatalogFromDB(),
+    async (tenantId: string) => fetchRawCatalogFromDB(tenantId),
     ["industrial-catalog-key"],
     {
       revalidate: 60, // 60 segundos
@@ -371,18 +376,19 @@ try {
   );
 } catch {
   // Fallback para entornos que no son de Next.js (como los scripts de prueba en ts-node)
-  getCachedCatalogInternal = async () => fetchRawCatalogFromDB();
+  getCachedCatalogInternal = async (tenantId: string) => fetchRawCatalogFromDB(tenantId);
 }
 
 /**
  * Obtiene la jerarquía completa del Catálogo Industrial con:
  *  - Queries optimizados (2 consultas en lugar de 10)
- *  - Caché de Next.js persistente e invalidable (unstable_cache)
+ *  - Caché de Next.js persistente e invalidable (unstable_cache), scopeada por tenant
  */
 export async function getIndustrialCatalog(
-  _tenantCode?: string | null
+  tenantCode?: string | null
 ): Promise<CatalogCategory[]> {
-  return getCachedCatalogInternal();
+  const tenantId = await getTenantId(tenantCode);
+  return getCachedCatalogInternal(tenantId);
 }
 
 
@@ -396,6 +402,20 @@ export async function addProductImage(
 ) {
   await requireAction("catalog.manage");
   const tenantId = await getTenantId(tenantCode);
+
+  // Verificar que el producto pertenece a este tenant antes de asociarle un
+  // asset — sin esto, cualquier admin con catalog.manage podría adjuntar
+  // imágenes a un producto de otro tenant sabiendo/adivinando su UUID.
+  const { data: productCheck } = await supabaseAdmin
+    .from("products")
+    .select("id")
+    .eq("id", productId)
+    .eq("tenant_id", tenantId)
+    .maybeSingle();
+
+  if (!productCheck) {
+    throw new Error("Producto no encontrado en este tenant.");
+  }
 
   const { data: asset, error: assetError } = await supabaseAdmin
     .from("media_assets")
@@ -458,6 +478,7 @@ export async function saveProduct(
     let productId = product.id;
 
     const productPayload = {
+      tenant_id: tenantId,
       product_code: product.productCode,
       name: product.name,
       description: product.description,
@@ -468,10 +489,23 @@ export async function saveProduct(
     };
 
     if (productId) {
+      // Verificar que el producto pertenece a este tenant antes de editarlo
+      // — sin esto, cualquier admin con catalog.manage podría editar el
+      // producto de otro tenant sabiendo/adivinando su UUID.
+      const { data: existing } = await supabaseAdmin
+        .from("products")
+        .select("id")
+        .eq("id", productId)
+        .eq("tenant_id", tenantId)
+        .maybeSingle();
+
+      if (!existing) throw new Error("Producto no encontrado en este tenant.");
+
       const { error: updateErr } = await supabaseAdmin
         .from("products")
         .update(productPayload)
-        .eq("id", productId);
+        .eq("id", productId)
+        .eq("tenant_id", tenantId);
 
       if (updateErr) throw new Error(updateErr.message);
     } else {
@@ -524,10 +558,21 @@ export async function saveProduct(
 export async function deleteProduct(tenantCode: string | null, productId: string) {
   try {
     await requireAction("catalog.manage");
+    const tenantId = await getTenantId(tenantCode);
+    const { data: existing } = await supabaseAdmin
+      .from("products")
+      .select("id")
+      .eq("id", productId)
+      .eq("tenant_id", tenantId)
+      .maybeSingle();
+
+    if (!existing) throw new Error("Producto no encontrado en este tenant.");
+
     const { error } = await supabaseAdmin
       .from("products")
       .update({ deleted_at: new Date().toISOString() })
-      .eq("id", productId);
+      .eq("id", productId)
+      .eq("tenant_id", tenantId);
 
     if (error) throw new Error(error.message);
     _invalidateCache(tenantCode);
@@ -556,6 +601,7 @@ export async function saveCategory(
     const userId = await resolveTenantOwnerUserIdAsync(tenantId);
 
     const payload = {
+      tenant_id: tenantId,
       category_code: category.categoryCode,
       name: category.name,
       description: category.description,
@@ -564,10 +610,20 @@ export async function saveCategory(
     };
 
     if (category.id) {
+      const { data: existing } = await supabaseAdmin
+        .from("product_categories")
+        .select("id")
+        .eq("id", category.id)
+        .eq("tenant_id", tenantId)
+        .maybeSingle();
+
+      if (!existing) throw new Error("Categoría no encontrada en este tenant.");
+
       const { error } = await supabaseAdmin
         .from("product_categories")
         .update(payload)
-        .eq("id", category.id);
+        .eq("id", category.id)
+        .eq("tenant_id", tenantId);
 
       if (error) throw new Error(error.message);
     } else {
@@ -592,10 +648,21 @@ export async function saveCategory(
 export async function deleteCategory(tenantCode: string | null, categoryId: string) {
   try {
     await requireAction("catalog.manage");
+    const tenantId = await getTenantId(tenantCode);
+    const { data: existing } = await supabaseAdmin
+      .from("product_categories")
+      .select("id")
+      .eq("id", categoryId)
+      .eq("tenant_id", tenantId)
+      .maybeSingle();
+
+    if (!existing) throw new Error("Categoría no encontrada en este tenant.");
+
     const { error } = await supabaseAdmin
       .from("product_categories")
       .update({ deleted_at: new Date().toISOString() })
-      .eq("id", categoryId);
+      .eq("id", categoryId)
+      .eq("tenant_id", tenantId);
 
     if (error) throw new Error(error.message);
     _invalidateCache(tenantCode);
