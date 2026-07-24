@@ -14,7 +14,6 @@ import {
   Layers,
   Award,
   HelpCircle,
-  Video,
   Grid,
   FileArchive,
   BookOpen,
@@ -29,14 +28,12 @@ import {
   ChevronRight,
   ChevronDown,
   Palette,
-  Upload,
   RefreshCw,
   History,
   Building,
   Layout,
   ExternalLink,
   ShieldCheck,
-  FileText,
   Wind,
   Image as ImageIcon,
   MessageSquare,
@@ -154,9 +151,6 @@ export default function CmsPage() {
   const [editingProduct, setEditingProduct] = React.useState<{
     id?: string; productCode: string; name: string; description: string; status: string; seriesId: string;
     specifications: Record<string, string>;
-    price?: number;
-    stepUrl?: string;
-    dwgUrl?: string;
   } | null>(null);
   const [editingCategory, setEditingCategory] = React.useState<{
     id?: string; categoryCode: string; name: string; description: string;
@@ -166,18 +160,18 @@ export default function CmsPage() {
   const [isSavingProduct, setIsSavingProduct] = React.useState(false);
 
   // ===== MEDIA LIBRARY STATE =====
-  const [mediaList, setMediaList] = React.useState<MediaFile[]>([
+  // Pestaña "Biblioteca Multimedia" en desarrollo (sin backend real aún) —
+  // este estado solo alimenta el panel de vista previa decorativo.
+  const [mediaList] = React.useState<MediaFile[]>([
     { id: "m-1", name: "video_hero.mp4", size: "18.4 MB", type: "video/mp4", url: "/video_hero.mp4" },
     { id: "m-2", name: "dossier_tecnico_2026.pdf", size: "4.2 MB", type: "application/pdf", url: "/dossier_tecnico_2026.pdf" },
     { id: "m-3", name: "plano_extractor_vt7500.dwg", size: "1.8 MB", type: "image/vnd.dwg", url: "/plano_extractor_vt7500.dwg" }
   ]);
 
   // ===== BLOG STATE =====
-  const [blogArticles, setBlogArticles] = React.useState<BlogArticle[]>([
-    { id: "art-1", title: "Normativa AMCA en Ventiladores Industriales", slug: "normativa-amca", category: "Ingeniería", author: "Ing. Carlos Mendoza", status: "PUBLICADO", publishedAt: "2026-06-15" },
-    { id: "art-2", title: "Cálculo de Renovaciones de Aire por Minuto", slug: "calculo-renovaciones-aire", category: "Cálculo", author: "Dr. Sandra Gómez", status: "BORRADOR", publishedAt: "--" }
-  ]);
-  const [editingArticle, setEditingArticle] = React.useState<BlogArticle | null>(null);
+  // Pestaña "Blog" en desarrollo (sin backend real aún) — editingArticle
+  // solo alimenta el panel de vista previa decorativo.
+  const [editingArticle] = React.useState<BlogArticle | null>(null);
 
   // ===== FOOTER STATE =====
   // Variables movidas a brandingState
@@ -913,13 +907,12 @@ export default function CmsPage() {
                                           status: prod.status,
                                           seriesId: ser.id,
                                           specifications: prod.specifications,
-                                          price: 15400000
                                         })}
                                         onDelete={() => handleDeleteProduct(prod.id)}
                                       />
                                     ))}
                                     <div className="pl-16 py-1">
-                                      <button onClick={() => setEditingProduct({ productCode: "", name: "", description: "", status: "ACTIVO", seriesId: ser.id, specifications: {}, price: 15000000 })} className="text-[10px] text-primary hover:text-primary/80 font-mono flex items-center gap-1">
+                                      <button onClick={() => setEditingProduct({ productCode: "", name: "", description: "", status: "ACTIVO", seriesId: ser.id, specifications: {} })} className="text-[10px] text-primary hover:text-primary/80 font-mono flex items-center gap-1">
                                         <Plus className="w-3 h-3" /> Nuevo Producto
                                       </button>
                                     </div>
@@ -940,14 +933,10 @@ export default function CmsPage() {
                 {editingProduct ? (
                   <div className="space-y-4">
                     <div className="text-[10px] font-mono text-muted-foreground uppercase">Editor de Producto</div>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <label className="text-[10px] text-muted-foreground">Código SKU</label>
                         <Input value={editingProduct.productCode} onChange={(e) => setEditingProduct({...editingProduct, productCode: e.target.value})} className="bg-background border-border text-xs text-foreground font-mono" />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] text-muted-foreground">Precio B2B (COP)</label>
-                        <Input type="number" value={editingProduct.price || 0} onChange={(e) => setEditingProduct({...editingProduct, price: Number(e.target.value)})} className="bg-background border-border text-xs text-foreground font-mono" />
                       </div>
                       <div className="space-y-1">
                         <label className="text-[10px] text-muted-foreground">Estado</label>
@@ -964,17 +953,6 @@ export default function CmsPage() {
                     <div className="space-y-1">
                       <label className="text-[10px] text-muted-foreground">Descripción Técnica Comercial</label>
                       <Textarea rows={3} value={editingProduct.description} onChange={(e) => setEditingProduct({...editingProduct, description: e.target.value})} className="bg-background border-border text-xs text-foreground" />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3 border-t border-border pt-3">
-                      <div className="space-y-1">
-                        <label className="text-[10px] text-muted-foreground">Plano STEP (3D CAD)</label>
-                        <Input value={editingProduct.stepUrl || ""} onChange={(e) => setEditingProduct({...editingProduct, stepUrl: e.target.value})} className="bg-background border-border text-[10px] text-foreground font-mono" placeholder="/cad/extractor.step" />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] text-muted-foreground">Plano DWG (2D CAD)</label>
-                        <Input value={editingProduct.dwgUrl || ""} onChange={(e) => setEditingProduct({...editingProduct, dwgUrl: e.target.value})} className="bg-background border-border text-[10px] text-foreground font-mono" placeholder="/cad/extractor.dwg" />
-                      </div>
                     </div>
 
                     {/* Specifications */}
@@ -1048,44 +1026,14 @@ export default function CmsPage() {
         {/* ==================== TAB: BIBLIOTECA MULTIMEDIA ==================== */}
         {activeTab === "media" && (
           <div className="space-y-6 animate-in fade-in duration-150">
-            <div className="flex justify-between items-center">
-              <div>
-                <span className="text-[10px] font-mono text-primary uppercase font-bold">// Media Library</span>
-                <h3 className="text-sm font-semibold text-foreground mt-0.5">Biblioteca de Archivos B2B</h3>
-                <p className="text-xs text-muted-foreground">Almacene planos STEP, DWG, PDFs técnicos y videos de marketing.</p>
-              </div>
-              <Button onClick={() => { toast.info("Función de carga simulada. Selecciona archivos desde tu equipo local."); }} className="bg-secondary/40 border border-border text-foreground text-xs h-8 cursor-pointer hover:bg-secondary/60">
-                <Upload className="w-3.5 h-3.5 mr-1" /> Cargar Archivo
-              </Button>
+            <div>
+              <span className="text-[10px] font-mono text-primary uppercase font-bold">// Media Library</span>
+              <h3 className="text-sm font-semibold text-foreground mt-0.5">Biblioteca de Archivos B2B</h3>
+              <p className="text-xs text-muted-foreground">Almacene planos STEP, DWG, PDFs técnicos y videos de marketing.</p>
             </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {mediaList.map((file) => (
-                <div key={file.id} className="p-3.5 rounded-xl border border-border bg-muted/10 flex flex-col justify-between gap-3 text-xs">
-                  <div className="space-y-1.5">
-                    <div className="h-20 bg-muted/20 rounded border border-border/60 flex items-center justify-center">
-                      {file.type.includes("video") ? (
-                        <Video className="w-7 h-7 text-muted-foreground/60" />
-                      ) : file.type.includes("pdf") ? (
-                        <FileText className="w-7 h-7 text-muted-foreground/60" />
-                      ) : (
-                        <FileArchive className="w-7 h-7 text-muted-foreground/60" />
-                      )}
-                    </div>
-                    <span className="font-semibold text-foreground block truncate">{file.name}</span>
-                    <div className="flex items-center justify-between text-[10px] text-muted-foreground font-mono">
-                      <span>{file.size}</span>
-                      <span className="uppercase">{file.type.split("/")[1]}</span>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button onClick={() => toast.success(`Enlace copiado al portapapeles: ${file.url}`)} className="flex-grow bg-secondary/40 hover:bg-secondary/60 text-foreground text-[10px] h-7 cursor-pointer">Copiar Link</Button>
-                    <button onClick={() => setMediaList(prev => prev.filter(f => f.id !== file.id))} className="px-2 py-1 rounded bg-destructive/10 border border-destructive/20 text-destructive hover:bg-destructive/20 cursor-pointer">
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ))}
+            <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground text-xs font-mono border border-dashed border-border rounded-xl">
+              <FileArchive className="w-8 h-8 text-muted-foreground/60 mb-2" />
+              Función en desarrollo — aún no hay almacenamiento real conectado a esta pestaña.
             </div>
           </div>
         )}
@@ -1093,73 +1041,14 @@ export default function CmsPage() {
         {/* ==================== TAB: BLOG ==================== */}
         {activeTab === "blog" && (
           <div className="space-y-6 animate-in fade-in duration-150">
-            <div className="flex justify-between items-center">
-              <div>
-                <span className="text-[10px] font-mono text-primary uppercase font-bold">// Content Marketing</span>
-                <h3 className="text-sm font-semibold text-foreground mt-0.5">Blog Comercial y Artículos de Ingeniería</h3>
-                <p className="text-xs text-muted-foreground">Publique artículos técnicos para mejorar el posicionamiento SEO orgánico.</p>
-              </div>
-              <Button onClick={() => { const newItem: BlogArticle = { id: `art-${Date.now()}`, title: "Nuevo Artículo Técnico", slug: "nuevo-articulo", category: "General", author: "Ingeniero Especialista", status: "BORRADOR", publishedAt: "--" }; setBlogArticles([...blogArticles, newItem]); setEditingArticle(newItem); }} className="bg-secondary/40 border border-border text-foreground text-xs h-8 cursor-pointer hover:bg-secondary/60">
-                <Plus className="w-3.5 h-3.5 mr-1" /> Redactar Artículo
-              </Button>
+            <div>
+              <span className="text-[10px] font-mono text-primary uppercase font-bold">// Content Marketing</span>
+              <h3 className="text-sm font-semibold text-foreground mt-0.5">Blog Comercial y Artículos de Ingeniería</h3>
+              <p className="text-xs text-muted-foreground">Publique artículos técnicos para mejorar el posicionamiento SEO orgánico.</p>
             </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="space-y-3">
-                {blogArticles.map(art => (
-                  <div key={art.id} onClick={() => setEditingArticle(art)} className={`p-4 rounded-xl border transition-all cursor-pointer space-y-2 ${editingArticle?.id === art.id ? "bg-accent/40 border-primary/40" : "bg-card/40 border-border hover:bg-accent/20"}`}>
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-semibold text-foreground line-clamp-1">{art.title}</h4>
-                      <Badge variant="secondary" className={`text-[8px] font-mono ${art.status === "PUBLICADO" ? "bg-success/10 text-success border border-success/20 animate-pulse" : "bg-secondary text-muted-foreground"}`}>{art.status}</Badge>
-                    </div>
-                    <div className="flex justify-between text-[9px] text-muted-foreground font-mono">
-                      <span>Autor: {art.author}</span>
-                      <span>Publicado: {art.publishedAt}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="bg-muted/10 border border-border rounded-xl p-6">
-                {editingArticle ? (
-                  <div className="space-y-4">
-                    <div className="text-[10px] font-mono text-muted-foreground uppercase">Editor de Redacción</div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] text-muted-foreground">Título del Artículo</label>
-                      <Input value={editingArticle.title} onChange={(e) => setEditingArticle({...editingArticle, title: e.target.value})} className="bg-background border-border text-xs text-foreground" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <label className="text-[10px] text-muted-foreground">Categoría</label>
-                        <Input value={editingArticle.category} onChange={(e) => setEditingArticle({...editingArticle, category: e.target.value})} className="bg-background border-border text-xs text-foreground" />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] text-muted-foreground">Estado publicación</label>
-                        <select value={editingArticle.status} onChange={(e) => setEditingArticle({...editingArticle, status: e.target.value as any})} className="w-full px-3 py-2 bg-background border border-border rounded-lg text-xs text-foreground focus:outline-none focus:border-primary">
-                          <option value="BORRADOR">BORRADOR</option>
-                          <option value="PUBLICADO">PUBLICADO</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] text-muted-foreground">Contenido Markdown</label>
-                      <Textarea rows={6} defaultValue="# Introducción a la ingeniería de fluidos..." className="bg-background border-border text-xs text-foreground font-mono" />
-                    </div>
-                    <div className="flex justify-between pt-3 border-t border-border">
-                      <Button onClick={() => { setBlogArticles(prev => prev.filter(a => a.id !== editingArticle.id)); setEditingArticle(null); triggerSuccess("Artículo borrado."); }} className="bg-destructive/10 border border-destructive/20 text-destructive hover:bg-destructive/20 text-xs h-8 px-3 cursor-pointer">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-                      <Button onClick={() => { setBlogArticles(prev => prev.map(a => a.id === editingArticle.id ? {...editingArticle, publishedAt: editingArticle.status === "PUBLICADO" ? new Date().toLocaleDateString() : "--"} : a)); setEditingArticle(null); triggerSuccess("Artículo de blog guardado."); }} className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs h-8 px-4 cursor-pointer">
-                        <Save className="w-3.5 h-3.5 mr-1" /> Guardar Artículo
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground text-xs font-mono">
-                    <BookOpen className="w-8 h-8 text-muted-foreground/60 mb-1" /> Selecciona un artículo para editar.
-                  </div>
-                )}
-              </div>
+            <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground text-xs font-mono border border-dashed border-border rounded-xl">
+              <BookOpen className="w-8 h-8 text-muted-foreground/60 mb-2" />
+              Función en desarrollo — aún no hay publicación real conectada a esta pestaña.
             </div>
           </div>
         )}
