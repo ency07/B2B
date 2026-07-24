@@ -3,7 +3,7 @@
 import { supabaseAdmin } from "@/platform/auth/clients";
 import { getTenantId } from "@/erp/actions/core";
 import { resolveTenantOwnerUserIdAsync } from "@/platform/tenant/tenant-resolver";
-import { requireAction } from "@/platform/auth/server-guards";
+import { requireAction, validateTenantAccess } from "@/platform/auth/server-guards";
 import {
   invalidateCatalogCache as _invalidateCache,
 } from "@/web/actions/catalog-cache";
@@ -400,8 +400,9 @@ export async function addProductImage(
   productId: string,
   image: { fileName: string; filePath: string; fileSize: number; mimeType: string; altText?: string }
 ) {
-  await requireAction("catalog.manage");
+  const ctx = await requireAction("catalog.manage");
   const tenantId = await getTenantId(tenantCode);
+  await validateTenantAccess(ctx.userId, ctx.role, tenantId);
 
   // Verificar que el producto pertenece a este tenant antes de asociarle un
   // asset — sin esto, cualquier admin con catalog.manage podría adjuntar
@@ -471,9 +472,10 @@ export async function saveProduct(
   }
 ) {
   try {
-    await requireAction("catalog.manage");
+    const ctx = await requireAction("catalog.manage");
     const tenantId = await getTenantId(tenantCode);
-    const userId = await resolveTenantOwnerUserIdAsync(tenantId);
+    await validateTenantAccess(ctx.userId, ctx.role, tenantId);
+    const userId = await resolveTenantOwnerUserIdAsync(tenantId, ctx.userId);
 
     let productId = product.id;
 
@@ -557,8 +559,9 @@ export async function saveProduct(
  */
 export async function deleteProduct(tenantCode: string | null, productId: string) {
   try {
-    await requireAction("catalog.manage");
+    const ctx = await requireAction("catalog.manage");
     const tenantId = await getTenantId(tenantCode);
+    await validateTenantAccess(ctx.userId, ctx.role, tenantId);
     const { data: existing } = await supabaseAdmin
       .from("products")
       .select("id")
@@ -596,9 +599,10 @@ export async function saveCategory(
   }
 ) {
   try {
-    await requireAction("catalog.manage");
+    const ctx = await requireAction("catalog.manage");
     const tenantId = await getTenantId(tenantCode);
-    const userId = await resolveTenantOwnerUserIdAsync(tenantId);
+    await validateTenantAccess(ctx.userId, ctx.role, tenantId);
+    const userId = await resolveTenantOwnerUserIdAsync(tenantId, ctx.userId);
 
     const payload = {
       tenant_id: tenantId,
@@ -647,8 +651,9 @@ export async function saveCategory(
  */
 export async function deleteCategory(tenantCode: string | null, categoryId: string) {
   try {
-    await requireAction("catalog.manage");
+    const ctx = await requireAction("catalog.manage");
     const tenantId = await getTenantId(tenantCode);
+    await validateTenantAccess(ctx.userId, ctx.role, tenantId);
     const { data: existing } = await supabaseAdmin
       .from("product_categories")
       .select("id")
