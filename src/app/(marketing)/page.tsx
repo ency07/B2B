@@ -5,6 +5,7 @@ import { getIndustrialCatalog, CatalogCategory } from "@/web/actions/catalog";
 import { MarketingShell } from "@/web/components/marketing-v2/MarketingShell";
 import { Metadata } from "next";
 import { getBrandingDefaults, type BrandingConfig } from "@/platform/branding/branding-defaults";
+import { DEFAULT_TENANT_CODE } from "@/platform/tenant/default-tenant";
 
 // Forzar revalidación dinámica
 export const dynamic = "force-dynamic";
@@ -18,7 +19,7 @@ const getTenantBrandingCached = cache(
 
 export async function generateMetadata(props: { searchParams: Promise<{ tenant?: string }> }): Promise<Metadata> {
   const searchParams = await props.searchParams;
-  const tenant = searchParams.tenant || "acme";
+  const tenant = searchParams.tenant || DEFAULT_TENANT_CODE;
 
   // getTenantBranding es de solo lectura (sin auth) y trae el branding real
   // configurado en el CMS — usar siempre esta función, no getPublicTenantSettings,
@@ -57,7 +58,7 @@ export async function generateMetadata(props: { searchParams: Promise<{ tenant?:
 
 export default async function Home(props: { searchParams: Promise<{ tenant?: string }> }) {
   const searchParams = await props.searchParams;
-  const tenant = searchParams.tenant || "acme";
+  const tenant = searchParams.tenant || DEFAULT_TENANT_CODE;
 
   // Branding real del tenant (sin auth) — usa defaults si falla
   let branding: BrandingConfig = getBrandingDefaults(tenant);

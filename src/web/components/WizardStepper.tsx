@@ -6,6 +6,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ROUTES } from "@/lib/routes";
+import { DEFAULT_TENANT_CODE } from "@/platform/tenant/default-tenant";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ArrowLeft, 
@@ -83,7 +84,7 @@ export default function WizardStepper({
   tenantCode: string;
 }) {
   const searchParams = useSearchParams();
-  const tenantParam = searchParams.get("tenant") || "acme";
+  const tenantParam = searchParams.get("tenant") || DEFAULT_TENANT_CODE;
   const preselectedProduct = searchParams.get("product") || "";
 
   // Colores dinámicos del Tenant
@@ -320,7 +321,7 @@ export default function WizardStepper({
     setIsSubmitting(true);
     try {
       const finalResult = await withTimeout(
-        submitWizardData(tenantCode || "acme", {
+        submitWizardData(tenantCode || DEFAULT_TENANT_CODE, {
           servicio: form.servicio,
           length: Number(form.length),
           width: Number(form.width),

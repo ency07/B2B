@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/platform/auth/clients";
+import { DEFAULT_TENANT_CODE } from "@/platform/tenant/default-tenant";
 
 /**
  * Resolucion central de tenant_id a partir de tenant_code.
@@ -35,9 +36,6 @@ const TENANT_CODE_TO_ID: Record<string, string> = {
 const DYNAMIC_TENANT_CACHE: Record<string, string> = {};
 const DYNAMIC_OWNER_CACHE: Record<string, string> = {};
 
-const DEFAULT_TENANT_CODE =
-  process.env.NEXT_PUBLIC_DEFAULT_TENANT_CODE || "acme";
-
 const DEFAULT_TENANT_ID =
   TENANT_CODE_TO_ID[DEFAULT_TENANT_CODE] ?? TENANT_CODE_TO_ID.acme;
 
@@ -55,8 +53,11 @@ const SUPPRESS_TENANT_WARNINGS =
  * y almacena el resultado en caché.
  */
 export async function resolveTenantIdAsync(tenantCode?: string | null): Promise<string> {
-  if (!tenantCode) return DEFAULT_TENANT_ID;
-  const normalizedCode = tenantCode.toLowerCase();
+  // Sin código explícito: usar el tenant por defecto del deployment
+  // (NEXT_PUBLIC_DEFAULT_TENANT_CODE), resuelto por el mismo camino que
+  // cualquier otro código — así un tenant real configurado como default
+  // (no solo acme/apex del mapa estático) también resuelve vía DB.
+  const normalizedCode = (tenantCode || DEFAULT_TENANT_CODE).toLowerCase();
 
   // 1. Verificar mapa estático
   const staticId = TENANT_CODE_TO_ID[normalizedCode];
