@@ -8,61 +8,6 @@ import { Quote } from "lucide-react";
 import { CinematicPhoto } from "./primitives/CinematicPhoto";
 import type { CaseSlideContent } from "@/platform/branding/branding-defaults";
 
-const DEFAULT_CASES: CaseSlideContent[] = [
-  {
-    sector: "Siderurgia", location: "Colombia", year: "2024",
-    titleMain: "Planta Paz del Río.", titleItalic: "22°C menos. Sin paradas.",
-    photoUrl: "/rotor_dynamic_balancing.webp", photoAlt: "Balanceo dinámico de rotor en planta",
-    results: [
-      { label: "Temperatura en zona de colada", before: "47°C", after: "25°C" },
-      { label: "Renovaciones por hora (ACH)", before: "18", after: "42" },
-      { label: "Costo anual de paradas no planificadas", before: "USD 2.4M", after: "USD 0.8M" },
-      { label: "Cumplimiento RETIE", before: "62%", after: "100%" },
-    ],
-    quote: "Pasamos de operar a la defensiva a operar con margen. La diferencia fue la ingeniería, no el equipo.",
-    quoteAuthor: "Carlos Mendoza", quoteRole: "Director de Operaciones · Paz del Río",
-  },
-  {
-    sector: "Minería", location: "Colombia", year: "2023",
-    titleMain: "Complejo El Cerrejón.", titleItalic: "Aire limpio a 200°C.",
-    photoUrl: "/industrial_centrifugal_fan.webp", photoAlt: "Extracción en planta de trituración",
-    results: [
-      { label: "Concentración de partículas", before: "340 µg/m³", after: "48 µg/m³" },
-      { label: "Horas de exposición crítica", before: "6h/día", after: "0h/día" },
-      { label: "Vida útil de motores", before: "3 años", after: "7 años" },
-      { label: "Cumplimiento OSHA", before: "58%", after: "100%" },
-    ],
-    quote: "La diferencia se sintió en la planta el primer día. El equipo ya no respira polvo.",
-    quoteAuthor: "Ana Restrepo", quoteRole: "Gerente HSE · El Cerrejón",
-  },
-  {
-    sector: "Data centers", location: "Colombia", year: "2024",
-    titleMain: "Data Center Claro.", titleItalic: "Uptime 99.99% garantizado.",
-    photoUrl: "/axial_duct_fan.webp", photoAlt: "Sala de servidores con climatización de precisión",
-    results: [
-      { label: "Redundancia de climatización", before: "N", after: "N+1" },
-      { label: "Consumo eléctrico HVAC", before: "100%", after: "71%" },
-      { label: "Incidentes térmicos anuales", before: "4", after: "0" },
-      { label: "Cumplimiento TIA-942", before: "Tier II", after: "Tier IV" },
-    ],
-    quote: "Ganamos margen operativo sin sacrificar continuidad. Eso no tiene precio en este negocio.",
-    quoteAuthor: "Julián Torres", quoteRole: "Director de Infraestructura · Claro",
-  },
-  {
-    sector: "Manufactura y alimentos", location: "Colombia", year: "2023",
-    titleMain: "Planta Nutresa Medellín.", titleItalic: "HACCP sin fricción.",
-    photoUrl: "/extractor_hongo_inox.webp", photoAlt: "Línea de producción con extracción localizada",
-    results: [
-      { label: "Cumplimiento HACCP", before: "71%", after: "100%" },
-      { label: "Renovaciones por hora (ACH)", before: "12", after: "30" },
-      { label: "Tiempo de auditoría anual", before: "3 semanas", after: "4 días" },
-      { label: "Paradas por mantenimiento", before: "14/año", after: "2/año" },
-    ],
-    quote: "La auditoría dejó de ser una amenaza. Ahora es un trámite de rutina.",
-    quoteAuthor: "Marcela Gómez", quoteRole: "Jefe de Planta · Nutresa",
-  },
-];
-
 interface FeaturedCaseProps {
   content?: CaseSlideContent[];
 }
@@ -70,7 +15,7 @@ interface FeaturedCaseProps {
 const AUTOPLAY_MS = 8000;
 
 export function FeaturedCase({ content }: FeaturedCaseProps = {}) {
-  const cases = content?.length ? content : DEFAULT_CASES;
+  const cases = content || [];
   const [idx, setIdx] = React.useState(0);
   const [paused, setPaused] = React.useState(false);
   const count = cases.length;
@@ -86,6 +31,10 @@ export function FeaturedCase({ content }: FeaturedCaseProps = {}) {
     }, AUTOPLAY_MS);
     return () => clearInterval(timer);
   }, [count, paused, idx]);
+
+  // Sin casos de éxito configurados: no renderizar la sección en vez de
+  // fabricar un caso de ejemplo o crashear leyendo cases[0].
+  if (count === 0) return null;
 
   return (
     <section

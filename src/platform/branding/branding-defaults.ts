@@ -431,75 +431,23 @@ export function getBrandingDefaults(_tenantCode?: string | null): BrandingConfig
       { name: "Manufactura y alimentos", shortDescription: "Ventilación general, extracción localizada en soldadura, cabinas de pintura. Materiales sanitizables (acero galvanizado, inoxidable). Cumplimiento HACCP / INVIMA." },
       { name: "Procesamiento químico", shortDescription: "Extracción de vapores en áreas clasificadas ATEX Zone 1. Materiales resistentes a ambientes agresivos (PVC, PP, FRP). Sistemas cerrados con monitoreo continuo." },
     ],
-    // Foto distinta por caso (evita repetir la misma imagen genérica en
-    // varias secciones) — reemplace por fotos reales del proyecto cuando estén disponibles.
-    casos: [
-      {
-        sector: "Siderurgia", location: "Colombia", year: "2024",
-        titleMain: "Planta Paz del Río.", titleItalic: "22°C menos. Sin paradas.",
-        photoUrl: "/rotor_dynamic_balancing.webp", photoAlt: "Balanceo dinámico de rotor en planta",
-        results: [
-          { label: "Temperatura en zona de colada", before: "47°C", after: "25°C" },
-          { label: "Renovaciones por hora (ACH)", before: "18", after: "42" },
-          { label: "Costo anual de paradas no planificadas", before: "USD 2.4M", after: "USD 0.8M" },
-          { label: "Cumplimiento RETIE", before: "62%", after: "100%" },
-        ],
-        quote: "Pasamos de operar a la defensiva a operar con margen. La diferencia fue la ingeniería, no el equipo.",
-        quoteAuthor: "Carlos Mendoza", quoteRole: "Director de Operaciones · Paz del Río",
-      },
-      {
-        sector: "Minería", location: "Colombia", year: "2023",
-        titleMain: "Complejo El Cerrejón.", titleItalic: "Aire limpio a 200°C.",
-        photoUrl: "/industrial_centrifugal_fan.webp", photoAlt: "Extracción en planta de trituración",
-        results: [
-          { label: "Concentración de partículas", before: "340 µg/m³", after: "48 µg/m³" },
-          { label: "Horas de exposición crítica", before: "6h/día", after: "0h/día" },
-          { label: "Vida útil de motores", before: "3 años", after: "7 años" },
-          { label: "Cumplimiento OSHA", before: "58%", after: "100%" },
-        ],
-        quote: "La diferencia se sintió en la planta el primer día. El equipo ya no respira polvo.",
-        quoteAuthor: "Ana Restrepo", quoteRole: "Gerente HSE · El Cerrejón",
-      },
-      {
-        sector: "Data centers", location: "Colombia", year: "2024",
-        titleMain: "Data Center Claro.", titleItalic: "Uptime 99.99% garantizado.",
-        photoUrl: "/axial_duct_fan.webp", photoAlt: "Sala de servidores con climatización de precisión",
-        results: [
-          { label: "Redundancia de climatización", before: "N", after: "N+1" },
-          { label: "Consumo eléctrico HVAC", before: "100%", after: "71%" },
-          { label: "Incidentes térmicos anuales", before: "4", after: "0" },
-          { label: "Cumplimiento TIA-942", before: "Tier II", after: "Tier IV" },
-        ],
-        quote: "Ganamos margen operativo sin sacrificar continuidad. Eso no tiene precio en este negocio.",
-        quoteAuthor: "Julián Torres", quoteRole: "Director de Infraestructura · Claro",
-      },
-      {
-        sector: "Manufactura y alimentos", location: "Colombia", year: "2023",
-        titleMain: "Planta Nutresa Medellín.", titleItalic: "HACCP sin fricción.",
-        photoUrl: "/extractor_hongo_inox.webp", photoAlt: "Línea de producción con extracción localizada",
-        results: [
-          { label: "Cumplimiento HACCP", before: "71%", after: "100%" },
-          { label: "Renovaciones por hora (ACH)", before: "12", after: "30" },
-          { label: "Tiempo de auditoría anual", before: "3 semanas", after: "4 días" },
-          { label: "Paradas por mantenimiento", before: "14/año", after: "2/año" },
-        ],
-        quote: "La auditoría dejó de ser una amenaza. Ahora es un trámite de rutina.",
-        quoteAuthor: "Marcela Gómez", quoteRole: "Jefe de Planta · Nutresa",
-      },
-    ],
+    // Sin casos de éxito por defecto: no se debe fabricar testimonios ni
+    // atribuir resultados a empresas reales sin su consentimiento. Cada
+    // tenant carga sus propios casos (reales, con permiso del cliente)
+    // desde el CMS antes de publicar su sitio.
+    casos: [],
     certificaciones: ["AMCA", "ISO 1940 G2.5", "ASHRAE 62.1"],
     meta_title: "Sistemas de Ventilación Industrial Premium",
     meta_description: "Diseño, fabricación e instalación de sistemas industriales de ventilación B2B.",
     meta_keywords: "ventilación, extractor axial, extractor hongo, AMCA",
 
+    // Sin clientes de referencia por defecto: nombrar empresas reales como
+    // clientes sin su consentimiento es un riesgo legal, no solo de marca.
+    // Cada tenant carga su propia lista desde el CMS.
     trust_marquee: {
       eyebrow: "Empresas que confían en nuestra ingeniería",
       statLine: "22 años · +310 operaciones completadas",
-      clients: [
-        "Paz del Río", "Nutresa", "Ecopetrol", "Cementos Argos", "Cerro Matoso",
-        "Bavaria", "Postobón", "Terpel", "ISA", "Drummond", "Propal", "Colombina",
-        "Manuelita", "Carvajal",
-      ].map((name) => ({ name, logoUrl: "" })),
+      clients: [],
     },
 
     problem_solving: [

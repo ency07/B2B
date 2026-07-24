@@ -2,23 +2,6 @@
 
 import * as React from "react";
 
-const CLIENTS = [
-  "Paz del Río",
-  "Nutresa",
-  "Ecopetrol",
-  "Cementos Argos",
-  "Cerro Matoso",
-  "Bavaria",
-  "Postobón",
-  "Terpel",
-  "ISA",
-  "Drummond",
-  "Propal",
-  "Colombina",
-  "Manuelita",
-  "Carvajal",
-].map((name) => ({ name, logoUrl: "" }));
-
 interface TrustClient {
   name: string;
   logoUrl?: string;
@@ -29,10 +12,14 @@ interface TrustMarqueeProps {
 }
 
 export function TrustMarquee({ content }: TrustMarqueeProps = {}) {
-  const clients = content?.clients?.length ? content.clients : CLIENTS;
+  const clients = content?.clients;
   const eyebrow = content?.eyebrow || "Empresas que confían en nuestra ingeniería";
   const statLine = content?.statLine || "22 años · +310 operaciones completadas";
-  const items = React.useMemo(() => [...clients, ...clients], [clients]);
+  const items = React.useMemo(() => [...(clients ?? []), ...(clients ?? [])], [clients]);
+
+  // Sin clientes de referencia configurados: no renderizar la sección en
+  // vez de mostrar una marquesina vacía o (peor) empresas inventadas.
+  if (!clients || clients.length === 0) return null;
 
   return (
     <section
