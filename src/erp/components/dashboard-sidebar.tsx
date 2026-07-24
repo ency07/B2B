@@ -35,6 +35,7 @@ import {
   FileCheck,
   Layers,
   ShoppingBag,
+  Building2,
 } from "lucide-react";
 import { useLayout } from "@/platform/providers/layout-context";
 import { cn } from "@/platform/utils/cn";
@@ -100,9 +101,17 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: "/dashboard/cms", label: "Contenido", icon: Layers, shortcut: "7" },
       { href: ROUTES.DASHBOARD_SETTINGS, label: "Configuracion", icon: Settings, shortcut: "8" },
+      { href: ROUTES.DASHBOARD_TENANTS, label: "Clientes (Tenants)", icon: Building2, shortcut: "9" },
     ],
   },
 ];
+
+// Rutas de operación de plataforma: visibles solo para SUPER_ADMIN/ADMIN_DEV,
+// aunque otros roles (ADMIN_EMPRESA, GERENTE_GENERAL, DIRECTOR_FINANCIERO)
+// también tengan "*" en ROLE_PERMISSIONS. "*" en esa matriz significa
+// "todo dentro de su tenant" — crear un tenant nuevo es una acción de
+// plataforma, no de tenant, así que no debe seguir esa regla genérica.
+const PLATFORM_ONLY_ROUTES = new Set<string>([ROUTES.DASHBOARD_TENANTS]);
 
 interface DashboardSidebarProps {
   role?: string | null;
@@ -154,11 +163,13 @@ export function DashboardSidebar({ role: initialRole = null }: DashboardSidebarP
   const allowedItems = React.useMemo(() => {
     const perms = getPermissionsForRole(role);
     const all = perms.includes("*");
+    const isPlatformAdmin = role === "SUPER_ADMIN" || role === "ADMIN_DEV";
     return NAV_SECTIONS.map((section) => ({
       ...section,
-      items: section.items.filter(
-        (item) => all || perms.includes(item.href)
-      ),
+      items: section.items.filter((item) => {
+        if (PLATFORM_ONLY_ROUTES.has(item.href)) return isPlatformAdmin;
+        return all || perms.includes(item.href);
+      }),
     })).filter((section) => section.items.length > 0);
   }, [role]);
 

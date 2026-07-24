@@ -379,3 +379,23 @@ export const userRoleSchema = z.object({
   userId: uuidSchema,
   roleId: uuidSchema,
 });
+
+// ── Tenants (onboarding de clientes nuevos) ─────────────────────────────────
+
+export const createTenantSchema = z.object({
+  tenantCode: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(2, "Código de tenant muy corto")
+    .max(50, "Código de tenant excede el máximo")
+    .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "Código de tenant inválido: solo minúsculas, números y guiones"),
+  name: nonEmpty("Nombre comercial", 200),
+  legalName: nonEmpty("Razón social", 200),
+  taxId: nonEmpty("NIT", 50),
+  email: z.string().trim().email("Email inválido").max(200).optional().or(z.literal("")),
+  phone: z.string().trim().max(50).optional(),
+  adminFirstName: nonEmpty("Nombre del administrador", 100),
+  adminLastName: nonEmpty("Apellido del administrador", 100),
+  adminEmail: z.string().trim().email("Email del administrador inválido").max(200),
+});
