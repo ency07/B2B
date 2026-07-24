@@ -13,7 +13,6 @@ import {
   registerPaymentSchema,
   updateJobStatusSchema,
   createCreditNoteSchema,
-  createPurchaseOrderSchema,
   updateTenantSettingsSchema,
   createInventoryItemSchema,
 } from "@/lib/validations/erp";
@@ -53,9 +52,6 @@ const EVENT_CODES = {
   JOB_STATUS_CHANGED: "JOB_STATUS_CHANGED",
   INVOICE_CREATED: "INVOICE_CREATED",
   PAYMENT_RECEIVED: "PAYMENT_RECEIVED",
-  PO_CREATED: "PO_CREATED",
-  PO_APPROVED: "PO_APPROVED",
-  PO_RECEIVED: "PO_RECEIVED",
   INVENTORY_MOVEMENT: "INVENTORY_MOVEMENT",
   LEAD_STATUS_CHANGED: "LEAD_STATUS_CHANGED",
   JOB_INVOICED: "JOB_INVOICED",
@@ -881,197 +877,14 @@ export async function runDunningCheck(
   };
 }
 
-// ==========================================
-// PURCHASES ACTIONS
-// ==========================================
-
-export async function createPurchaseOrder(
-  tenantCode: string | null,
-  data: {
-    vendorId: string;
-    totalAmount: number;
-    notes?: string;
-    items: {
-      description: string;
-      quantity: number;
-      unitPrice: number;
-      subtotal: number;
-    }[];
-  }
-) {
-  const ctx = await requireAction("purchases.create");
-  data = validate(createPurchaseOrderSchema, data);
-  const tenantId = await getTenantId(tenantCode);
-  await validateTenantAccess(ctx.userId, ctx.role, tenantId);
-
-  // Insertar cabecera
-  const { data: po, error: poErr } = await supabaseAdmin
-    .from("purchase_orders")
-    .insert({
-      tenant_id: tenantId,
-      vendor_id: data.vendorId,
-      total_amount: data.totalAmount,
-      notes: data.notes,
-      status: "BORRADOR",
-      created_by: ctx.userId,
-    })
-    .select()
-    .single();
-
-  if (poErr) throw new Error(poErr.message);
-
-  // Insertar items
-  const { error: itemsErr } = await supabaseAdmin
-    .from("purchase_order_items")
-    .insert(data.items.map((item) => ({
-      po_id: po.id,
-      ...item
-    })));
-
-  if (itemsErr) throw new Error(itemsErr.message);
-
-  emitBusinessEvent(tenantId, EVENT_CODES.PO_CREATED, "PURCHASE_ORDER", po.id, { vendor_id: data.vendorId, total: data.totalAmount }, ctx.userId);
-
-  return po;
-}
-
-export async function approvePurchaseOrder(
-  tenantCode: string | null,
-  poId: string
-) {
-  const ctx = await requireAction("purchases.approve");
-  const tenantId = await getTenantId(tenantCode);
-  await validateTenantAccess(ctx.userId, ctx.role, tenantId);
-
-  const { data: existing, error: fetchErr } = await supabaseAdmin
-    .from("purchase_orders")
-    .select("id, status, deleted_at")
-    .eq("id", poId)
-    .eq("tenant_id", tenantId)
-    .maybeSingle();
-
-  if (fetchErr || !existing || existing.deleted_at) throw new Error("Orden de compra no encontrada.");
-  if (existing.status !== "BORRADOR") throw new Error(`La orden de compra debe estar en BORRADOR para aprobarla. Estado actual: ${existing.status}`);
-
-  const { data: po, error: poErr } = await supabaseAdmin
-    .from("purchase_orders")
-    .update({
-      status: "APROBADA",
-      approved_by: ctx.userId,
-      approved_at: new Date().toISOString(),
-    })
-    .eq("id", poId)
-    .eq("tenant_id", tenantId)
-    .select()
-    .single();
-
-  if (poErr || !po) throw new Error("Error al aprobar la orden de compra.");
-  emitBusinessEvent(tenantId, EVENT_CODES.PO_APPROVED, "PURCHASE_ORDER", poId, { po_id: poId }, ctx.userId);
-  return po;
-}
-
-export async function receivePurchaseOrder(
-  tenantCode: string | null,
-  poId: string
-) {
-  const ctx = await requireAction("purchases.create");
-  const tenantId = await getTenantId(tenantCode);
-  await validateTenantAccess(ctx.userId, ctx.role, tenantId);
-
-  const { data: existing, error: fetchErr } = await supabaseAdmin
-    .from("purchase_orders")
-    .select("id, status, deleted_at")
-    .eq("id", poId)
-    .eq("tenant_id", tenantId)
-    .maybeSingle();
-
-  if (fetchErr || !existing || existing.deleted_at) throw new Error("Orden de compra no encontrada.");
-  if (existing.status !== "APROBADA") throw new Error(`La orden de compra debe estar APROBADA para recibir. Estado actual: ${existing.status}`);
-
-  const { data: po, error: poErr } = await supabaseAdmin
-    .from("purchase_orders")
-    .update({ status: "RECIBIDA" })
-    .eq("id", poId)
-    .eq("tenant_id", tenantId)
-    .select()
-    .single();
-
-  if (poErr || !po) throw new Error("Error al recibir la orden de compra.");
-  emitBusinessEvent(tenantId, EVENT_CODES.PO_RECEIVED, "PURCHASE_ORDER", poId, { po_id: poId }, ctx.userId);
-  return po;
-}
-
-export interface PurchaseOrderItemData {
-  id: string;
-  description: string;
-  quantity: number;
-  unit_price: number;
-  subtotal: number;
-}
-
-export interface PurchaseOrderData {
-  id: string;
-  code: string;
-  vendor_id: string;
-  vendor_name: string;
-  status: string;
-  total_amount: number;
-  notes: string | null;
-  created_at: string;
-  items: PurchaseOrderItemData[];
-}
-
-export async function getPurchaseOrders(
-  tenantCode: string | null
-): Promise<PurchaseOrderData[]> {
-  const ctx = await getAuthContext();
-  if (!ctx) throw new Error("No autenticado");
-  const tenantId = await getTenantId(tenantCode);
-  await validateTenantAccess(ctx.userId, ctx.role, tenantId);
-
-  const { data: orders, error: ordersErr } = await supabaseAdmin
-    .from("purchase_orders")
-    .select("id, code, vendor_id, status, total_amount, notes, created_at")
-    .eq("tenant_id", tenantId)
-    .is("deleted_at", null)
-    .order("created_at", { ascending: false });
-
-  if (ordersErr) throw new Error(ordersErr.message);
-
-  const vendorIds = [...new Set(orders.map((o: any) => o.vendor_id))];
-
-  const { data: vendors } = await supabaseAdmin
-    .from("clients")
-    .select("id, name")
-    .in("id", vendorIds);
-
-  const vendorMap = new Map((vendors || []).map((v: any) => [v.id, v.name]));
-
-  const poIds = orders.map((o: any) => o.id);
-  const { data: items } = await supabaseAdmin
-    .from("purchase_order_items")
-    .select("id, po_id, description, quantity, unit_price, subtotal")
-    .in("po_id", poIds);
-
-  const itemsByPo = new Map<string, PurchaseOrderItemData[]>();
-  (items || []).forEach((it: any) => {
-    const list = itemsByPo.get(it.po_id) || [];
-    list.push(it);
-    itemsByPo.set(it.po_id, list);
-  });
-
-  return orders.map((o: any) => ({
-    id: o.id,
-    code: o.code,
-    vendor_id: o.vendor_id,
-    vendor_name: vendorMap.get(o.vendor_id) || "—",
-    status: o.status,
-    total_amount: Number(o.total_amount),
-    notes: o.notes,
-    created_at: o.created_at,
-    items: itemsByPo.get(o.id) || [],
-  }));
-}
+// PURCHASES ACTIONS: movidas a src/erp/actions/purchases.ts (2026-07-24).
+// El código que vivía acá apuntaba a `purchase_orders`/`purchase_order_items`,
+// tablas que nunca existieron en producción (la migración que las creaba
+// quedó marcada "aplicada" en el historial pero jamás corrió contra la BD
+// real). El módulo de Compras real usa el esquema de 9 tablas
+// (proveedores, solicitudes_compra, cotizaciones_proveedor, ordenes_compra,
+// recepciones) que ya existía en la BD con RLS/triggers/auditoría, pero sin
+// ningún código de aplicación conectado — ver purchases.ts para el detalle.
 
 // ==========================================
 // SOFT DELETE ACTIONS

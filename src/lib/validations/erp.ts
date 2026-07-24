@@ -235,18 +235,128 @@ export const updateLeadStatusSchema = z.object({
   newStatus: leadStatusSchema,
 });
 
-// ── Purchases ────────────────────────────────────────────────────────────────
+// ── Purchases (proveedores, solicitudes, cotizaciones, OC, recepciones) ──────
 
-export const createPurchaseOrderSchema = z.object({
-  vendorId: uuidSchema,
-  totalAmount: z.number().nonnegative(),
-  notes: z.string().max(1000).optional(),
+export const createProveedorSchema = z.object({
+  razonSocial: nonEmpty("Razón social", 200),
+  nit: z.string().trim().max(50).optional(),
+  direccion: z.string().trim().max(500).optional(),
+  ciudad: z.string().trim().max(100).optional(),
+  telefono: z.string().trim().max(50).optional(),
+  correo: z.string().trim().email("Email inválido").max(200).optional().or(z.literal("")),
+  sitioWeb: z.string().trim().max(300).optional(),
+  categoria: z.enum(["MATERIALES", "SERVICIOS", "EQUIPOS", "CONSUMIBLES"]),
+  diasCredito: z.number().int().nonnegative().default(30),
+  condicionesPago: z.string().trim().max(1000).optional(),
+});
+
+export const updateProveedorSchema = createProveedorSchema.partial().extend({
+  estado: z.enum(["ACTIVO", "INACTIVO"]).optional(),
+});
+
+export const createSolicitudCompraSchema = z.object({
+  area: z.string().trim().max(100).optional(),
+  proyecto: z.string().trim().max(200).optional(),
+  prioridad: z.enum(["URGENTE", "ALTA", "MEDIA", "BAJA"]).default("MEDIA"),
+  justificacion: z.string().trim().min(10, "La justificación debe tener al menos 10 caracteres").max(2000),
+  fechaNecesidad: dateString("Fecha de necesidad").optional(),
+  centroCostos: z.string().trim().max(100).optional(),
+  valorEstimado: z.number().nonnegative().optional(),
   items: z.array(z.object({
-    description: z.string().trim().min(1),
-    quantity: z.number().positive(),
-    unitPrice: z.number().nonnegative(),
-    subtotal: z.number().nonnegative(),
-  })).min(1, "Debe incluir al menos un item"),
+    descripcion: nonEmpty("Descripción", 500),
+    cantidad: z.number().positive("La cantidad debe ser mayor a 0"),
+    unidad: z.string().trim().max(20).default("un"),
+    proveedorSugeridoId: uuidSchema.optional(),
+  })).min(1, "Debe incluir al menos un ítem"),
+});
+
+export const solicitudCompraStatusSchema = z.enum([
+  "APROBADA",
+  "RECHAZADA",
+  "COTIZANDO",
+  "CONVERTIDA",
+  "CANCELADA",
+]);
+
+export const updateSolicitudCompraStatusSchema = z.object({
+  solicitudId: uuidSchema,
+  newStatus: solicitudCompraStatusSchema,
+  motivoRechazo: z.string().trim().min(10).max(1000).optional(),
+  motivoCancelacion: z.string().trim().min(10).max(1000).optional(),
+}).refine((d) => d.newStatus !== "RECHAZADA" || !!d.motivoRechazo, {
+  message: "El motivo de rechazo es obligatorio (mínimo 10 caracteres)",
+  path: ["motivoRechazo"],
+}).refine((d) => d.newStatus !== "CANCELADA" || !!d.motivoCancelacion, {
+  message: "El motivo de cancelación es obligatorio (mínimo 10 caracteres)",
+  path: ["motivoCancelacion"],
+});
+
+export const createCotizacionProveedorSchema = z.object({
+  solicitudId: uuidSchema,
+  proveedorId: uuidSchema,
+  valor: z.number().nonnegative("El valor no puede ser negativo"),
+  moneda: z.string().trim().max(10).default("COP"),
+  fechaEntrega: dateString("Fecha de entrega").optional(),
+  garantia: z.string().trim().max(200).optional(),
+  condiciones: z.string().trim().max(1000).optional(),
+  items: z.array(z.object({
+    descripcion: nonEmpty("Descripción", 500),
+    cantidad: z.number().positive(),
+    unidad: z.string().trim().max(20).default("un"),
+    precioUnitario: z.number().nonnegative(),
+  })).default([]),
+});
+
+export const cotizacionProveedorEstadoSchema = z.object({
+  cotizacionId: uuidSchema,
+  estado: z.enum(["ACEPTADA", "RECHAZADA"]),
+});
+
+export const createOrdenCompraSchema = z.object({
+  solicitudId: uuidSchema.optional(),
+  proveedorId: uuidSchema,
+  cotizacionId: uuidSchema.optional(),
+  proyecto: z.string().trim().max(200).optional(),
+  fechaEntrega: dateString("Fecha de entrega").optional(),
+  condicionesPago: z.string().trim().max(1000).optional(),
+  iva: z.number().nonnegative().default(0),
+  retencion: z.number().nonnegative().default(0),
+  items: z.array(z.object({
+    productoId: uuidSchema.optional(),
+    descripcion: nonEmpty("Descripción", 500),
+    cantidad: z.number().positive(),
+    unidad: z.string().trim().max(20).default("un"),
+    precioUnitario: z.number().nonnegative(),
+    descuento: z.number().nonnegative().default(0),
+  })).min(1, "Debe incluir al menos un ítem"),
+});
+
+export const ordenCompraStatusSchema = z.enum([
+  "ENVIADA",
+  "ACEPTADA",
+  "CANCELADA",
+]);
+
+export const updateOrdenCompraStatusSchema = z.object({
+  ordenId: uuidSchema,
+  newStatus: ordenCompraStatusSchema,
+  motivoCancelacion: z.string().trim().min(10).max(1000).optional(),
+}).refine((d) => d.newStatus !== "CANCELADA" || !!d.motivoCancelacion, {
+  message: "El motivo de cancelación es obligatorio (mínimo 10 caracteres)",
+  path: ["motivoCancelacion"],
+});
+
+export const createRecepcionSchema = z.object({
+  ocId: uuidSchema,
+  warehouseId: uuidSchema,
+  tipo: z.enum(["TOTAL", "PARCIAL", "RECHAZO", "DEVOLUCION"]),
+  observaciones: z.string().trim().max(1000).optional(),
+  items: z.array(z.object({
+    ocItemId: uuidSchema,
+    cantidadRecibida: z.number().nonnegative(),
+    estado: z.enum(["ACEPTADO", "CONDICIONAL", "RECHAZADO"]).default("ACEPTADO"),
+    observaciones: z.string().trim().max(500).optional(),
+  })).min(1, "Debe incluir al menos un ítem recibido"),
 });
 
 // ── Users ────────────────────────────────────────────────────────────────────
