@@ -219,6 +219,13 @@ export async function notifyClientMessageFromStaff(
     const { Resend } = await import("resend");
     const resend = new Resend(resendKey);
 
+    // Sin URL de sitio configurada, no inventamos un dominio — se omite el
+    // botón en vez de enlazar a un dominio que no es el de este tenant.
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+    const ctaBlock = siteUrl
+      ? `<div class="cta"><a href="${siteUrl}/portal">Ir al Portal</a></div>`
+      : "";
+
     const { error: emailErr } = await resend.emails.send({
       from: fromEmail,
       to: clientEmail,
@@ -252,9 +259,7 @@ export async function notifyClientMessageFromStaff(
       <div class="message">
         <p>${messageBody}</p>
       </div>
-      <div class="cta">
-        <a href="${process.env.NEXT_PUBLIC_SITE_URL || "https://portal.ventitech.com"}/portal">Ir al Portal</a>
-      </div>
+      ${ctaBlock}
     </div>
     <div class="footer">
       Este es un mensaje automático. No responder a este correo.<br>

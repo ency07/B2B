@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getTenantBranding } from "@/web/actions/branding";
+import { getBrandingDefaults } from "@/platform/branding/branding-defaults";
 import { getCurrentClient } from "@/lib/portal-auth";
 import {
   getClientJobs,
@@ -87,7 +88,7 @@ export default async function PortalPage({ searchParams }: Props) {
       redirect(loginUrl);
     }
 
-    return <PortalNoClientAssigned />;
+    return <PortalNoClientAssigned tenantCode={tenantParam} />;
   }
 
   // Cargar datos del client (per-client filtering por client_id) + branding del
@@ -191,7 +192,9 @@ export default async function PortalPage({ searchParams }: Props) {
  * Estado visible cuando el usuario está autenticado pero no tiene un client
  * asociado. Antes este caso caía en un loop /portal -> /login -> /portal.
  */
-function PortalNoClientAssigned() {
+async function PortalNoClientAssigned({ tenantCode }: { tenantCode: string | null }) {
+  const branding = await getTenantBranding(tenantCode).catch(() => getBrandingDefaults(tenantCode));
+  const supportEmail = branding.email_corporativo || getBrandingDefaults(tenantCode).email_corporativo;
   return (
     <main className="min-h-screen flex items-center justify-center bg-background p-6">
       <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
@@ -222,9 +225,9 @@ function PortalNoClientAssigned() {
           ¿Necesitas ayuda? Escríbenos a{" "}
           <a
             className="text-foreground underline"
-            href="mailto:soporte@ventitech.com"
+            href={`mailto:${supportEmail}`}
           >
-            soporte@ventitech.com
+            {supportEmail}
           </a>
           .
         </p>

@@ -2,12 +2,23 @@ import { Metadata } from "next";
 import Link from "next/link";
 import { ArcoForm } from "./arco-form";
 import { ROUTES } from "@/lib/routes";
+import { getTenantBranding } from "@/web/actions/branding";
+import { getBrandingDefaults } from "@/platform/branding/branding-defaults";
 
 export const metadata: Metadata = {
   title: "Política de Privacidad — Portal de Clientes",
 };
 
-export default function PrivacyPage() {
+interface Props {
+  searchParams: Promise<{ tenant?: string }>;
+}
+
+export default async function PrivacyPage({ searchParams }: Props) {
+  const params = await searchParams;
+  const tenantCode = params.tenant || null;
+  const branding = await getTenantBranding(tenantCode).catch(() => getBrandingDefaults(tenantCode));
+  const contactEmail = branding.email_corporativo || getBrandingDefaults(tenantCode).email_corporativo;
+
   return (
     <main className="min-h-screen bg-stone-50 py-16 px-6">
       <div className="max-w-3xl mx-auto space-y-8">
@@ -66,7 +77,7 @@ export default function PrivacyPage() {
                 Para ejercer sus derechos ARCO, puede escribir a nuestro
                 oficial de protección de datos a través del formulario de
                 contacto en el portal o enviando un correo a
-                {" "}<span className="font-mono text-stone-900">datos@ventitech.com</span>.
+                {" "}<span className="font-mono text-stone-900">{contactEmail}</span>.
               </p>
             </section>
 
@@ -89,12 +100,12 @@ export default function PrivacyPage() {
               <p>
                 Si tiene preguntas sobre el tratamiento de sus datos, puede
                 contactarnos en:{" "}
-                <span className="font-mono text-stone-900">datos@ventitech.com</span>
+                <span className="font-mono text-stone-900">{contactEmail}</span>
               </p>
             </section>
           </div>
 
-          <ArcoForm />
+          <ArcoForm contactEmail={contactEmail} />
         </div>
       </div>
     </main>
